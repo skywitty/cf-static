@@ -1,0 +1,75 @@
+# GitHub Actions 部署到 Cloudflare Workers
+#
+# ⚠️ 与 Workers Builds 二选一，不要同时开启，否则每次 push 会重复部署同一个 Worker。
+#    Workers Builds 走的是 Cloudflare GitHub App 授权；本方案走 API Token，两条路线互相独立。
+#    若 Workers Builds 后来恢复正常并已接线，请删除本文件，或先在 Worker → Settings → Builds
+#    里 Disconnect 停用 Workers Builds。
+#
+# 需要的两个仓库 Secret（Settings → Secrets and variables → Actions → New repository secret）：
+#   CLOUDFLARE_API_TOKEN   权限：Account / Workers Scripts / Edit
+#   CLOUDFLARE_ACCOUNT_ID  32 位账号 ID，Cloudflare Dashboard 右侧栏可复制
+#
+# 为什么不用 `npm ci`：
+#   本仓库的 package-lock.json 是在 Windows 上生成的，其中缺少
+#   @cloudflare/workerd-linux-64、@esbuild/linux-x64 等平台二进制条目
+#   （npm 安装可选依赖失败时会把它们从锁文件里剔除，锁文件里只剩 sharp 的平台包）。
+#   在 Linux runner 上执行 `npm ci` 会装出一个找不到 workerd 二进制的 wrangler，部署直接失败。
+#   改用 npx 拉取指定版本的 wrangler，可保证拿到与 runner 平台匹配的二进制。
+
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # 没配 Secret 时给出可读的提示并跳过部署，避免每次 push 都亮红叉
+      - name: 预检 Secrets
+        id: precheck
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          missing=""
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            missing="$missing CLOUDFLARE_API_TOKEN"
+          fi
+          if [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          fi
+          if [ -n "$missing" ]; then
+            echo "::warning::尚未配置 Secret:$missing —— 本次跳过部署。在 Settings → Secrets and variables → Actions 添加后，重新运行本工作流即可。"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Secret 齐备，开始部署。"
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy
+        if: steps.precheck.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4.147.0 deploy

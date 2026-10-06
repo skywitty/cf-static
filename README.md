@@ -28,19 +28,31 @@ cf-static/
 ├─ wrangler.jsonc
 ├─ package.json
 └─ .github/workflows/
-   └─ deploy.yml.example   备选方案：GitHub Actions 部署（默认未启用）
+   └─ deploy.yml          GitHub Actions 自动部署（与 Workers Builds 二选一）
 ```
 
 ---
 
 ## 一、首次部署
 
-### 1. 部署 Worker（约 3 分钟）
+三种方式任选其一。注意**顺序**：必须先让 Worker 存在，"接入 skywitty.win"那一步才有对象可挂。
 
-前提：代码已推送到 GitHub（`https://github.com/skywitty/cf-static`）。
+### 方式 A：本地 CLI 直传（30 秒，最可靠）
+
+```bash
+npx wrangler login    # 浏览器授权，只需一次
+npx wrangler deploy
+```
+
+终端输出 `https://cf-static.<账号>.workers.dev` 即成功。**不需要 API Token，也不需要
+GitHub 授权**，任何 Git 集成故障都绕得过去 —— 遇到 Dashboard 报错时先用这条把站先立起来。
+
+### 方式 B：Workers Builds（Git 自动部署，零密钥）
 
 1. Cloudflare Dashboard → **Workers & Pages** → **Create application** →
    在 **Import a repository** 旁点 **Get started**。
+   > 要选**导入已有仓库**，不要走"新建仓库"分支 —— 后者需要 Cloudflare 用你的 GitHub
+   > 授权去创建仓库，授权一失效就报"无法创建 Git 仓库"。
 2. 授权 Cloudflare GitHub App，仓库范围勾选本仓库即可。
 3. 选择 `skywitty/cf-static`，按下表配置：
 
@@ -59,7 +71,16 @@ cf-static/
 
 之后任何推送到 `main` 的提交都会自动构建发布；其他分支生成独立 Preview 地址。
 
-### 2. 接入 skywitty.win（一次性，约 5 分钟）
+> 若这一步报「Cloudflare 目前无法创建 Git 仓库，请重试，或手动创建仓库并从现有仓库部署」，
+> 属于**账号级 GitHub 授权问题**（详见第五、六节），与仓库本身无关。直接改用方式 C。
+
+### 方式 C：GitHub Actions（Git 自动部署，需 API Token）
+
+见第六节。**不依赖 Cloudflare 的 GitHub App 授权**，是方式 B 报错时的标准替代路径。
+
+### 接入 skywitty.win（一次性，约 5 分钟）
+
+> 前置条件：Worker 已存在（方式 A/B/C 任一已跑通）。
 
 **前提**：`skywitty.win` 已作为站点添加到同一个 Cloudflare 账号（nameserver 已指向 Cloudflare）。
 
@@ -140,8 +161,21 @@ curl -H "Host: skywitty.win"      http://localhost:8787/
 > 一旦配置了 `routes`，`wrangler dev` 会把所有请求的 hostname 强制改写成 zone 域名，
 > Host 头被忽略，本地就没法测试按域名分发的逻辑了。路由统一在 Dashboard 里挂。
 
-> Windows 上若报 `@cloudflare/workerd-windows-64 could not be found`，执行
-> `npm install @cloudflare/workerd-windows-64 --no-save` 补齐本地二进制，不影响云端构建。
+> **Windows 本地环境已知问题**：`npm install` 装不上 `@cloudflare/workerd-windows-64`、
+> `@esbuild/win32-x64` 这两个可选的平台二进制（锁文件里也缺这些条目），`npm run dev`
+> 会报找不到 workerd。`npm install <包> --no-save` 补装通常也会失败（npm 的删除钩子超时）。
+> 可靠做法是手工铺二进制：
+>
+> ```bash
+> npm pack @cloudflare/workerd-windows-64@1.20261001.1   # 版本须与 node_modules/workerd 的 optionalDependencies 一致
+> tar -xzf cloudflare-workerd-windows-64-1.20261001.1.tgz
+> mkdir -p node_modules/@cloudflare/workerd-windows-64/bin
+> cp package/package.json node_modules/@cloudflare/workerd-windows-64/
+> cp package/bin/workerd.exe node_modules/@cloudflare/workerd-windows-64/bin/
+> ```
+>
+> 只影响本地 `npm run dev`。云端构建与 GitHub Actions 不受影响 —— 所以 `deploy.yml`
+> 刻意不用 `npm ci`，而是直接用 `npx` 拉 wrangler。
 
 ---
 
@@ -177,6 +211,9 @@ curl -H "Host: skywitty.win"      http://localhost:8787/
 
 | 现象 | 原因与处理 |
 |---|---|
+| Dashboard 报「Cloudflare 目前无法创建 Git 仓库」 | 账号级 GitHub 授权失效（常见 `error 8000121: Your GitHub authorization has expired`），不是仓库的问题。三步处理：① 确认走的是**导入已有仓库**而非新建仓库，并取消勾选 `Create private Git repository`；② GitHub → Settings → Applications → **Cloudflare Workers and Pages** → Configure → Uninstall，回 Dashboard 重新授权（该 App 为全部 Workers/Pages 项目共用，重装后其他项目可能需重新连接 Builds）；③ 仍不行就用**方式 C**（API Token，不依赖该 App） |
+| Actions 跑完显示「跳过部署」 | 两个 Secret 未配置，按第六节添加后重新运行工作流 |
+| Actions 报找不到 workerd / esbuild 二进制 | 别用 `npm ci`，锁文件缺平台条目，见 `deploy.yml` 顶部注释 |
 | 构建报 `Worker name mismatch` | `wrangler.jsonc` 的 `name` 与 Dashboard 里的 Worker 名不一致 |
 | 子域名打不开 / NXDOMAIN | 通配 DNS 记录没加，或没开代理（必须是橙色云朵） |
 | 子域名能解析但返回 404 | 通配 DNS 有了，但 Worker 路由 `*.skywitty.win/*` 没挂 |
@@ -188,9 +225,40 @@ curl -H "Host: skywitty.win"      http://localhost:8787/
 | 本地 dev 的 Host 头无效 | 配置里出现了 `routes`，移除后重启 |
 | PWA 无法安装 | 必须通过 HTTPS 访问；`workers.dev` 与自定义域名均已自带 |
 
-## 六、备选方案：GitHub Actions 部署
+---
 
-Workers Builds 已覆盖自动部署，**默认无需启用 Actions**（避免重复部署）。
-若希望 CI 完全留在 GitHub 侧（要跑测试、Lint 等），把 `.github/workflows/deploy.yml.example`
-改名为 `deploy.yml`，配好 `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` 两个 Secret，
-再到 Worker → **Settings** → **Builds** → **Disconnect** 停用 Workers Builds 即可。
+## 六、方式 C：GitHub Actions 部署
+
+`.github/workflows/deploy.yml` **已启用**，推送到 `main` 即自动部署，用 API Token 认证，
+完全绕开 Cloudflare 的 GitHub App 授权 —— Workers Builds 报错时用这条路。
+
+> ⚠️ **与 Workers Builds 二选一**。两条管线同时开着，每次 push 会重复部署同一个 Worker。
+> 若你后来修好了方式 B 并完成接线，请先删掉 `deploy.yml`，或在 Worker → **Settings** →
+> **Builds** → **Disconnect** 停用 Workers Builds。
+
+### 配置（约 2 分钟）
+
+**① 创建 API Token** — [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
+→ **Create Token** → **Create Custom Token**：
+
+| 字段 | 填写值 |
+|---|---|
+| Name | `cf-static GitHub Actions` |
+| Permissions | **Account** / **Workers Scripts** / **Edit** |
+| Account Resources | Include → 你的账号 |
+
+创建后**立即复制**（只显示一次）。不需要任何 Zone 权限 —— 路由是在 Dashboard 手工挂的。
+
+**② 取 Account ID** — Cloudflare Dashboard 右侧栏的 **Account ID**（32 位十六进制）。
+
+**③ 写入仓库 Secret** — GitHub 仓库 → **Settings** → **Secrets and variables** → **Actions**
+→ **New repository secret**，添加两个：
+
+| Name | Secret |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | 上一步复制的 Token |
+| `CLOUDFLARE_ACCOUNT_ID` | 上一步复制的账号 ID |
+
+**④ 触发** — 推一个提交到 `main`，或到 **Actions** → **Deploy to Cloudflare Workers** →
+**Run workflow**。未配 Secret 时工作流会显示黄色警告并跳过部署，不会亮红叉。
+
