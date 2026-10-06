@@ -90,6 +90,18 @@ GitHub 授权**，任何 Git 集成故障都绕得过去 —— 遇到 Dashboard
 
 之后任何推送到 `main` 的提交都会自动构建发布；其他分支生成独立 Preview 地址。
 
+#### ⚠️ 构建配置四个字段，其中两个填错必挂
+
+| 配置项 | 必须的填写值 | 填错的后果 |
+|---|---|---|
+| Build command | **留空** | 本仓库没有构建步骤 |
+| Deploy command | `npx wrangler deploy` | — |
+| Root directory | **留空** = 仓库根目录 | 填了子目录 → 构建在子目录里跑 `npm ci` → 报找不到 `package-lock.json` |
+| 连接的仓库 | **`skywitty/cf-static`** | 连到别的仓库（尤其是 Cloudflare 新建的空仓库）→ 同样报找不到 `package-lock.json` |
+
+**保存后回 Settings → Builds 核对一次"连的是哪个仓库"。** 如果你在上一步「已存在具有该名称的
+存储库」之后换了仓库名继续，Cloudflare 很可能建了个**空仓库**并连上了它 —— 那必然构建失败。
+
 > 若报「Cloudflare 目前无法创建 Git 仓库，请重试，或手动创建仓库并从现有仓库部署」，
 > 属于**账号级 GitHub 授权问题**（详见第五、六节），与仓库本身无关。改用入口 1 或方式 C。
 
@@ -180,21 +192,21 @@ curl -H "Host: skywitty.win"      http://localhost:8787/
 > 一旦配置了 `routes`，`wrangler dev` 会把所有请求的 hostname 强制改写成 zone 域名，
 > Host 头被忽略，本地就没法测试按域名分发的逻辑了。路由统一在 Dashboard 里挂。
 
-> **Windows 本地环境已知问题**：`npm install` 装不上 `@cloudflare/workerd-windows-64`、
-> `@esbuild/win32-x64` 这两个可选的平台二进制（锁文件里也缺这些条目），`npm run dev`
-> 会报找不到 workerd。`npm install <包> --no-save` 补装通常也会失败（npm 的删除钩子超时）。
-> 可靠做法是手工铺二进制：
+> **锁文件已补全平台条目**（92 条，含全部 `@cloudflare/workerd-*` 与 `@esbuild/*`）。
+> 原来的锁文件是在华为云镜像下生成的：npm 装不上可选依赖时会**静默删掉对应的锁条目**，
+> 于是 Windows 本地 `npm run dev` 报找不到 workerd，云端 Linux 构建也会装出缺 workerd
+> 二进制的 wrangler。现已改用官方源、在干净目录（不带 `node_modules`）里重新解析补齐。
+>
+> 若本地仍报 `@cloudflare/workerd-windows-64 could not be found`，先删掉 `node_modules`
+> 重跑 `npm install`（锁文件里已有该包）。万不得已可手工铺二进制：
 >
 > ```bash
-> npm pack @cloudflare/workerd-windows-64@1.20261001.1   # 版本须与 node_modules/workerd 的 optionalDependencies 一致
+> npm pack @cloudflare/workerd-windows-64@1.20261001.1
 > tar -xzf cloudflare-workerd-windows-64-1.20261001.1.tgz
 > mkdir -p node_modules/@cloudflare/workerd-windows-64/bin
 > cp package/package.json node_modules/@cloudflare/workerd-windows-64/
 > cp package/bin/workerd.exe node_modules/@cloudflare/workerd-windows-64/bin/
 > ```
->
-> 只影响本地 `npm run dev`。云端构建与 GitHub Actions 不受影响 —— 所以 `deploy.yml`
-> 刻意不用 `npm ci`，而是直接用 `npx` 拉 wrangler。
 
 ---
 
@@ -233,6 +245,8 @@ curl -H "Host: skywitty.win"      http://localhost:8787/
 | Dashboard 报「Cloudflare 目前无法创建 Git 仓库」 | 账号级 GitHub 授权失效（常见 `error 8000121: Your GitHub authorization has expired`），不是仓库的问题。三步处理：① 确认走的是**导入已有仓库**而非新建仓库；② GitHub → Settings → Applications → **Cloudflare Workers and Pages** → Configure → Uninstall，回 Dashboard 重新授权（该 App 为全部 Workers/Pages 项目共用，重装后其他项目可能需重新连接 Builds）；③ 仍不行就用**方式 C**（API Token，不依赖该 App） |
 | Dashboard 报「已存在具有该名称的存储库，请选择其他名称」 | 你走进了"新建仓库"分支：Cloudflare 正尝试在你的 GitHub 账号里创建同名仓库，而 `skywitty/cf-static` 已经存在。**不要改名字**（改成 `cf-static-2` 只会建出一个空仓库，白部署一场）。改用方式 B 的**入口 1**，或退回上一步、在仓库**列表**里选中已有仓库 |
 | 方式 B 的仓库列表是空的 / 找不到本仓库 | GitHub App 的仓库访问范围没包含它。GitHub → Settings → Applications → **Cloudflare Workers and Pages** → Configure → **Repository access** → 勾上 `skywitty/cf-static`（或改选 All repositories），刷新 Dashboard 重试 |
+| 构建失败：`npm ci` … `can only install with an existing package-lock.json`，末尾是 `Failed: error occurred while installing tools or dependencies` | 构建在**没有 `package-lock.json` 的目录**里跑了 `npm ci`。本仓库根目录确实有锁文件，所以这是配置问题，按可能性排查：① **Worker 连的不是本仓库**（最常见是被连到 Cloudflare 新建的空仓库）；② **Root directory 填了子目录**，必须留空。见方式 B 下的「构建配置四个字段」表 |
+| 构建失败：`Cannot find module '@cloudflare/workerd-linux-64'` | 锁文件缺 Linux 平台条目，`npm ci` 装出的 wrangler 缺二进制。已于 2026-10-06 补全；若从旧提交部署请先合并 `main` |
 | Actions 跑完显示「跳过部署」 | 两个 Secret 未配置，按第六节添加后重新运行工作流 |
 | Actions 报找不到 workerd / esbuild 二进制 | 别用 `npm ci`，锁文件缺平台条目，见 `deploy.yml` 顶部注释 |
 | 构建报 `Worker name mismatch` | `wrangler.jsonc` 的 `name` 与 Dashboard 里的 Worker 名不一致 |

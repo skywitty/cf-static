@@ -9,12 +9,12 @@
 #   CLOUDFLARE_API_TOKEN   权限：Account / Workers Scripts / Edit
 #   CLOUDFLARE_ACCOUNT_ID  32 位账号 ID，Cloudflare Dashboard 右侧栏可复制
 #
-# 为什么不用 `npm ci`：
-#   本仓库的 package-lock.json 是在 Windows 上生成的，其中缺少
-#   @cloudflare/workerd-linux-64、@esbuild/linux-x64 等平台二进制条目
-#   （npm 安装可选依赖失败时会把它们从锁文件里剔除，锁文件里只剩 sharp 的平台包）。
-#   在 Linux runner 上执行 `npm ci` 会装出一个找不到 workerd 二进制的 wrangler，部署直接失败。
-#   改用 npx 拉取指定版本的 wrangler，可保证拿到与 runner 平台匹配的二进制。
+# 为什么不跑 `npm ci`：
+#   本仓库没有构建步骤，部署只需要一个 wrangler，不需要那棵依赖树。直接跳过安装，
+#   管线更快，也不受锁文件状态影响。
+#   （package-lock.json 早期缺 @cloudflare/workerd-linux-64、@esbuild/linux-x64 等平台条目，
+#   在 Linux runner 上执行 `npm ci` 会装出找不到 workerd 二进制的 wrangler、部署必失败；
+#   锁文件已于 2026-10-06 用官方源在干净目录重新解析补全，但保留 npx 方式更省事。）
 
 name: Deploy to Cloudflare Workers
 
