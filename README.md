@@ -49,12 +49,31 @@ GitHub 授权**，任何 Git 集成故障都绕得过去 —— 遇到 Dashboard
 
 ### 方式 B：Workers Builds（Git 自动部署，零密钥）
 
-1. Cloudflare Dashboard → **Workers & Pages** → **Create application** →
+两个入口，**推荐入口 1** —— 它绕开 `Create application` 里那条"新建仓库"分支，
+也就不会遇到「无法创建 Git 仓库」「已存在具有该名称的存储库」这类报错。
+
+**入口 1（推荐）：先有 Worker，再把仓库连上去**
+
+1. 先跑通方式 A，让 `cf-static` 这个 Worker 存在。
+2. Dashboard → **Workers & Pages** → 点进 `cf-static` → **Settings** → **Builds** → **Connect**。
+3. 选 Git 账号 → **在列表里选中** `skywitty/cf-static`（列表为空见第五节的仓库访问范围）。
+4. 按下表配置后保存：
+
+   | 配置项 | 填写值 |
+   |---|---|
+   | Build command | *（留空，无构建步骤）* |
+   | Deploy command | `npx wrangler deploy` |
+   | Root directory | *（留空，即仓库根目录）* |
+
+**入口 2：从 Create application 导入**
+
+1. Dashboard → **Workers & Pages** → **Create application** →
    在 **Import a repository** 旁点 **Get started**。
-   > 要选**导入已有仓库**，不要走"新建仓库"分支 —— 后者需要 Cloudflare 用你的 GitHub
-   > 授权去创建仓库，授权一失效就报"无法创建 Git 仓库"。
 2. 授权 Cloudflare GitHub App，仓库范围勾选本仓库即可。
-3. 选择 `skywitty/cf-static`，按下表配置：
+3. **在仓库列表里选中 `skywitty/cf-static`**（有搜索框可筛选）。
+   > 不要走"新建仓库"分支，也不要在弹出的表单里输入仓库名 —— 那是让 Cloudflare 去你的
+   > GitHub 建一个新仓库，`cf-static` 已被占用，会报「已存在具有该名称的存储库」。
+4. 按下表配置：
 
    | 配置项 | 填写值 |
    |---|---|
@@ -67,12 +86,12 @@ GitHub 授权**，任何 Git 集成故障都绕得过去 —— 遇到 Dashboard
 
    > Project name 必须与 `wrangler.jsonc` 里的 `name` 完全一致，否则构建直接失败。
 
-4. **Save and Deploy**，完成后访问 `https://cf-static.<账号>.workers.dev` 验证。
+5. **Save and Deploy**，完成后访问 `https://cf-static.<账号>.workers.dev` 验证。
 
 之后任何推送到 `main` 的提交都会自动构建发布；其他分支生成独立 Preview 地址。
 
-> 若这一步报「Cloudflare 目前无法创建 Git 仓库，请重试，或手动创建仓库并从现有仓库部署」，
-> 属于**账号级 GitHub 授权问题**（详见第五、六节），与仓库本身无关。直接改用方式 C。
+> 若报「Cloudflare 目前无法创建 Git 仓库，请重试，或手动创建仓库并从现有仓库部署」，
+> 属于**账号级 GitHub 授权问题**（详见第五、六节），与仓库本身无关。改用入口 1 或方式 C。
 
 ### 方式 C：GitHub Actions（Git 自动部署，需 API Token）
 
@@ -211,7 +230,9 @@ curl -H "Host: skywitty.win"      http://localhost:8787/
 
 | 现象 | 原因与处理 |
 |---|---|
-| Dashboard 报「Cloudflare 目前无法创建 Git 仓库」 | 账号级 GitHub 授权失效（常见 `error 8000121: Your GitHub authorization has expired`），不是仓库的问题。三步处理：① 确认走的是**导入已有仓库**而非新建仓库，并取消勾选 `Create private Git repository`；② GitHub → Settings → Applications → **Cloudflare Workers and Pages** → Configure → Uninstall，回 Dashboard 重新授权（该 App 为全部 Workers/Pages 项目共用，重装后其他项目可能需重新连接 Builds）；③ 仍不行就用**方式 C**（API Token，不依赖该 App） |
+| Dashboard 报「Cloudflare 目前无法创建 Git 仓库」 | 账号级 GitHub 授权失效（常见 `error 8000121: Your GitHub authorization has expired`），不是仓库的问题。三步处理：① 确认走的是**导入已有仓库**而非新建仓库；② GitHub → Settings → Applications → **Cloudflare Workers and Pages** → Configure → Uninstall，回 Dashboard 重新授权（该 App 为全部 Workers/Pages 项目共用，重装后其他项目可能需重新连接 Builds）；③ 仍不行就用**方式 C**（API Token，不依赖该 App） |
+| Dashboard 报「已存在具有该名称的存储库，请选择其他名称」 | 你走进了"新建仓库"分支：Cloudflare 正尝试在你的 GitHub 账号里创建同名仓库，而 `skywitty/cf-static` 已经存在。**不要改名字**（改成 `cf-static-2` 只会建出一个空仓库，白部署一场）。改用方式 B 的**入口 1**，或退回上一步、在仓库**列表**里选中已有仓库 |
+| 方式 B 的仓库列表是空的 / 找不到本仓库 | GitHub App 的仓库访问范围没包含它。GitHub → Settings → Applications → **Cloudflare Workers and Pages** → Configure → **Repository access** → 勾上 `skywitty/cf-static`（或改选 All repositories），刷新 Dashboard 重试 |
 | Actions 跑完显示「跳过部署」 | 两个 Secret 未配置，按第六节添加后重新运行工作流 |
 | Actions 报找不到 workerd / esbuild 二进制 | 别用 `npm ci`，锁文件缺平台条目，见 `deploy.yml` 顶部注释 |
 | 构建报 `Worker name mismatch` | `wrangler.jsonc` 的 `name` 与 Dashboard 里的 Worker 名不一致 |
