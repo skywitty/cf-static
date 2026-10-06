@@ -1,15 +1,34 @@
-import { PROJECTS } from "./projects.js";
+import { BASE_DOMAINS, PROJECTS, HOST_ALIASES } from "./projects.js";
 
-// 内部资产主机名：改写请求路径后交给 assets 绑定，不对外暴露
+// 内部资产主机名：改写路径后交给 assets 绑定，不对外暴露
 const ASSET_HOST = "assets.local";
 const ALLOWED_METHODS = new Set(["GET", "HEAD"]);
+// 合法的一级子域名标签：小写字母、数字、中划线，首尾不能是中划线
+const SUBDOMAIN_LABEL = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
-// 域名 → 项目名，启动时展开一次
-const HOST_TO_PROJECT = new Map();
-for (const [name, config] of Object.entries(PROJECTS)) {
-  for (const domain of config.domains ?? []) {
-    HOST_TO_PROJECT.set(domain.toLowerCase(), name);
+/**
+ * 解析主机名归属。
+ *   { project, base }       按项目分发，base 用于生成索引页回链
+ *   { index: true }         展示项目索引
+ *   { passthrough: true }   未接入域名（workers.dev 等），按原路径直通
+ */
+function resolveHost(hostname) {
+  const alias = HOST_ALIASES[hostname];
+  if (alias) return { project: alias };
+
+  for (const base of BASE_DOMAINS) {
+    if (hostname === base) return { index: true };
+    if (!hostname.endsWith(`.${base}`)) continue;
+
+    const label = hostname.slice(0, hostname.length - base.length - 1);
+    if (label === "www") return { index: true };
+    // 只接受一级子域名：更深层不在免费 Universal SSL 覆盖范围内
+    if (!label.includes(".") && SUBDOMAIN_LABEL.test(label)) {
+      return { project: label, base };
+    }
   }
+
+  return { passthrough: true };
 }
 
 export default {
@@ -22,25 +41,25 @@ export default {
     }
 
     const url = new URL(request.url);
-    const project = HOST_TO_PROJECT.get(url.hostname.toLowerCase());
+    const route = resolveHost(url.hostname.toLowerCase());
 
-    // 命中已登记的自定义域名：把项目前缀拼回路径，交给静态资源层
-    if (project) {
-      const assetPath = url.pathname === "/" ? `/${project}/` : `/${project}${url.pathname}`;
+    // 项目子域名：把项目前缀拼回路径，再取资源
+    if (route.project) {
+      const assetPath =
+        url.pathname === "/" ? `/${route.project}/` : `/${route.project}${url.pathname}`;
       const response = await fetchAsset(env, request, assetPath);
-      if (response.status !== 404) {
-        return rewriteRedirect(response, project);
+      if (response.status === 404) {
+        const indexUrl = route.base ? `https://${route.base}/` : "/";
+        return notFoundPage(route.project, url.pathname, indexUrl);
       }
-      return notFoundPage(project, url.pathname);
+      return stripProjectPrefix(response, route.project);
     }
 
-    // 未登记的域名（含 workers.dev）：根路径给项目索引，其余交给 404
-    // 注：形如 /life/xxx 的路径由静态资源层优先命中，不会走到这里
-    if (url.pathname === "/") {
-      return indexPage();
-    }
-
-    return notFoundPage(null, url.pathname);
+    // 主域名与未接入域名：按原路径取资源，根路径回退到项目索引
+    const response = await fetchAsset(env, request, url.pathname);
+    if (response.status !== 404) return response;
+    if (url.pathname === "/") return indexPage();
+    return notFoundPage(null, url.pathname, "/");
   },
 };
 
@@ -62,7 +81,7 @@ async function fetchAsset(env, request, pathname) {
 }
 
 // assets 层可能在 Location 里带上内部主机名或项目前缀，这里翻译回对外地址
-function rewriteRedirect(response, project) {
+function stripProjectPrefix(response, project) {
   if (response.status < 300 || response.status >= 400) return response;
 
   const location = response.headers.get("location");
@@ -93,23 +112,24 @@ function rewriteRedirect(response, project) {
 
 function indexPage() {
   const entries = Object.entries(PROJECTS);
+  const base = BASE_DOMAINS[0];
+
   const items = entries
-    .map(([name, config]) => {
-      const domains = config.domains ?? [];
-      const meta = domains.length ? `<span class="meta">${esc(domains.join(" · "))}</span>` : "";
-      return `<li><a href="/${esc(name)}/">${esc(config.title ?? name)}</a>${meta}</li>`;
+    .map(([name, title]) => {
+      const meta = base ? `<span class="meta">${esc(`${name}.${base}`)}</span>` : "";
+      return `<li><a href="/${esc(name)}/">${esc(title)}</a>${meta}</li>`;
     })
     .join("");
 
   const body = entries.length
     ? `<h1>项目索引</h1><ul class="list">${items}</ul>`
-    : `<h1>项目索引</h1><p class="meta">尚未注册任何项目</p>`;
+    : `<h1>项目索引</h1><p class="meta">尚未登记任何项目</p>`;
 
   return html(body, "项目索引");
 }
 
-function notFoundPage(project, pathname) {
-  const body = `<h1>404</h1><p>没有找到 <code>${esc(pathname)}</code></p><p><a href="/">返回项目索引</a></p>`;
+function notFoundPage(project, pathname, indexUrl) {
+  const body = `<h1>404</h1><p>没有找到 <code>${esc(pathname)}</code></p><p><a href="${esc(indexUrl)}">返回项目索引</a></p>`;
   return html(body, project ? `${project} · 未找到` : "未找到", 404);
 }
 

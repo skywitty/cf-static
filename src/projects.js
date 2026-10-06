@@ -1,27 +1,31 @@
 /**
- * 项目注册表 —— 唯一的配置入口。
+ * 项目路由配置 —— 唯一的配置入口。
  *
- * 约定：仓库根目录下的每一个文件夹就是一个项目，
- *      文件夹名即项目名，同时也是路径访问入口 /<文件夹名>/。
- *      因此新增一个「只走路径」的项目，什么都不用改，加文件夹即可。
+ * ── 主域名 ──────────────────────────────────────────────
+ * 一级子域名自动映射到同名项目文件夹，新增项目零配置：
  *
- * 只有需要「独立域名」的项目，才在这里登记一条：
+ *     skywitty.win        →  项目索引页
+ *     www.skywitty.win    →  项目索引页
+ *     life.skywitty.win   →  public/life/
+ *     blog.skywitty.win   →  public/blog/
+ *     <任意>.skywitty.win →  public/<任意>/
  *
- *   export const PROJECTS = {
- *     life: { title: "栖 · 生活工作台", domains: ["life.example.com"] },
- *     blog: { title: "随手记",           domains: ["blog.example.com", "www.example.com"] },
- *   };
+ * 免费版 Universal SSL 覆盖主域名与其一级子域名，HTTPS 无需额外配置；
+ * 不支持 a.b.skywitty.win 这类二级子域名（需付费 ACM）。
  *
- * 字段说明
- *   title   —— 项目索引页上显示的名字，不填则回退到文件夹名
- *   domains —— 绑定到该项目的自定义域名（纯主机名，不带协议与路径）
- *              这些域名必须先以 Custom Domain 形式挂到同一个 Worker 上，
- *              路由脚本才能通过 Host 头把它们分辨出来。
- *              留空表示该项目只能通过 /<文件夹名>/ 路径访问。
+ * ── 项目显示名（可选）────────────────────────────────────
+ * 不登记也能正常访问，登记只是为了在索引页显示一个好看的名字。
+ *
+ * ── 例外映射 ────────────────────────────────────────────
+ * 某个主机名需要指向非同名文件夹时，在 HOST_ALIASES 里覆盖。
  */
+
+export const BASE_DOMAINS = ["skywitty.win"];
+
 export const PROJECTS = {
-  life: {
-    title: "栖 · 生活工作台",
-    domains: [],
-  },
+  life: "栖 · 生活工作台",
+};
+
+export const HOST_ALIASES = {
+  // "www.skywitty.win": "life",
 };

@@ -1,7 +1,18 @@
 # cf-static
 
-一个 Cloudflare Worker 承载多个静态项目，按域名自动分发。
-`public/` 下的每一个文件夹就是一个项目，可用 `/<文件夹名>/` 路径访问，也可以各自绑定独立域名。
+一个 Cloudflare Worker 承载多个静态项目，通过**通配子域名**自动分发。
+`public/` 下的每一个文件夹就是一个项目，新增项目零配置。
+
+## 域名规则
+
+| 访问地址 | 对应内容 |
+|---|---|
+| `skywitty.win` | 项目索引页（放了 `public/index.html` 则用它） |
+| `www.skywitty.win` | 项目索引页 |
+| `life.skywitty.win` | `public/life/` |
+| `blog.skywitty.win` | `public/blog/` |
+| `<任意>.skywitty.win` | `public/<任意>/`，不存在则 404 |
+| `cf-static.<账号>.workers.dev/life/` | 兜底入口，按路径访问同名文件夹 |
 
 ## 目录结构
 
@@ -12,41 +23,26 @@ cf-static/
 │  └─ life/
 │     └─ index.html           栖 · 生活工作台
 ├─ src/
-│  ├─ index.js             路由 Worker：按 Host / 路径分发
-│  └─ projects.js          项目注册表（唯一配置入口）
+│  ├─ index.js             路由 Worker：按 Host 分发
+│  └─ projects.js          配置：主域名 + 项目显示名 + 例外映射
 ├─ wrangler.jsonc
 ├─ package.json
 └─ .github/workflows/
    └─ deploy.yml.example   备选方案：GitHub Actions 部署（默认未启用）
 ```
 
-## 请求是怎么分发的
-
-```
-life.example.com/notes/style.css
-        │
-        ├─ Host 命中已登记域名 ──► 路径改写为 /life/notes/style.css ──► 静态资源层
-        │
-cf-static.<账号>.workers.dev/blog/
-        │
-        └─ Host 未登记 ──► /blog/xxx 由静态资源层直接命中（项目名前缀即路径）
-```
-
-- **命中静态文件**：由 Cloudflare 直接返回，不进 Worker，不消耗计算额度。
-- **未命中**：交给 `src/index.js`，按 Host 判断归属项目，改写路径后取资源；仍未命中则返回 404 页。
-- 根路径 `/` 返回一个自动生成的项目索引页。
-- 只接受 `GET` / `HEAD`，其他方法返回 405。
-
 ---
 
-## 一、首次部署（Dashboard 操作，约 3 分钟）
+## 一、首次部署
 
-前提：代码已推送到 GitHub（本仓库：`https://github.com/skywitty/cf-static`）。
+### 1. 部署 Worker（约 3 分钟）
 
-1. 登录 Cloudflare Dashboard，进入 **Workers & Pages**。
-2. 点 **Create application** → 在 **Import a repository** 旁点 **Get started**。
-3. 授权 Cloudflare GitHub App，仓库范围勾选本仓库即可，不必授权全部仓库。
-4. 选择 `skywitty/cf-static`，按下表配置：
+前提：代码已推送到 GitHub（`https://github.com/skywitty/cf-static`）。
+
+1. Cloudflare Dashboard → **Workers & Pages** → **Create application** →
+   在 **Import a repository** 旁点 **Get started**。
+2. 授权 Cloudflare GitHub App，仓库范围勾选本仓库即可。
+3. 选择 `skywitty/cf-static`，按下表配置：
 
    | 配置项 | 填写值 |
    |---|---|
@@ -55,45 +51,73 @@ cf-static.<账号>.workers.dev/blog/
    | Build command | *（留空，无构建步骤）* |
    | Deploy command | `npx wrangler deploy` |
    | Root directory | *（留空，即仓库根目录）* |
-   | API token | 选 **Create new token**（自动生成，无需手工建） |
+   | API token | 选 **Create new token**（自动生成） |
 
    > Project name 必须与 `wrangler.jsonc` 里的 `name` 完全一致，否则构建直接失败。
 
-5. 点 **Save and Deploy**，完成后访问 `https://cf-static.<你的账号名>.workers.dev`。
-6. 之后任何推送到 `main` 的提交都会自动构建发布；其他分支会生成独立 Preview 地址。
+4. **Save and Deploy**，完成后访问 `https://cf-static.<账号>.workers.dev` 验证。
+
+之后任何推送到 `main` 的提交都会自动构建发布；其他分支生成独立 Preview 地址。
+
+### 2. 接入 skywitty.win（一次性，约 5 分钟）
+
+**前提**：`skywitty.win` 已作为站点添加到同一个 Cloudflare 账号（nameserver 已指向 Cloudflare）。
+
+**① 添加通配 DNS 记录** — DNS → Records → Add record：
+
+| Type | Name | Target / IPv4 | Proxy |
+|---|---|---|---|
+| CNAME | `*` | `skywitty.win` | **Proxied（橙色云朵）** |
+| A | `@` | `192.0.2.1` | **Proxied（橙色云朵）** |
+
+- 通配记录**必须开启代理**，否则请求不会经过 Cloudflare，Worker 路由不会触发。
+- 开启代理后 Target 的值不参与解析，填什么都行；主域名用 `192.0.2.1` 这类占位地址即可，
+  Worker 会直接接管，不会真的回源。
+- DNS 通配记录**不覆盖主域名本身**（RFC 4592），所以 `@` 那条要单独加。
+
+**② 挂 Worker 路由** — Workers & Pages → `cf-static` → Settings → **Domains & Routes**
+→ Add → **Route**，添加两条：
+
+```
+*.skywitty.win/*
+skywitty.win/*
+```
+
+**③ HTTPS**：无需操作。免费版 Universal SSL 自动签发并续期，覆盖主域名与全部一级子域名。
+
+> 不支持 `a.b.skywitty.win` 这类二级子域名 —— 免费证书只覆盖一级，需要付费的
+> Advanced Certificate Manager。路由脚本本身也只接受一级子域名。
 
 ---
 
 ## 二、新增一个项目
 
-### 只走路径访问（零配置）
-
-在 `public/` 下新建文件夹并放入入口文件：
+真正零配置，只有一步：
 
 ```
 public/blog/index.html
 ```
 
-推送后即可访问 `https://<你的域名>/blog/`。
+推送后 `https://blog.skywitty.win` 立即可用，同时 `https://skywitty.win/blog/` 也能访问。
 
-### 需要独立域名
+想让它出现在项目索引页上（带一个好看的名字），在 `src/projects.js` 加一行：
 
-1. 在 `src/projects.js` 注册一行（`title` 用于项目索引页显示）：
+```js
+export const PROJECTS = {
+  life: "栖 · 生活工作台",
+  blog: "随手记",
+};
+```
 
-   ```js
-   export const PROJECTS = {
-     life: { title: "栖 · 生活工作台", domains: [] },
-     blog: { title: "随手记", domains: ["blog.example.com"] },
-   };
-   ```
+不登记也能正常访问，登记只影响索引页显示。
 
-2. 到 Cloudflare：选中 **cf-static** 这个 Worker → **Settings** → **Domains & Routes** → **Add** →
-   **Custom domain**，填入 `blog.example.com`。
-   一个 Worker 可以挂任意多个自定义域名，路由脚本靠 Host 头把它们区分开。
+### 想让某个子域名指向别的文件夹
 
-3. 推送后 `blog.example.com` 就会指向 `public/blog/`，绑定的域名也会显示在索引页上。
-
-> 域名必须托管在同一个 Cloudflare 账号下。DNS 记录与证书会自动创建，通常几分钟内生效。
+```js
+export const HOST_ALIASES = {
+  "go.skywitty.win": "life",
+};
+```
 
 ---
 
@@ -105,11 +129,16 @@ npm run dev        # 本地预览 http://localhost:8787
 npm run deploy     # 手动部署（需先 npx wrangler login）
 ```
 
-本地验证域名路由时，直接伪造 Host 头即可：
+本地验证域名路由，直接伪造 Host 头即可，一个服务就能测全部域名：
 
 ```bash
-curl -H "Host: blog.example.com" http://localhost:8787/
+curl -H "Host: life.skywitty.win" http://localhost:8787/
+curl -H "Host: skywitty.win"      http://localhost:8787/
 ```
+
+> ⚠️ **不要把路由写进 `wrangler.jsonc` 的 `routes`。**
+> 一旦配置了 `routes`，`wrangler dev` 会把所有请求的 hostname 强制改写成 zone 域名，
+> Host 头被忽略，本地就没法测试按域名分发的逻辑了。路由统一在 Dashboard 里挂。
 
 > Windows 上若报 `@cloudflare/workerd-windows-64 could not be found`，执行
 > `npm install @cloudflare/workerd-windows-64 --no-save` 补齐本地二进制，不影响云端构建。
@@ -119,20 +148,28 @@ curl -H "Host: blog.example.com" http://localhost:8787/
 ## 四、几个关键设计取舍
 
 **为什么静态根是 `public/` 而不是仓库根目录？**
-`wrangler dev` 会监听静态根目录下的所有文件变动来做热重载，但它**不读取 `.assetsignore`**。
-若把仓库根目录设为静态根，`.wrangler/state` 下 sqlite 的写入会不断触发重建，形成死循环，
+`wrangler dev` 会监听静态根目录下的所有文件变动做热重载，但它**不读取 `.assetsignore`**。
+若把仓库根目录设为静态根，`.wrangler/state` 下 sqlite 的写入会不断触发重建，形成无限重启循环，
 `npm run dev` 完全不可用。收拢到独立子目录后，基础设施文件天然隔离，也顺带保证
-`README.md`、`src/`、`package.json` 等不会被误上传（已验证均返回 404）。
+`README.md`、`src/`、`package.json` 不会被误上传。
+
+**为什么要开 `run_worker_first`？**
+默认情况下静态资源优先于 Worker，这会让 `public/` 根目录的文件「盖住」子域名下的同名路径 ——
+比如日后加了 `public/index.html`，`life.skywitty.win/` 就会错误地返回它而不是 `public/life/index.html`。
+开启后 Worker 先执行、自己决定去向，行为可预测。
+代价是每个请求消耗一次 Worker 调用（免费额度 10 万次/天），个人站点余量充足。
 
 **为什么不设置 `not_found_handling`？**
 一旦设为 `404-page` 或 `single-page-application`，未命中的请求会被 Cloudflare 直接短路、不进 Worker，
 按域名分发的逻辑就失效了。保持默认 `none`，未命中请求才会落到 `src/index.js`。
 
-**为什么启用 `main` 而不是纯静态？**
-纯静态 Worker 只能按路径分发，无法识别 Host 头，也就无法让每个项目拥有独立域名。
-用路由脚本换来的是：一次部署覆盖全部项目，域名数量不受限。
+**为什么用路由脚本而不是纯静态 Worker？**
+纯静态 Worker 只能按路径分发，读不到 Host 头，也就无法实现子域名。
+换成路由脚本后，加项目只需加文件夹，域名数量不受限。
 
-**代价**：未命中的请求会消耗一次 Worker 调用；命中静态资源的请求仍是纯静态返回，不计费。
+**为什么 `routes` 放在 Dashboard 而不是 `wrangler.jsonc`？**
+一是本地 dev 会因此无法测试 Host 分发（见上）；二是 `routes` 依赖 zone 已添加到账号，
+写进配置会让部署与域名状态耦合 —— 域名未就绪时构建会直接失败，把整个自动部署管线拖垮。
 
 ---
 
@@ -141,10 +178,15 @@ curl -H "Host: blog.example.com" http://localhost:8787/
 | 现象 | 原因与处理 |
 |---|---|
 | 构建报 `Worker name mismatch` | `wrangler.jsonc` 的 `name` 与 Dashboard 里的 Worker 名不一致 |
-| 新项目 404 | 确认入口文件是 `public/<项目名>/index.html`，且已推送 |
-| 自定义域名访问仍是索引页 | 域名没写进 `src/projects.js` 的 `domains`，或尚未在 Worker 上添加 Custom domain |
+| 子域名打不开 / NXDOMAIN | 通配 DNS 记录没加，或没开代理（必须是橙色云朵） |
+| 子域名能解析但返回 404 | 通配 DNS 有了，但 Worker 路由 `*.skywitty.win/*` 没挂 |
+| 主域名打不开 | 通配记录不覆盖主域名本身，需单独加 `@` 记录 |
+| 子域名返回索引页而不是项目 | 没建对应的 `public/<子域名>/index.html` |
+| 新增项目 404 | 入口文件必须是 `public/<项目名>/index.html`，且已推送 |
+| 二级子域名报证书错误 | 免费证书只覆盖一级，需要付费 ACM，或改用一级子域名 |
 | 本地 dev 反复重启 | 静态根被设成了仓库根目录，改回 `./public` |
-| PWA 无法安装 | 必须通过 HTTPS 访问；`workers.dev` 子域名自带，自定义域名绑定后同样可用 |
+| 本地 dev 的 Host 头无效 | 配置里出现了 `routes`，移除后重启 |
+| PWA 无法安装 | 必须通过 HTTPS 访问；`workers.dev` 与自定义域名均已自带 |
 
 ## 六、备选方案：GitHub Actions 部署
 

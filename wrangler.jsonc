@@ -4,17 +4,23 @@
   "name": "cf-static",
   "main": "./src/index.js",
   "compatibility_date": "2026-10-06",
+  // 域名不在配置里声明 routes，而是在 Dashboard 手工挂（见 README「接入 skywitty.win」）。原因有二：
+  //   1. 一旦配置了 routes，wrangler dev 会把所有请求的 hostname 强制改写成 zone 域名，
+  //      Host 头被忽略，本地就没法用 curl -H "Host: ..." 测试按域名分发的路由逻辑了；
+  //   2. routes 依赖 zone 已添加到账号，写进配置会让部署与域名状态耦合，zone 未就绪时构建直接失败。
   "assets": {
-    // 静态资源根：public/ 下的每一个文件夹就是一个项目，访问路径为 /<文件夹名>/
+    // 静态资源根：public/ 下的每一个文件夹就是一个项目
     // 必须是独立子目录，不能直接用 "./"：
     // wrangler dev 会监听该目录，若把仓库根目录作为静态根，.wrangler/state 的写入会不断触发重建，陷入死循环。
     "directory": "./public",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    // 让 Worker 先于静态资源执行，路由才能按 Host 分发。
+    // 不开启的话，public/ 根目录的文件会「盖住」子域名的同名路径
+    // （例如日后加了 public/index.html，life.skywitty.win/ 就会错误地返回它）。
+    // 代价：每个请求消耗一次 Worker 调用（免费额度 10 万次/天）。
+    "run_worker_first": true
     // 刻意不设置 not_found_handling：
     // 一旦设为 404-page / single-page-application，未命中的请求会被短路、不进 Worker，
-    // 按域名分发的路由逻辑就失效了。保持默认（none）让未命中请求落到 src/index.js。
-    //
-    // 也不设置 run_worker_first：
-    // 命中静态资源的请求由 Cloudflare 直接返回，不消耗 Worker 计算；只有未命中的请求才进 Worker。
+    // 按域名分发的路由逻辑就失效了。
   }
 }
