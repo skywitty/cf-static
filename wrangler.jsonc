@@ -2,11 +2,19 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   // 必须与 Cloudflare Dashboard 中的 Worker 名称完全一致，否则 Workers Builds 会构建失败
   "name": "cf-static",
+  "main": "./src/index.js",
   "compatibility_date": "2026-10-06",
-  // 纯静态托管：不写 main，Cloudflare 只负责上传并分发 life/ 下的文件
   "assets": {
-    "directory": "./life",
-    // 未命中静态文件时回退到 index.html（单页 PWA 友好）
-    "not_found_handling": "single-page-application"
+    // 静态资源根：public/ 下的每一个文件夹就是一个项目，访问路径为 /<文件夹名>/
+    // 必须是独立子目录，不能直接用 "./"：
+    // wrangler dev 会监听该目录，若把仓库根目录作为静态根，.wrangler/state 的写入会不断触发重建，陷入死循环。
+    "directory": "./public",
+    "binding": "ASSETS"
+    // 刻意不设置 not_found_handling：
+    // 一旦设为 404-page / single-page-application，未命中的请求会被短路、不进 Worker，
+    // 按域名分发的路由逻辑就失效了。保持默认（none）让未命中请求落到 src/index.js。
+    //
+    // 也不设置 run_worker_first：
+    // 命中静态资源的请求由 Cloudflare 直接返回，不消耗 Worker 计算；只有未命中的请求才进 Worker。
   }
 }

@@ -1,0 +1,5 @@
+# 仅用于排除 public/ 内的杂项文件，不会影响任何项目文件夹
+# wrangler dev 的监听器不读取本文件，如需在本地跳过某个文件夹的构建，直接移出 public/ 即可
+.DS_Store
+Thumbs.db
+desktop.ini
