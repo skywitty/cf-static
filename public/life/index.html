@@ -12,10 +12,9 @@
 <!-- ===== PWA：添加到手机桌面 / 安装为应用 =====
      manifest、theme-color、图标等由通用模块在运行时生成（真源 shared/pwa-install.js），
      本项目只需在文件末尾给出 PWAInstall.init(...) 配置。 -->
-<!-- PWA:INLINE:START -->
-    
-<script>
-/*!
+    <!-- PWA:INLINE:START -->
+    <script>
+    /*!
      * pwa-install.js · 通用「安装为应用（PWA）」能力
      *
      * 单一真源：shared/pwa-install.js
@@ -43,10 +42,10 @@
      */
     (function (global) {
       'use strict';
-    
+
       var VERSION = '1.0.0';
       var GUIDE_ID = 'pwa-install-guide';
-    
+
       var TEXT = {
         zh: {
           cta: '装到桌面', ctaShort: '装桌面', ready: '安装应用',
@@ -77,7 +76,7 @@
           ok: 'Got it'
         }
       };
-    
+
       var STYLE_ID = 'pwa-install-style';
       var STYLE = [
         '.pwa-guide{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;',
@@ -103,28 +102,28 @@
         'html:not([data-theme="light"]) .pwa-guide-desc{color:#9db0ad}}',
         '@media (prefers-reduced-motion:reduce){.pwa-guide-card{animation:none}}'
       ].join('');
-    
+
       var state = { cfg: null, prompt: null, toastEl: null, toastTimer: 0, ready: false };
-    
+
       /* ───────────── 小工具 ───────────── */
-    
+
       function b64(text) {
         try { return global.btoa(unescape(encodeURIComponent(text))); } catch (e) { return ''; }
       }
-    
+
       function el(tag, attrs, text) {
         var node = document.createElement(tag);
         if (attrs) { for (var k in attrs) { if (attrs[k] != null) node.setAttribute(k, attrs[k]); } }
         if (text != null) node.textContent = text;
         return node;
       }
-    
+
       function pickLang(cfg) {
         if (cfg.lang === 'zh' || cfg.lang === 'en') return cfg.lang;
         var tag = (document.documentElement.getAttribute('lang') || global.navigator.language || 'zh');
         return /^en/i.test(tag) ? 'en' : 'zh';
       }
-    
+
       function strings(cfg) {
         var base = TEXT[pickLang(cfg)] || TEXT.zh;
         var out = {};
@@ -132,14 +131,14 @@
         if (cfg.strings) { for (var j in cfg.strings) out[j] = cfg.strings[j]; }
         return out;
       }
-    
+
       function isStandalone() {
         try {
           var byMedia = global.matchMedia && global.matchMedia('(display-mode: standalone)').matches;
           return Boolean(byMedia) || global.navigator.standalone === true;
         } catch (e) { return false; }
       }
-    
+
       function defaultIconSvg(color) {
         var c = color || '#16856f';
         return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
@@ -149,13 +148,13 @@
           '<path d="M12 8.4v1.2M12 14.4v1.2M10.3 10.3h2.3a1.35 1.35 0 0 1 0 2.7h-1.2a1.35 1.35 0 0 0 0 2.7h2.3"/>' +
           '</g></svg>';
       }
-    
+
       /* 给一个 SVG 补上显式宽高，供 canvas / 图片使用 */
       function sizedSvg(svg, size) {
         if (/<svg[^>]*\swidth=/.test(svg)) return svg;
         return svg.replace(/<svg/, '<svg width="' + size + '" height="' + size + '"');
       }
-    
+
       /* 把 SVG 栅格化成 PNG（供 iOS 的 apple-touch-icon 用；失败就静默放弃） */
       function rasterize(svg, size, done) {
         var img;
@@ -172,16 +171,16 @@
         img.onerror = function () { done(null); };
         img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(sizedSvg(svg, size));
       }
-    
+
       /* ───────────── head 注入 ───────────── */
-    
+
       function ensureMeta(attr, key, content) {
         var node = document.head.querySelector('meta[' + attr + '="' + key + '"]');
         if (!node) { node = el('meta'); node.setAttribute(attr, key); document.head.appendChild(node); }
         node.setAttribute('content', content);
         return node;
       }
-    
+
       function ensureLink(rel, href, extra) {
         var node = document.head.querySelector('link[rel="' + rel + '"]');
         if (!node) { node = el('link', { rel: rel }); document.head.appendChild(node); }
@@ -189,7 +188,7 @@
         if (extra) { for (var k in extra) node.setAttribute(k, extra[k]); }
         return node;
       }
-    
+
       function buildManifest(cfg, icon) {
         var start = global.location.origin + global.location.pathname;
         var scope = cfg.scope || (global.location.origin + '/');
@@ -213,28 +212,28 @@
         }
         return 'data:application/manifest+json;base64,' + b64(JSON.stringify(manifest));
       }
-    
+
       function ensureHead(cfg) {
         var svg = cfg.iconSvg || defaultIconSvg(cfg.brandColor);
         var icon = {
           href: 'data:image/svg+xml;base64,' + b64(svg),
           apple: cfg.appleIcon || ''
         };
-    
+
         var manifestLink = document.head.querySelector('link[rel="manifest"]');
         if (!manifestLink) { manifestLink = el('link', { rel: 'manifest' }); document.head.appendChild(manifestLink); }
         manifestLink.setAttribute('href', buildManifest(cfg, icon));
-    
+
         ensureMeta('name', 'application-name', cfg.name);
         ensureMeta('name', 'mobile-web-app-capable', 'yes');
         ensureMeta('name', 'apple-mobile-web-app-capable', 'yes');
         ensureMeta('name', 'apple-mobile-web-app-title', cfg.shortName || cfg.name);
         ensureMeta('name', 'apple-mobile-web-app-status-bar-style', cfg.statusBarStyle || 'default');
         ensureMeta('name', 'theme-color', themeColorFor(cfg));
-    
+
         ensureLink('icon', icon.href, { type: 'image/svg+xml' });
         ensureLink('mask-icon', icon.href, { color: cfg.brandColor || '#16856f' });
-    
+
         var appleLink = document.head.querySelector('link[rel="apple-touch-icon"]');
         if (cfg.appleIcon) {
           ensureLink('apple-touch-icon', cfg.appleIcon);
@@ -247,9 +246,9 @@
         }
         return icon;
       }
-    
+
       /* ───────────── 主题色联动 ───────────── */
-    
+
       function currentTheme() {
         var attr = document.documentElement.getAttribute('data-theme');
         if (attr === 'dark' || attr === 'light') return attr;
@@ -258,19 +257,19 @@
         } catch (e) { /* 忽略 */ }
         return 'light';
       }
-    
+
       function themeColorFor(cfg) {
         var pair = cfg.themeColor;
         if (!pair) return cfg.brandColor || '#16856f';
         if (typeof pair === 'string') return pair;
         return pair[currentTheme()] || pair.light || '#ffffff';
       }
-    
+
       function syncThemeColor(cfg) {
         var meta = document.head.querySelector('meta[name="theme-color"]');
         if (meta) meta.setAttribute('content', themeColorFor(cfg));
       }
-    
+
       function watchTheme(cfg) {
         syncThemeColor(cfg);
         if (!global.MutationObserver) return;
@@ -284,9 +283,9 @@
           }
         } catch (e) { /* 忽略 */ }
       }
-    
+
       /* ───────────── 轻提示（可被 cfg.toast 覆盖） ───────────── */
-    
+
       function fallbackToast(message) {
         if (!state.toastEl) {
           state.toastEl = el('div', { class: 'pwa-guided', role: 'status', 'aria-live': 'polite' });
@@ -297,20 +296,20 @@
         clearTimeout(state.toastTimer);
         state.toastTimer = setTimeout(function () { state.toastEl.classList.remove('is-on'); }, 2200);
       }
-    
+
       function toast(message) {
         try {
           if (typeof state.cfg.toast === 'function') state.cfg.toast(message);
           else fallbackToast(message);
         } catch (e) { /* 提示失败不影响主流程 */ }
       }
-    
+
       /* ───────────── 手动指引浮层 ───────────── */
-    
+
       function guideNode() {
         var node = document.getElementById(GUIDE_ID);
         if (node) return node;
-    
+
         node = el('div', { class: 'pwa-guide', id: GUIDE_ID, hidden: 'hidden', role: 'dialog', 'aria-modal': 'true' });
         var card = el('div', { class: 'pwa-guide-card' });
         card.appendChild(el('h3', { id: GUIDE_ID + '-title' }));
@@ -318,45 +317,45 @@
         card.appendChild(el('ol', { class: 'pwa-guide-steps', id: GUIDE_ID + '-steps' }));
         card.appendChild(el('button', { class: 'pwa-guide-close', type: 'button', id: GUIDE_ID + '-ok' }));
         node.appendChild(card);
-    
+
         node.addEventListener('click', function (event) {
           if (event.target === node) node.hidden = true;
         });
         return node;
       }
-    
+
       function openGuide() {
         var cfg = state.cfg;
         var text = strings(cfg);
         var node = guideNode();
-    
+
         node.querySelector('#' + GUIDE_ID + '-title').textContent = text.guideTitle;
         node.querySelector('#' + GUIDE_ID + '-desc').textContent = text.guideDesc;
-    
+
         var ua = global.navigator.userAgent || '';
         var isIOS = /iPad|iPhone|iPod/.test(ua) ||
           (global.navigator.platform === 'MacIntel' && global.navigator.maxTouchPoints > 1);
         var steps = isIOS ? [text.ios1, text.ios2, text.ios3] : [text.android1, text.android2, text.android3];
-    
+
         var list = node.querySelector('#' + GUIDE_ID + '-steps');
         list.textContent = '';
         steps.forEach(function (step) { list.appendChild(el('li', null, step)); });
-    
+
         var ok = node.querySelector('#' + GUIDE_ID + '-ok');
         ok.textContent = text.ok;
         ok.onclick = function () { node.hidden = true; };
-    
+
         if (!node.parentNode) document.body.appendChild(node);
         node.hidden = false;
       }
-    
+
       /* ───────────── 按钮状态 ───────────── */
-    
+
       function labelNodes() {
         var cfg = state.cfg;
         return Array.prototype.slice.call(document.querySelectorAll(cfg.buttons));
       }
-    
+
       function setLabel(promptReady) {
         var text = strings(state.cfg);
         labelNodes().forEach(function (button) {
@@ -369,7 +368,7 @@
           else button.textContent = label;
         });
       }
-    
+
       function hideEntry() {
         labelNodes().forEach(function (button) {
           button.hidden = true;
@@ -377,9 +376,9 @@
           button.style.display = 'none';
         });
       }
-    
+
       /* ───────────── 事件与启动 ───────────── */
-    
+
       function bindGlobalEvents() {
         global.addEventListener('beforeinstallprompt', function (event) {
           event.preventDefault();
@@ -393,11 +392,11 @@
           hideEntry();
         });
       }
-    
+
       function bootUI() {
         var cfg = state.cfg;
         var text = strings(cfg);
-    
+
         labelNodes().forEach(function (button) {
           button.addEventListener('click', function () {
             if (isStandalone()) { toast(text.already); return; }
@@ -414,27 +413,27 @@
             } catch (e) { finish(null); }
           });
         });
-    
+
         setLabel(false);
         if (isStandalone()) hideEntry();
       }
-    
+
       function init(cfg) {
         cfg = cfg || {};
         if (!cfg.name) throw new Error('PWAInstall.init: 缺少 name');
         state.cfg = cfg;
-    
+
         if (!document.getElementById(STYLE_ID)) {
           var style = el('style', { id: STYLE_ID });
           style.textContent = STYLE;
           (document.head || document.documentElement).appendChild(style);
         }
-    
+
         // head 部分要尽早：manifest 必须在文档解析早期就位
         ensureHead(cfg);
         watchTheme(cfg);
         bindGlobalEvents();
-    
+
         if (document.readyState === 'loading') {
           document.addEventListener('DOMContentLoaded', bootUI);
         } else {
@@ -443,7 +442,7 @@
         state.ready = true;
         return api;
       }
-    
+
       var api = {
         version: VERSION,
         init: init,
@@ -451,12 +450,11 @@
         openGuide: openGuide,
         setLabel: setLabel
       };
-    
+
       global.PWAInstall = api;
     })(window);
-    
-    
-</script>
+
+    </script>
     <!-- PWA:INLINE:END -->
 <style>
 :root{

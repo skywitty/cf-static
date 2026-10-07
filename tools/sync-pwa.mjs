@@ -49,6 +49,10 @@ function detectEol(text) {
   return text.includes("\r\n") ? "\r\n" : "\n";
 }
 
+// 比较时忽略行尾差异：Windows 与 Linux 的检出换行符不同（core.autocrlf），
+// 但内联换行只是外观差别，不该让 CI 误判为「未同步」而拦掉部署。
+const normalizeEol = (text) => text.replace(/\r\n/g, "\n");
+
 function main() {
   const source = readFileSync(SOURCE, "utf8");
 
@@ -85,10 +89,22 @@ function main() {
 
     const eol = detectEol(html);
     const indent = match[1] || "    ";
-    const body = [indent, "<script>", source.replace(/\n/g, eol + indent), indent, "</script>"].join(eol);
-    const replaced = html.replace(BLOCK, `$1$2${eol}${body}${eol}${indent}$5`);
+    // 先把真源压成 LF 再按目标换行重排：真源本身若是 CRLF，直接替换 \n 会生成 \r\r\n
+    const indented = normalizeEol(source)
+      .split("\n")
+      .map((line) => (line ? indent + line : line))
+      .join(eol);
+    const replacement = [
+      indent + match[2],            // START 注释（缩进在 BLOCK 里被单独捕获，须补回来）
+      indent + "<script>",
+      indented,
+      indent + "</script>",
+      indent + match[5],            // END 注释
+    ].join(eol);
+    // 用函数式替换：内联内容里若有 $ 不会被当成替换模式
+    const replaced = html.replace(BLOCK, () => replacement);
 
-    if (replaced === html) {
+    if (normalizeEol(replaced) === normalizeEol(html)) {
       console.log(`· ${label} 已是最新`);
       continue;
     }
