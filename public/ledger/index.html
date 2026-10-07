@@ -1,0 +1,2661 @@
+<!DOCTYPE html>
+<html data-page-node-id="J3tsJjMPxoqrN4P5yFUvRw" data-theme="light" lang="zh-CN">
+<head data-page-node-id="GLQbmKcWnUhTahNSfqyck4">
+<!--pnid:CDTG2vY1grnocMVrkgnc8F--><!-- 本工作台通过 WorkBuddy「资料库」skill 搭建、存储和部署 -->
+<script data-page-node-id="tLPc1RYS08uOWiXT9l5i6Z" src="/page/page_comm/inject.js"></script>
+  <meta data-page-node-id="uE9uk0c7NfDMCAtltjJANl" charset="utf-8">
+  <meta data-page-node-id="G9o8flrk1Xi7BiaUtxAXig" content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport">
+  <title data-page-node-id="h8ZxU2DfdLK7FU67rZvpjo" data-pnid-children="b5YUHyLD5l7BzygH3zlSzw">打工人小账本</title>
+  <style data-page-node-id="Hi7WIJx3nSiaF8BqLF3rm3" data-pnid-children="6ofny4PgN3hfsQMM2aeXf6">
+    :root {
+      color-scheme: light;
+      --ink-deep: #163b3d;
+      --ink: #31595a;
+      --muted: #708786;
+      --positive: #16856f;
+      --positive-strong: #116b5b;
+      --positive-pale: #dff4ea;
+      --brand: #16856f;
+      --brand-soft: #dff4ea;
+      --danger: #d95f5f;
+      --danger-pale: #ffe7e1;
+      --warning: #9a6a18;
+      --warning-pale: #fff2c7;
+      --paper: #f8f5ed;
+      --surface: #fffdf7;
+      --surface-soft: #edf7f0;
+      --surface-raised: #fffaf0;
+      --line: #d7ded5;
+      --line-strong: #b9cdc5;
+      --blue: #5c88b8;
+      --coral: #d95f5f;
+      --coral-pale: #ffe7e1;
+      --sun: #f6c95f;
+      --sun-pale: #fff2c7;
+      --shadow: 0 1px 0 rgba(22, 59, 61, 0.04), 0 8px 24px rgba(22, 59, 61, 0.055);
+      --shadow-soft: 0 4px 14px rgba(22, 59, 61, 0.065);
+      --radius: 22px;
+      --control-radius: 14px;
+      --sidebar: 256px;
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --ink-deep: #e8f4ee;
+      --ink: #c5ddd5;
+      --muted: #91aaa3;
+      --positive: #73d1b6;
+      --positive-strong: #9be2cc;
+      --positive-pale: #193f37;
+      --brand: #73d1b6;
+      --brand-soft: #193f37;
+      --danger: #ff958d;
+      --danger-pale: #4b2928;
+      --warning: #f0c978;
+      --warning-pale: #4a3c20;
+      --paper: #111b1b;
+      --surface: #192827;
+      --surface-soft: #20332f;
+      --surface-raised: #263a35;
+      --line: #344b46;
+      --line-strong: #4b6760;
+      --blue: #8eb9e3;
+      --coral: #ff958d;
+      --coral-pale: #4b2928;
+      --sun: #f0c978;
+      --sun-pale: #4a3c20;
+      --shadow: 0 1px 0 rgba(255, 255, 255, 0.025), 0 8px 24px rgba(0, 0, 0, 0.16);
+      --shadow-soft: 0 4px 14px rgba(0, 0, 0, 0.15);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 0;
+      min-height: 100dvh;
+      color: var(--ink-deep);
+      background:
+        radial-gradient(circle at 88% 8%, var(--brand-soft), transparent 34%),
+        linear-gradient(145deg, var(--paper), var(--surface-soft));
+      font-family: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.55;
+    }
+    button, input, select, textarea { font: inherit; }
+    button, input, select { min-height: 44px; }
+    button, input, select, textarea {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      color: var(--ink-deep);
+      background: var(--surface);
+    }
+    textarea { min-height: 92px; resize: vertical; }
+    button {
+      padding: 10px 16px;
+      color: var(--ink-deep);
+      background: var(--surface);
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+    button:hover { border-color: var(--brand); }
+    button:active { transform: scale(0.98); }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--brand) 35%, transparent);
+      outline-offset: 2px;
+    }
+    button.primary { color: white; border-color: var(--positive-strong); background: var(--positive-strong); }
+    button.secondary { color: var(--brand); background: var(--brand-soft); }
+    button.danger { color: var(--danger); background: var(--danger-pale); }
+    button.ghost { border-color: transparent; background: transparent; }
+    .app-shell { min-height: 100dvh; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 20;
+      display: none;
+      width: var(--sidebar);
+      padding: 28px 20px;
+      border-right: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface) 90%, transparent);
+      backdrop-filter: blur(18px);
+    }
+    .brand { margin-bottom: 26px; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      border-radius: 15px;
+      color: white;
+      font-weight: 800;
+      background: var(--ink-deep);
+    }
+    .brand h1 { margin: 0; font-size: 20px; letter-spacing: -0.04em; }
+    .brand p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .nav-list { display: grid; gap: 6px; }
+    .nav-button {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      border-color: transparent;
+      background: transparent;
+      text-align: left;
+    }
+    .nav-button.active { color: var(--positive-strong); background: var(--positive-pale); }
+    .sidebar-footer { position: absolute; right: 20px; bottom: 24px; left: 20px; display: grid; gap: 8px; }
+    .main { width: 100%; padding: 18px 16px calc(92px + env(safe-area-inset-bottom)); }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      max-width: 1180px;
+      margin: 0 auto 18px;
+    }
+    .topbar-copy h2 { margin: 0; font-size: clamp(22px, 4vw, 32px); letter-spacing: -0.04em; }
+    .topbar-copy p { margin: 3px 0 0; color: var(--muted); }
+    .theme-button { flex: 0 0 auto; }
+    .storage-alert, .top-reminder {
+      max-width: 1180px;
+      margin: 0 auto 16px;
+      padding: 13px 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+    }
+    .storage-alert { color: var(--danger); background: var(--danger-pale); }
+    .top-reminder { color: var(--ink); background: var(--warning-pale); }
+    .workspace { max-width: 1180px; margin: 0 auto; }
+    .page-section { display: none; animation: enter 220ms ease both; }
+    .page-section.active { display: block; }
+    @keyframes enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 0 0 18px; }
+    .section-heading h2 { margin: 0; font-size: clamp(26px, 5vw, 42px); letter-spacing: -0.05em; }
+    .section-heading p { max-width: 56ch; margin: 6px 0 0; color: var(--muted); }
+    .grid { display: grid; gap: 16px; }
+    .grid.two, .grid.three { grid-template-columns: 1fr; }
+    .panel {
+      min-width: 0;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      box-shadow: var(--shadow);
+    }
+    .panel.soft { background: var(--surface-soft); box-shadow: none; }
+    .panel h3 { margin: 0 0 14px; font-size: 18px; }
+    .panel p { margin-top: 0; }
+    .kpi-label { color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+    .kpi-value { margin: 4px 0; font-size: clamp(30px, 8vw, 56px); font-weight: 800; line-height: 1.05; letter-spacing: -0.055em; overflow-wrap: anywhere; }
+    .kpi-note { color: var(--muted); font-size: 14px; }
+    .positive { color: var(--positive); }
+    .expense-color { color: var(--danger); }
+    .progress-track { height: 12px; overflow: hidden; border-radius: 999px; background: var(--line); }
+    .progress-fill { height: 100%; border-radius: inherit; background: var(--positive); transition: transform 300ms ease; transform-origin: left; }
+    .form-grid { display: grid; gap: 14px; }
+    .field { display: grid; gap: 7px; min-width: 0; }
+    .field label { color: var(--ink); font-size: 14px; font-weight: 700; }
+    .field small { color: var(--muted); }
+    .span-full { grid-column: 1 / -1; }
+    .form-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .formula-list { display: grid; gap: 0; margin: 0; }
+    .formula-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      padding: 13px 0;
+      border-top: 1px solid var(--line);
+    }
+    .formula-row:first-child { border-top: 0; }
+    .formula-row dt { color: var(--muted); }
+    .formula-row dd { margin: 0; font-weight: 750; text-align: right; overflow-wrap: anywhere; }
+    .record-list { display: grid; gap: 10px; }
+    .record-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 0;
+      border-top: 1px solid var(--line);
+    }
+    .record-card:first-child { border-top: 0; }
+    .record-title { font-weight: 750; }
+    .record-meta { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+    .record-amount { font-size: 20px; font-weight: 800; text-align: right; }
+    .record-actions { display: flex; flex-wrap: wrap; justify-content: end; gap: 6px; margin-top: 6px; }
+    .record-actions button { min-width: 44px; padding: 8px 10px; }
+    .empty-state { padding: 26px 4px; color: var(--muted); text-align: center; }
+    .safety-levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+    .safety-item { padding: 14px 8px; border: 1px solid var(--line); border-radius: 14px; color: var(--muted); text-align: center; }
+    .safety-item.reached { color: var(--positive-strong); border-color: var(--positive); background: var(--positive-pale); }
+    .chart-wrap { width: 100%; overflow: hidden; }
+    #freedom-chart { display: block; width: 100%; min-height: 280px; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 16px; color: var(--muted); font-size: 13px; }
+    .legend-dot { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 50%; background: var(--positive); }
+    .legend-dot.target { background: var(--brand); }
+    .range-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; }
+    input[type="range"] { min-height: 44px; padding: 0; accent-color: var(--positive); background: transparent; }
+    .scenario-card { position: relative; }
+    .scenario-card.fastest { border-color: var(--positive); }
+    .tag { display: inline-flex; align-items: center; min-height: 28px; padding: 3px 9px; border-radius: 999px; color: var(--positive-strong); background: var(--positive-pale); font-size: 12px; font-weight: 800; }
+    .subtle { color: var(--muted); font-size: 14px; }
+    .button-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .mobile-tools {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      max-width: 1180px;
+      margin: 0 auto 16px;
+    }
+    .mobile-tools button { padding: 8px 6px; font-size: 13px; }
+    .mobile-nav {
+      position: fixed;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 30;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 2px;
+      padding: 7px 6px calc(7px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--line);
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      backdrop-filter: blur(18px);
+    }
+    .mobile-nav button { min-width: 0; min-height: 48px; padding: 5px 2px; border-color: transparent; border-radius: 10px; background: transparent; font-size: 11px; }
+    .mobile-nav button.active { color: var(--positive-strong); background: var(--positive-pale); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    [hidden] { display: none !important; }
+    @media (min-width: 640px) {
+      .main { padding-right: 24px; padding-left: 24px; }
+      .form-grid.two-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (min-width: 768px) {
+      .sidebar { display: block; }
+      .main { margin-left: var(--sidebar); width: calc(100% - var(--sidebar)); padding: 32px 34px 50px; }
+      .mobile-nav, .mobile-tools { display: none; }
+      .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (min-width: 1024px) {
+      .form-grid.three-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    /* 奶油薄荷手账视觉系统 */
+    html { scroll-behavior: auto; }
+    body {
+      overflow-x: hidden;
+      background-color: var(--paper);
+      background-image:
+        radial-gradient(circle, color-mix(in srgb, var(--positive) 12%, transparent) 1px, transparent 1.5px),
+        linear-gradient(135deg, color-mix(in srgb, var(--sun-pale) 45%, transparent), transparent 42%);
+      background-size: 22px 22px, 100% 100%;
+      font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+    button { transition: transform 160ms ease, opacity 160ms ease; }
+    button:hover { transform: translateY(-1px); }
+    button.primary { color: #fffaf3; border-color: var(--positive-strong); background: var(--positive-strong); }
+    input, select { height: 48px; min-height: 48px; }
+    input, select, textarea { border-radius: var(--control-radius); background: var(--surface-raised); }
+    .app-icon {
+      display: inline-block;
+      flex: 0 0 auto;
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vertical-align: -0.2em;
+    }
+    .icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+    .sidebar {
+      padding: 24px 18px;
+      border-right: 1px solid var(--line-strong);
+      background: color-mix(in srgb, var(--surface-raised) 96%, transparent);
+      backdrop-filter: none;
+    }
+    .brand { padding: 10px 10px 18px; margin-bottom: 12px; border-bottom: 1px dashed var(--line-strong); }
+    .brand-mark {
+      width: 54px;
+      height: 54px;
+      margin-bottom: 14px;
+      border: 1px solid color-mix(in srgb, var(--positive) 55%, var(--line));
+      border-radius: 18px 18px 20px 16px;
+      color: var(--positive-strong);
+      background: var(--positive-pale);
+      box-shadow: 4px 5px 0 color-mix(in srgb, var(--sun) 35%, transparent);
+      transform: rotate(-2deg);
+    }
+    .brand-mark .app-icon { width: 30px; height: 30px; }
+    .brand h1 { font-size: 21px; }
+    .nav-list { gap: 5px; }
+    .nav-button { gap: 11px; min-height: 48px; padding: 11px 13px; border-radius: 15px; font-weight: 600; }
+    .nav-button.active { box-shadow: inset 3px 0 var(--positive); }
+    .sidebar-footer { padding-top: 14px; border-top: 1px dashed var(--line-strong); }
+    .sidebar-footer button, .mobile-tools button, .theme-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+    .main { position: relative; }
+    .topbar { padding-bottom: 14px; border-bottom: 1px dashed var(--line-strong); }
+    .topbar-copy h2 { font-size: clamp(1.35rem, 2.6vw, 1.75rem); font-weight: 650; letter-spacing: -0.025em; }
+    .theme-button { min-width: 48px; border-color: var(--line-strong); background: var(--sun-pale); }
+    .storage-alert, .top-reminder { border-radius: 16px; box-shadow: var(--shadow-soft); }
+    .top-reminder { border-style: dashed; background: color-mix(in srgb, var(--sun-pale) 78%, var(--surface)); }
+    .section-heading { align-items: center; margin-bottom: 22px; }
+    .section-heading h2 { font-size: clamp(1.75rem, 3.5vw, 2.25rem); font-weight: 650; letter-spacing: -0.035em; line-height: 1.16; }
+    .grid.two, .grid.dashboard { align-items: start; }
+    .grid.dashboard > *, .grid.two > * { align-self: start; }
+    .panel {
+      position: relative;
+      padding: 20px;
+      border-color: var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .panel.form-grid, .field { align-items: start; }
+    .panel::after {
+      position: absolute;
+      width: 34px;
+      height: 10px;
+      border-radius: 3px;
+      background: color-mix(in srgb, var(--sun) 55%, transparent);
+      content: "";
+      opacity: 0;
+      pointer-events: none;
+      transform: rotate(3deg);
+    }
+    .panel.sticker::after { top: -5px; right: 24px; opacity: 1; }
+    .panel.featured { border-color: color-mix(in srgb, var(--line-strong) 78%, transparent); background: var(--surface-raised); }
+    .panel.mint { background: var(--positive-pale); }
+    .panel.coral { background: var(--coral-pale); }
+    .panel.sun { background: var(--sun-pale); }
+    .panel.plain { background: transparent; box-shadow: none; }
+    .panel.soft { border-style: dashed; background: var(--surface-soft); box-shadow: none; }
+    .panel-title { display: flex; align-items: center; gap: 9px; grid-column: 1 / -1; margin: 0 0 2px; }
+    .panel-title .app-icon { color: var(--positive); }
+    .kpi-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .icon-base {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+      border-radius: 14px;
+      background: color-mix(in srgb, var(--surface) 64%, transparent);
+      transform: rotate(2deg);
+    }
+    .icon-base .app-icon { width: 19px; height: 19px; }
+    .kpi-label { color: var(--ink); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.035em; }
+    .kpi-value { margin: 8px 0 6px; font-size: clamp(1.75rem, 3.2vw, 2.5rem); font-weight: 600; line-height: 1.08; letter-spacing: -0.035em; white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
+    .kpi-value.kpi-overflow { white-space: normal; overflow-wrap: anywhere; }
+    .record-amount, output { font-size: 1rem; font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    [data-section="dashboard"] .kpi-value { font-size: clamp(1.75rem, 2.8vw, 2.25rem); }
+    #month-expense-hours, #safety-months, #unpaid-insight, #commute-insight, #expense-days-insight { font-size: clamp(1.45rem, 2.5vw, 2rem); white-space: normal; }
+    .field { grid-auto-rows: max-content; gap: 7px; min-width: 0; }
+    .field label { display: flex; align-items: end; min-height: 22px; line-height: 1.35; }
+    .form-hint { margin: -4px 0 0; padding: 10px 12px; border-left: 3px solid var(--sun); color: var(--muted); background: color-mix(in srgb, var(--sun-pale) 62%, transparent); }
+    .hero-heading { align-items: center; padding: 4px 0 8px; }
+    .hero-copy { max-width: 650px; }
+    .hero-illustration { flex: 0 0 auto; width: clamp(150px, 20vw, 238px); color: var(--ink-deep); filter: drop-shadow(0 9px 0 rgba(22, 59, 61, 0.05)); }
+    .hero-illustration svg { display: block; width: 100%; height: auto; }
+    .recent-section { margin-top: 16px; padding: 20px; border: 1px dashed var(--line-strong); border-radius: var(--radius); background: color-mix(in srgb, var(--surface-raised) 72%, transparent); }
+    .recent-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .recent-heading h3 { display: flex; align-items: center; gap: 8px; margin: 0; }
+    .recent-heading button { min-width: 44px; }
+    .recent-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .recent-grid > .empty-state { grid-column: 1 / -1; }
+    .recent-note {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 17px 17px 20px 15px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+    .recent-note:nth-child(2n) { transform: rotate(0.4deg); }
+    .category-icon {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      color: var(--positive-strong);
+      background: var(--positive-pale);
+    }
+    .category-icon[data-category="交通"] { color: var(--blue); background: color-mix(in srgb, var(--blue) 15%, var(--surface)); }
+    .category-icon[data-category="购物"] { color: var(--coral); background: var(--coral-pale); }
+    .category-icon[data-category="娱乐"] { color: var(--warning); background: var(--sun-pale); }
+    .category-icon[data-category="房租"] { color: var(--ink); background: var(--surface-soft); }
+    .recent-copy { min-width: 0; }
+    .recent-copy .record-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .recent-side { text-align: right; }
+    .recent-side .record-amount { font-size: 17px; }
+    .record-list { gap: 9px; }
+    .record-card {
+      grid-template-columns: minmax(0, 1fr) auto;
+      padding: 13px 0;
+      border-top-style: dashed;
+    }
+    .record-card.expense-record { grid-template-columns: auto minmax(0, 1fr) auto; }
+    .record-card > .category-icon { width: 40px; height: 40px; }
+    .record-card .record-actions { justify-content: flex-end; }
+    .empty-state { display: grid; justify-items: center; gap: 8px; min-height: 120px; align-content: center; }
+    .empty-state .app-icon { width: 36px; height: 36px; color: var(--positive); }
+    .mobile-tools { position: relative; z-index: 2; }
+    .mobile-tools button { min-height: 44px; border-color: var(--line-strong); background: var(--surface-raised); }
+    .mobile-nav { border-color: var(--line-strong); background: color-mix(in srgb, var(--surface-raised) 96%, transparent); backdrop-filter: none; }
+    .mobile-nav button { display: grid; place-items: center; align-content: center; gap: 2px; min-height: 52px; }
+    .mobile-nav .app-icon { width: 19px; height: 19px; }
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 60;
+      max-width: min(360px, calc(100vw - 32px));
+      padding: 13px 17px;
+      border: 1px solid var(--positive);
+      border-radius: 16px;
+      color: var(--ink-deep);
+      background: var(--positive-pale);
+      box-shadow: var(--shadow-soft);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(12px);
+      transition: transform 180ms ease, opacity 180ms ease;
+    }
+    .toast.visible { opacity: 1; transform: translateY(0); }
+    @media (min-width: 1180px) {
+      .grid.dashboard { grid-template-columns: minmax(0, 1.6fr) minmax(300px, 0.72fr); }
+      .dashboard-form-card { position: sticky; top: 24px; }
+    }
+    @media (max-width: 767px) {
+      .hero-heading { align-items: flex-start; }
+      .hero-illustration { width: 132px; }
+      .toast { right: 16px; bottom: calc(82px + env(safe-area-inset-bottom)); }
+    }
+    @media (max-width: 639px) {
+      .main { padding-top: 14px; padding-right: 12px; padding-left: 12px; }
+      .topbar { align-items: flex-start; }
+      .topbar-copy p { font-size: 13px; }
+      .theme-button span { display: none; }
+      .section-heading h2 { font-size: 1.75rem; }
+      .hero-heading { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 8px; }
+      .hero-illustration { width: 100%; }
+      .recent-grid { grid-template-columns: 1fr; }
+      .recent-note:nth-child(2n) { transform: none; }
+      .panel, .recent-section { padding: 17px; }
+      .kpi-value { font-size: clamp(1.75rem, 8.5vw, 2.25rem); font-weight: 600; }
+      .record-card.expense-record { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+      .record-card.expense-record > :last-child { grid-column: 2; width: 100%; text-align: left; }
+      .record-card.expense-record .record-actions { justify-content: flex-start; }
+      .mobile-tools { gap: 6px; }
+      .mobile-tools button { padding: 7px 4px; font-size: 12px; }
+      .mobile-tools .app-icon { width: 17px; height: 17px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* ================= 云端同步状态 ================= */
+    .topbar-tools { display: flex; align-items: center; gap: 10px; flex: none; }
+    .sync-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 12px; border-radius: 999px;
+      border: 1px solid var(--line-strong); background: var(--surface-raised);
+      color: var(--ink); font-size: 13px; font-weight: 600; white-space: nowrap; min-height: 38px;
+    }
+    .sync-pill .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--positive); flex: none; }
+    .sync-pill[data-state="syncing"] .sync-dot { background: var(--sun); animation: syncPulse 1.1s ease-in-out infinite; }
+    .sync-pill[data-state="error"] { border-color: var(--danger); color: var(--danger); background: var(--danger-pale); }
+    .sync-pill[data-state="error"] .sync-dot { background: var(--danger); }
+    .sync-pill[data-state="offline"] .sync-dot { background: var(--line-strong); }
+    @keyframes syncPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+    .sync-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+      max-width: 1180px; margin: 0 auto 14px; padding: 12px 16px; border-radius: 16px;
+      border: 1px solid var(--danger); background: var(--danger-pale); color: var(--danger);
+      font-size: 14px; font-weight: 600; box-shadow: var(--shadow-soft);
+    }
+    .sync-bar[hidden] { display: none; }
+    .sync-bar-actions { display: flex; gap: 8px; flex: none; }
+    .sync-bar button { min-height: 44px; border-color: var(--danger); color: var(--danger); background: var(--surface-raised); }
+    @media (max-width: 767px) {
+      .topbar-tools { gap: 8px; }
+      .sync-pill { padding: 6px 10px; font-size: 12px; min-height: 36px; }
+    }
+    @media (max-width: 430px) {
+      #sync-pill-text { display: none; }
+      .sync-pill { padding: 6px 9px; }
+    }
+  </style>
+</head>
+<body data-page-node-id="r4o8VB5vQpNaczEwjvUi6O">
+  <svg data-page-node-id="4ZCCCIut0u0ewsrooZj6Um" aria-hidden="true" class="icon-sprite">
+    <symbol data-page-node-id="BK6OnQ9kreoggWpKaiFFNd" id="icon-dashboard" viewBox="0 0 24 24"><path data-page-node-id="R82DJUG5GqFtNtIUzJdATH" d="M4 13h6V4H4zM14 20h6v-9h-6zM4 20h6v-3H4zM14 7h6V4h-6z"/></symbol>
+    <symbol data-page-node-id="cCMqYV92JldeSDF3kMq12K" id="icon-clock" viewBox="0 0 24 24"><circle data-page-node-id="vIOI8ApTq3uyCVeDzTNJOA" cx="12" cy="12" r="8.5"/><path data-page-node-id="kgQ9nV4G3i3k1PokTcNxhj" d="M12 7.5v5l3.2 2"/></symbol>
+    <symbol data-page-node-id="JkQUapV25vqayuZdpPA54b" id="icon-receipt" viewBox="0 0 24 24"><path data-page-node-id="Au5IjjaZ1qaD2XwtHCSOni" d="M6 3.5h12v17l-3-1.8-3 1.8-3-1.8-3 1.8zM9 8h6M9 12h6"/></symbol>
+    <symbol data-page-node-id="rqYtMRTWu9BOLxSUn1Gtgx" id="icon-calendar" viewBox="0 0 24 24"><rect data-page-node-id="SBH2NAUkLl5aQZSyAuSi69" height="14" rx="2" width="16" x="4" y="5.5"/><path data-page-node-id="NGjLj8aNXPFULIVOo8YCtE" d="M8 3.5v4M16 3.5v4M4 10h16M8 14h2M14 14h2"/></symbol>
+    <symbol data-page-node-id="sfhMZJXOez2i0jh10o4AhZ" id="icon-pig" viewBox="0 0 24 24"><path data-page-node-id="KNX4hrecwtYfw2FGfBepZi" d="M5 10.5c0-3.3 3.1-5.5 7.4-5.5 3.7 0 6.6 2 6.6 5v3.5l1.5 1v2h-3l-1 2.5h-2v-2H9v2H7l-1.2-3A5.8 5.8 0 0 1 5 10.5zM5.5 8 3 6.5V11h2M14.5 8.5h.01"/></symbol>
+    <symbol data-page-node-id="GnxgAIzhErHROJABkmzC3K" id="icon-spark" viewBox="0 0 24 24"><path data-page-node-id="Ofdb0lU7zknie7cLgEGdiz" d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7zM18.5 16l.7 2.3 2.3.7-2.3.7-.7 2.3-.7-2.3-2.3-.7 2.3-.7z"/></symbol>
+    <symbol data-page-node-id="mRG8i3JCTGHho9eLtlKM9y" id="icon-moon" viewBox="0 0 24 24"><path data-page-node-id="hRphLAOOp1pBdCxcy83FNX" d="M19.5 15.5A8 8 0 0 1 8.5 4.5a8 8 0 1 0 11 11z"/></symbol>
+    <symbol data-page-node-id="Z5wJ1KbE0FA2cGCWlwpgkr" id="icon-download" viewBox="0 0 24 24"><path data-page-node-id="AMUIiTh60gGZocPtcRC4SY" d="M12 4v11m-4-4 4 4 4-4M5 19h14"/></symbol>
+    <symbol data-page-node-id="lc41ZYoDmyPq6OnK33M3CX" id="icon-upload" viewBox="0 0 24 24"><path data-page-node-id="0yJbrMGvcfIhdxIY2ru1cC" d="M12 16V5M8 9l4-4 4 4M5 19h14"/></symbol>
+    <symbol data-page-node-id="JLj9yGI328Up3q9P2vskcy" id="icon-trash" viewBox="0 0 24 24"><path data-page-node-id="Myj1ctJ6PPYfjpIKrnw4QL" d="M5 7h14M9 7V4h6v3m2 0-1 13H8L7 7m3 4v5m4-5v5"/></symbol>
+    <symbol data-page-node-id="XNOBpccEg3G2tygS7o3KGF" id="icon-wallet" viewBox="0 0 24 24"><path data-page-node-id="S9dwUfypLsj2vL6sgrBD0J" d="M4 7.5h15a1.5 1.5 0 0 1 1.5 1.5v10H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12v3.5M16 13h4.5"/></symbol>
+    <symbol data-page-node-id="liyere9ZPRgeoAaoZ6ERtH" id="icon-target" viewBox="0 0 24 24"><circle data-page-node-id="cCuytMPHJ3t5wdlMduZQuP" cx="12" cy="12" r="8.5"/><circle data-page-node-id="lvUbxy8nN4qHh39Aqwcsnb" cx="12" cy="12" r="4.5"/><circle data-page-node-id="Jke6CXYZHmi342bgFv8Pri" cx="12" cy="12" r="1"/></symbol>
+    <symbol data-page-node-id="bCG0m72w7BD3epCV1GqS3o" id="icon-form" viewBox="0 0 24 24"><path data-page-node-id="MhnLlrkPIh4o7OJbUVQgXJ" d="M5 4h14v16H5zM8 8h8M8 12h5M8 16h7"/></symbol>
+    <symbol data-page-node-id="UsumISxnwmqC7hE5H2DEnp" id="icon-bowl" viewBox="0 0 24 24"><path data-page-node-id="cH5yc9lIVhniK3Zi1WKTCZ" d="M4 11h16a8 8 0 0 1-16 0zM8 7c0-1 1-1 1-2M12 7c0-1 1-1 1-2M16 7c0-1 1-1 1-2"/></symbol>
+    <symbol data-page-node-id="YbVsfQ0Fec5fiEXLBX2VwY" id="icon-bus" viewBox="0 0 24 24"><rect data-page-node-id="znbI3aynxb8ml0isdlJuzF" height="16" rx="3" width="14" x="5" y="3.5"/><path data-page-node-id="uiVEfzD0nBxoeMq6jn3C8A" d="M5 11h14M8 7h8M8 16h.01M16 16h.01M8 19.5v1.5M16 19.5v1.5"/></symbol>
+    <symbol data-page-node-id="YWxzsVRvwY04DJgA9bcDz6" id="icon-bag" viewBox="0 0 24 24"><path data-page-node-id="f8VU3KflxljO0GvuEfgp6L" d="M5 8h14l-1 12H6zM9 9V7a3 3 0 0 1 6 0v2"/></symbol>
+    <symbol data-page-node-id="BoUAvAV7ErdgsIuOnA3w0z" id="icon-star" viewBox="0 0 24 24"><path data-page-node-id="4y3nlF6Oc9qcIyHkOPCFPn" d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></symbol>
+    <symbol data-page-node-id="vRZxK3xJ0tKfWTuUgkgW7T" id="icon-house" viewBox="0 0 24 24"><path data-page-node-id="yWZHGII9fpElVNiWheTKnu" d="m4 11 8-7 8 7v9h-6v-6h-4v6H4z"/></symbol>
+    <symbol data-page-node-id="wBFhjiWM7RWkRTs8rKdIwU" id="icon-dot" viewBox="0 0 24 24"><circle data-page-node-id="wr5iFHvhAWZeIWxuKgrJp7" cx="12" cy="12" r="4"/></symbol>
+    <symbol data-page-node-id="ytvq8gfJSSsXPv0ysAqMfO" id="icon-coin" viewBox="0 0 24 24"><circle data-page-node-id="iE2H96beOHzcDYcY5pVeqz" cx="12" cy="12" r="8.5"/><path data-page-node-id="IFfiQHPTVrngj3spMGRfV9" d="M9 9.5c.5-1 1.5-1.5 3-1.5 1.8 0 3 1 3 2.2 0 3-6 1.2-6 4 0 1.2 1.2 2.2 3 2.2 1.5 0 2.6-.5 3-1.5M12 6.5v11"/></symbol>
+  </svg>
+  <div data-page-node-id="rUTuXnt5fy79bavKlbmgWS" class="app-shell">
+    <aside data-page-node-id="cuWye3xeyR7xxzVHEInnaM" aria-label="主导航" class="sidebar">
+      <div data-page-node-id="UeHClZFJeRXgsaCYfkm1KT" class="brand">
+        <div data-page-node-id="5EwDFaMRM8BuAZDE8u1G1i" aria-hidden="true" class="brand-mark"><svg data-page-node-id="QipJfIoBVVaOtW1soVSN8A" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="T6jHh887WbllQtyQ5FFGGW" href="#icon-pig"></use></svg></div>
+        <h1 data-page-node-id="FRXuKcVWextXAJ9YWTLD2l"><!--pnid:3UfP1tUJ8jAOqEbM0HDPnD-->打工人小账本</h1>
+        <p data-page-node-id="hdOScrAFeBwwazkphnjqBp"><!--pnid:pfZlBNARzHQDmDAq5PM5EH-->把钱和时间都算明白</p>
+      </div>
+      <nav data-page-node-id="XJj5OOb4Xxi3YTIjbxICGB" class="nav-list" id="desktop-nav">
+        <button data-page-node-id="VFu4rIQlSccAAnjBoooXHa" class="nav-button active" data-target="dashboard" type="button"><svg data-page-node-id="TAdHyddKyZ0nKHrZPbcUck" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="FkhHomLkki4RZVV8LHvW7E" href="#icon-dashboard"></use></svg><span data-page-node-id="W1KbG8HftoYf7WTME7zcsO"><!--pnid:bbxTMQ5WRN3FAhCopseEpU-->今日驾驶舱</span></button>
+        <button data-page-node-id="b5rBpCRQBsbaKxV9K1maHk" class="nav-button" data-target="hourly" type="button"><svg data-page-node-id="EpnChBscG5b4SGM7y5JgWa" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="ELSOL73F1WeFonjukzze2e" href="#icon-clock"></use></svg><span data-page-node-id="uoi9EgNTIHtQcKhi0uw24v"><!--pnid:XmF6hNFbWR4yqcVMLhnMNz-->我的时薪</span></button>
+        <button data-page-node-id="FSkF4PH12j3G2EtfxNElgq" class="nav-button" data-target="expenses" type="button"><svg data-page-node-id="VyPeU1LrPUtECUtnbupp0H" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="ivyr48ziA6nefVdJnWNv4b" href="#icon-receipt"></use></svg><span data-page-node-id="GodzmBnQRY56kz8gKRUc2H"><!--pnid:CnvvUgZRb868ffQDzFTklW-->10 秒记账</span></button>
+        <button data-page-node-id="FocB6Fcnibg50zyLdwTAod" class="nav-button" data-target="monthly" type="button"><svg data-page-node-id="JIq0oo3UbijjmgrafqntF3" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="HX5jkd6q4NSEtt8FoLVbrO" href="#icon-calendar"></use></svg><span data-page-node-id="wq3bOXf5123IIQsCrIhluO"><!--pnid:L7ISA3agj8odTs8IVMcVHY-->月度总结</span></button>
+        <button data-page-node-id="ve3Lu3cMgB1DU8reg35ckG" class="nav-button" data-target="freedom" type="button"><svg data-page-node-id="4corKocUpt5gAKcRG0Ik95" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="rNxlYAtloDZYuS2Tbn2dQZ" href="#icon-pig"></use></svg><span data-page-node-id="1SAxYWAm7oSfkkf7z8415z"><!--pnid:mce7RAV5F0TurJEkt6COvA-->自由基金</span></button>
+        <button data-page-node-id="sL0JN3cdXlywjRBZXXAQa9" class="nav-button" data-target="insights" type="button"><svg data-page-node-id="NUgq1sysLQR1dXD6yyjXK1" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="DFeFosiOm3oO5mJTY1XwpC" href="#icon-spark"></use></svg><span data-page-node-id="JsMa2SmoNuFr52JS36nvIj"><!--pnid:WUfnWXmzsOLgVCzURhPYMi-->有趣发现</span></button>
+      </nav>
+      <div data-page-node-id="C5YEV4utOeS4icxS67NPhE" class="sidebar-footer">
+        <button data-page-node-id="wVrN6x4ncZZFhrJXjV20Hk" class="ghost" id="clear-sample-button" type="button"><svg data-page-node-id="hTXw33VgvlwEukiaZCfhao" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="YHJg6Fhdrr1vQwLRF9Yhui" href="#icon-trash"></use></svg><span data-page-node-id="EzAru3Q2LRY7xPDx8pun2u"><!--pnid:9i9k1E0AzcNrSJ0cELYeJn-->清空示例</span></button>
+      </div>
+    </aside>
+
+    <main data-page-node-id="hVo9RdheNjWOMei9Z4f0t3" class="main">
+      <header data-page-node-id="rMioafxyXeTKhGRvnX37ST" class="topbar">
+        <div data-page-node-id="MkmhlRMFAaZL0NDJ8K8mHR" class="topbar-copy">
+          <h2 data-page-node-id="eFA1aovj9MoT0uCNhbKGLk" id="page-title"><!--pnid:pzbuoHGiyIRsGXO0tyt1Qe-->今日驾驶舱</h2>
+          <p data-page-node-id="iiktoCkrcwnJdHlQEcrUuE" id="today-label"></p>
+        </div>
+        <div data-page-node-id="ERceSy6R5Ji8n2Iqg4ltit" class="topbar-tools">
+          <div data-page-node-id="SYNCPILL01" aria-live="polite" class="sync-pill" data-state="syncing" id="sync-pill" role="status"><span data-page-node-id="amWAiNQ5x6jLRaRLXVDPDx" class="sync-dot"></span><span data-page-node-id="B6dsCEAtri1mfP8VJlK4hX" id="sync-pill-text"><!--pnid:WPfidQXRhyZantr0i8TnRt-->同步中</span></div>
+          <button data-page-node-id="S9Mqwn7wiQ6sY9VsAlITeX" class="theme-button" id="theme-button" type="button"><svg data-page-node-id="tblbsRgljN1ofgJoG1HwJU" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="48pJknWH5C1UUzogQZBqLB" href="#icon-moon"></use></svg><span data-page-node-id="068bttJUw53XED6mNGnEak" id="theme-label"><!--pnid:hKNYlnCqIXwNzMR1wcfXEI-->切换深色</span></button>
+        </div>
+      </header>
+      <div data-page-node-id="qHii4GEUel2fmtVdbJ1fDO" class="storage-alert" hidden id="storage-alert" role="alert"></div>
+      <div data-page-node-id="hyDoaxkpCZ2F2aUTbZ8LoK" class="sync-bar" hidden id="sync-bar" role="alert">
+        <span data-page-node-id="snwOFpOXRLlR7zPVsBca5Z" id="sync-bar-text"></span>
+        <span data-page-node-id="qKODZproWmN4IAUY76xLZe" class="sync-bar-actions">
+          <button data-page-node-id="9UBaUQ2RPKyv3jcDHJRprO" id="sync-retry" type="button"><!--pnid:kXzCHxE2IsQ2F8ZDn8ZcQw-->重试同步</button>
+          <button data-page-node-id="whu3OFWTKFBuRGAiD6AI42" id="sync-use-local" type="button"><!--pnid:7db1wVL4oZnx3refFv1fAq-->先用本地数据</button>
+        </span>
+      </div>
+      <div data-page-node-id="4fylFziBRMyqvhXyOWI81H" aria-live="polite" class="top-reminder" id="top-reminder" role="status"></div>
+      <div data-page-node-id="ITVL9isuLM6X2HtmgFqvUg" aria-label="手机数据工具" class="mobile-tools">
+        <button data-page-node-id="6kJIkDh0iEgZmPe38VQx3R" class="ghost" id="mobile-clear-sample-button" type="button"><svg data-page-node-id="Bmn4bnCSGAw2RuX3XAfPkW" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="7DJVOvyZ9ne5BSufl0C11i" href="#icon-trash"></use></svg><span data-page-node-id="t4AxUmG6ZXu7ttdTllZs1K"><!--pnid:BR9NkdjIMHkQO8otT8K36z-->清示例</span></button>
+      </div>
+
+      <div data-page-node-id="IqAfORsrKMkiit6Lxu52Zz" class="workspace">
+        <section data-page-node-id="i20XzvfHiJvL7WVIJNtBvk" aria-labelledby="dashboard-title" class="page-section active" data-section="dashboard">
+          <div data-page-node-id="axhVdv8XsPcn1iGhZqOdhV" class="section-heading hero-heading">
+            <div data-page-node-id="6W0tEEBKQAa1j3JPi104Fr" class="hero-copy"><h2 data-page-node-id="XNMEne5B1jkvnPa0upJB4G" id="dashboard-title"><!--pnid:dUVHedVkWd3EEVsoiDXOBa-->今天也要算清楚</h2><p data-page-node-id="o3szNeJcw6etKiHCIv5FGr"><!--pnid:CE4dS9eSKWHi2mNqsYPugg-->不是为了苛责每一笔钱，而是让每一小时更接近你想要的生活。</p></div>
+            <div data-page-node-id="jhA0npwrt7KBZaQ8hme1s5" aria-label="小猪存钱罐托着硬币与嫩芽" class="hero-illustration" role="img">
+              <svg data-page-node-id="7705Af4TWJcJol9MS22UwB" aria-hidden="true" viewBox="0 0 260 170">
+                <path data-page-node-id="4OTi67cXLv9p26UbzyXtg2" d="M22 132c18-31 45-45 82-41 33-39 88-34 109 3 22 5 34 18 35 38z" fill="var(--positive-pale)"/>
+                <circle data-page-node-id="HC0j6B4kltPsrxAiJfVAyu" cx="195" cy="42" fill="var(--sun-pale)" r="19" stroke="var(--sun)" stroke-width="4"/>
+                <path data-page-node-id="yc27kxaldu9ve28MuyQZvZ" d="M195 31v22m-7-16c2-4 12-4 13 1 1 7-13 3-13 10 0 5 10 6 14 1" fill="none" stroke="var(--warning)" stroke-linecap="round" stroke-width="3"/>
+                <path data-page-node-id="U2Ll949jcAq4WSuXzMFRAC" d="M116 72c19-23 67-19 79 9 15 0 25 10 25 24v19h-17l-7 18h-17v-13h-53v13h-18l-7-18c-15-6-24-20-21-36 3-10 12-18 23-20" fill="var(--coral-pale)" stroke="var(--coral)" stroke-linejoin="round" stroke-width="4"/>
+                <path data-page-node-id="xBKNa8wsDFgqydV0y1xeob" d="M80 84 59 70v31h20m73-32h22" fill="none" stroke="var(--coral)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+                <circle data-page-node-id="WVuYlFInQ1PsoaZyUKJRg9" cx="177" cy="91" fill="var(--ink-deep)" r="3"/>
+                <path data-page-node-id="12u7ez5WQRA2hbpmIo7q4R" d="M125 57c-2-16 10-26 23-30m-22 28c-15-7-24-3-30 5m52-33c3-13 14-20 27-19-1 13-10 21-27 19z" fill="var(--positive-pale)" stroke="var(--positive)" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+                <path data-page-node-id="Bjtsa627XojTEJL0G60NEq" d="M32 145h202" stroke="var(--line-strong)" stroke-linecap="round" stroke-width="4"/>
+              </svg>
+            </div>
+          </div>
+          <div data-page-node-id="ao9kVyMfn9l4Dbh0VUi3r2" class="grid dashboard">
+            <div data-page-node-id="3ZLD0rGsD6jXMde4FAdsy6" class="grid">
+              <div data-page-node-id="rpy9lDNG4joVUbprqF1Qk6" class="grid two">
+                <article data-page-node-id="5XspZhsx4eTYl2rzhi6muc" class="panel featured mint sticker">
+                  <div data-page-node-id="pzTNPFi5uZ1r5fAVTQpEGc" class="kpi-head"><div data-page-node-id="jyxkwJhn8WA53c1V3qvkRB" class="kpi-label"><!--pnid:twJfVQorCPmaPKGs9twWei-->真实时薪</div><span data-page-node-id="BRimZe16SQfkfj9aqufyv6" class="icon-base positive"><svg data-page-node-id="lNeWeWLYYv0nkZTC7gtVUc" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="NmoaQEBmkXq0QIKNT2LhOP" href="#icon-clock"></use></svg></span></div>
+                  <div data-page-node-id="GrCvM3ZIb1YI4jmgmDaboj" class="kpi-value positive" data-sp-bindable="database" data-sp-database-id="jlCZDYK7mRcnZOoPhzN2UN" id="dashboard-real-hourly"><!--pnid:0parwyypm9IQH20lw4YLm5-->待设置</div>
+                  <div data-page-node-id="SQgbhmWfqdwOmcHV7t8HDU" class="kpi-note" data-sp-bindable="database" data-sp-database-id="jlCZDYK7mRcnZOoPhzN2UN" id="dashboard-hourly-note"></div>
+                </article>
+                <article data-page-node-id="wf3k2hegiSmZRwI3QcyBCi" class="panel coral">
+                  <div data-page-node-id="uLvGDoZLgQtU1U6mj5Z9ca" class="kpi-head"><div data-page-node-id="N786ApTa0nTJoTiie2Fc1P" class="kpi-label"><!--pnid:ZSjBsOGT5JfEfLVcXsl0FK-->本月支出</div><span data-page-node-id="i3IRg1THsHRimRg4OxAVJg" class="icon-base expense-color"><svg data-page-node-id="4gFwB4A0GqeeBuxxTPw6eQ" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="DRHZztKQEZzeXd95Wv5gez" href="#icon-wallet"></use></svg></span></div>
+                  <div data-page-node-id="GcMeXdCFZ7Dpip25lP9so8" class="kpi-value expense-color" data-sp-bindable="database" data-sp-database-id="jHRNZYnX6X6FmDfu2YJNbQ" id="dashboard-month-expense"><!--pnid:t275K1mgP0epyOzLcsiR3j-->¥0</div>
+                  <div data-page-node-id="JyEBQ4Yk4BsA7fyednxvPn" class="kpi-note" data-sp-bindable="database" data-sp-database-id="jHRNZYnX6X6FmDfu2YJNbQ" id="dashboard-today-expense"></div>
+                </article>
+              </div>
+              <article data-page-node-id="xe2wzNlaafAzdbmGV8Q4wY" class="panel sun">
+                <div data-page-node-id="TPVdnd2j9R0F0VEdeiswHh" class="kpi-head"><div data-page-node-id="IKWu05ADNm4qezpsfXvJLy" class="kpi-label"><!--pnid:pdBpABYurSsYNlJFyoO6UQ-->自由基金进度</div><span data-page-node-id="ZN0VwpWcbG6bPyidVwnWAH" class="icon-base"><svg data-page-node-id="moq3WBhUyXQ26OQnn4lLHO" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="Tm5rAB6tbFDJM45tQ9JTe6" href="#icon-target"></use></svg></span></div>
+                <div data-page-node-id="TfziwhCAVg198CDq7YNqQX" class="kpi-value positive" data-sp-bindable="database" data-sp-database-id="jlCZDYK7mRcnZOoPhzN2UN" id="dashboard-freedom"><!--pnid:z9O6OhZgyu8nvQUy3YpkWV-->0%</div>
+                <div data-page-node-id="z1oOdqWCyDGJfHjRoVqmYH" aria-hidden="true" class="progress-track"><div data-page-node-id="OOJeAg8d0G92WubVP9VCgX" class="progress-fill" id="dashboard-progress"></div></div>
+                <p data-page-node-id="ajbVgHUKL1nkOG7gy1uvwT" class="kpi-note" id="dashboard-freedom-note"></p>
+              </article>
+              <article data-page-node-id="rnoGKcJVxPzBPXJXPEoBTj" class="panel soft">
+                <h3 data-page-node-id="vwIOAoxeImqJSXiLbjSGgI" class="panel-title"><svg data-page-node-id="8bMc6rZWdRPJLVO170y0RJ" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="xfvvxddKqxvhOMg74bos37" href="#icon-spark"></use></svg><span data-page-node-id="u0RwmUDbTy71fBvYoNoabi"><!--pnid:8URIqg8ISjrvEL6qcmxz18-->自由宣言</span></h3>
+                <p data-page-node-id="48CnGDHsPN9SsRvJW8H1xY" id="dashboard-reason"><!--pnid:RCvrN7bHIr9eTZVZX8L7vT-->先写下你想攒这笔钱的理由。数字会变，理由帮你记住方向。</p>
+              </article>
+              <section data-page-node-id="eP0UQpw2vyBMT7fM7CrWhI" aria-labelledby="dashboard-recent-title" class="recent-section">
+                <div data-page-node-id="cyXOPfuXb0hbKXYSabVXU5" class="recent-heading"><h3 data-page-node-id="ym5Aeex8oaarBDzO2mLsU8" id="dashboard-recent-title"><svg data-page-node-id="8PFCZqnHFOpxOI7ovWLWHv" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="uJ6PMhUWJ3zt90oLIrYSsD" href="#icon-receipt"></use></svg><span data-page-node-id="KxvATexs8kEVzgc1aMB8lg"><!--pnid:cLlGHXZGgshSVmgVkUtRW1-->刚刚花掉的时光</span></h3><button data-page-node-id="TNQtzUYiSCwTcsZI9rn3uj" class="secondary" data-target="expenses" type="button"><!--pnid:3iy7gB4V1XTcHdqNdP1TbS-->查看全部</button></div>
+                <div data-page-node-id="bnXCIjklNKvwDfhrxj1Hmx" class="recent-grid" data-sp-bindable="database" data-sp-database-id="jHRNZYnX6X6FmDfu2YJNbQ" id="dashboard-recent-list"></div>
+              </section>
+            </div>
+            <aside data-page-node-id="nQnsaSvtu5J6rOGoOXAMdS" class="panel dashboard-form-card sticker">
+              <h3 data-page-node-id="BCXsSnpzo8YFiXWFTsmh8j" class="panel-title"><svg data-page-node-id="hnGRA3ZtWmzWb9DgPvUKOr" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="vYjF6FoAvKjlEBHsX8dpsm" href="#icon-form"></use></svg><span data-page-node-id="BMouJ6MwOnrx3baVUBApYW"><!--pnid:xj0my6LpHyS8p2oPoxc9JX-->现在记一笔</span></h3>
+              <form data-page-node-id="5Wu5Wu2gkiLVXPlQjIMer5" class="form-grid" id="dashboard-expense-form">
+                <div data-page-node-id="Z2twAUQYp0ak7d42IFaKcL" class="field"><label data-page-node-id="tacR3mzodSNMcJn64mjupN" for="quick-amount"><!--pnid:sETfOqpxqLjHvT3yDwOpWA-->金额</label><input data-page-node-id="DVc9zHcdCu3bm1VJvoX4GB" id="quick-amount" inputmode="decimal" min="0.01" name="amount" required step="0.01" type="number"></div>
+                <div data-page-node-id="5WALKcyagtSRaUmqFntvNd" class="field"><label data-page-node-id="KmZxessZh38JO3lZfpXJwN" for="quick-category"><!--pnid:PrKNL6vIuH0TJoIzrC0bQP-->分类</label><select data-page-node-id="w3WYsNvx3w5oPw2bFM5Qvo" id="quick-category" name="category"><option data-page-node-id="ncwmBPo8sIplXn1y1vETbe" value="吃饭"><!--pnid:zQp4ASqGZPOQwL5Xqc4IaA-->吃饭</option><option data-page-node-id="VO3pYRHXnlnw7KD186GyhO" value="交通"><!--pnid:6QeVe8FR9NTOfcOXe08N4O-->交通</option><option data-page-node-id="wGEoGGN6STS8lAhdHpEuPl" value="购物"><!--pnid:6O8S9EyttTTi68vgCYM3q1-->购物</option><option data-page-node-id="WoeKxSPJM5yQ1cGRskRva3" value="娱乐"><!--pnid:RJaBCPtaLp3ilNHascOWqV-->娱乐</option><option data-page-node-id="wHfvaF3S38UPTxTyTpSROx" value="房租"><!--pnid:S8FUgmy2aRtHSQNuZXj2t2-->房租</option><option data-page-node-id="eWCFu9CImv7g4IpaIJz9PV" value="其他"><!--pnid:6XDFjwMmcc7dM8kYtB2SC8-->其他</option></select></div>
+                <div data-page-node-id="GqvNXvuXwkqpmbQ2EFOUY2" class="field"><label data-page-node-id="om67UgraDfV8TLmH5pGsE5" for="quick-note"><!--pnid:jXNhmDsi5ydNpSkSgP1jOZ-->随手一句</label><input data-page-node-id="gueZP2nnAtI2pJYCduqPRr" id="quick-note" maxlength="300" name="note" placeholder="可不填，写一句更有记忆点"></div>
+                <button data-page-node-id="C6PWf0isnRH8iHKM64HFDu" class="primary" type="submit"><!--pnid:DDRHM6iGwp8cUFUs5nanx9-->保存并换算工时</button>
+              </form>
+              <p data-page-node-id="vMIYnjuKuj86fsNRgXhTo5" aria-live="polite" class="subtle" id="quick-result"></p>
+            </aside>
+          </div>
+        </section>
+
+        <section data-page-node-id="qRJlXRa3LzDqsNzYnITlBW" aria-labelledby="hourly-title" class="page-section" data-section="hourly">
+          <div data-page-node-id="WjwIG7avSPWf8Uy2LDZahU" class="section-heading"><div data-page-node-id="4vggHE8Q7P6K2xgppYeMlU"><h2 data-page-node-id="lpimfBNjJPE3cZHe8Q5UOZ" id="hourly-title"><!--pnid:XFeowiYPsLOBoxzRC18mQe-->我的时薪</h2><p data-page-node-id="hB4iRKcPnof4XmuohlEr00"><!--pnid:sN34l1FCFI245MkU1gpf0L-->老板想让我以为的数字，和生活实际拿走时间后剩下的数字，都摊开来看。</p></div></div>
+          <div data-page-node-id="9X1pQugtrksmMsnpWkeIui" class="grid two">
+            <form data-page-node-id="FeLb0eppqzLOewF2AXuH6Y" class="panel form-grid two-cols" id="profile-form" novalidate>
+              <h3 data-page-node-id="66iznFW21ZK6qYSu7jxkmR" class="panel-title"><svg data-page-node-id="gpoRHJtN1FQDJRh5pEv9JH" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="0yRa5vVYkSVwuNWVOEHIJj" href="#icon-clock"></use></svg><span data-page-node-id="JXXbiTYYPgo7IGRjhk78IA"><!--pnid:B5jm6CsgzUoF765GnmknzZ-->工作时间参数</span></h3>
+              <div data-page-node-id="XW9U5i2MfzdHt8LBXhTIMS" class="field"><label data-page-node-id="kN1xYNZ7Rlf4XnUqWTlzPd" for="monthly-salary"><!--pnid:SyyC2qGmrK7fSYjQGP01am-->到手月薪</label><input data-page-node-id="WdcwAKz2esNFG9CUyv2Erm" id="monthly-salary" inputmode="decimal" min="0" name="monthlySalary" step="0.01" type="number"></div>
+              <div data-page-node-id="6NYUNPFs3mF1c2qgkjpqbx" class="field"><label data-page-node-id="65zHkW1QDIAWWJ2JDrfeIv" for="pay-months"><!--pnid:FRBCW1M8g3o9RQ8dIYmTHr-->一年发薪月数</label><input data-page-node-id="Ke5Ebg6MZMgFOhu9F7M74G" id="pay-months" inputmode="decimal" min="0" name="payMonths" step="0.1" type="number"></div>
+              <div data-page-node-id="Z9lJW7fvtVTjg3NhU3pOlZ" class="field"><label data-page-node-id="4oCSgwvfpAdd3mfC7ZvxEh" for="work-cost"><!--pnid:gUSpVzFETBkv3aQjNUGlHw-->每月为工作花的钱</label><input data-page-node-id="ZH4p3rl0xiTyDeazmsPnqH" id="work-cost" inputmode="decimal" min="0" name="monthlyWorkCost" step="0.01" type="number"></div>
+              <div data-page-node-id="k5SKs2Nhozd7w6H4dZEWp0" class="field"><label data-page-node-id="Gi3oxrhAl4PGWIJoJhznkx" for="office-hours"><!--pnid:JzzFoSWbupN9ro0VW93KQB-->每天常规在公司小时</label><input data-page-node-id="DSf6Pmflm96o9EJ8TjjYLh" id="office-hours" inputmode="decimal" min="0" name="dailyOfficeHours" step="0.1" type="number"></div>
+              <div data-page-node-id="vLh4FpH57amFP57fsP7goq" class="field"><label data-page-node-id="03gIzoVVxzixXI0N5AzHYz" for="commute-minutes"><!--pnid:TAwAe3CeNVwB8lNkBPF6Yz-->单程通勤分钟</label><input data-page-node-id="kMr1TCRvmTm74vfmgXc1OX" id="commute-minutes" inputmode="numeric" min="0" name="oneWayCommuteMinutes" step="1" type="number"></div>
+              <div data-page-node-id="G8X9UWSbUCOVuviOCuS7Lr" class="field"><label data-page-node-id="ClDCM0bqULG8eI33KZNr4w" for="overtime-hours"><!--pnid:jXCTYHMviB67QQ8MZWepCV-->每周额外加班小时</label><input data-page-node-id="Wrmuf07HEdh5wqNzPtXIDH" id="overtime-hours" inputmode="decimal" min="0" name="weeklyOvertimeHours" step="0.5" type="number"></div>
+              <p data-page-node-id="uumkWR8Crd6mj5FMMRFk56" class="span-full form-hint office-hours-hint"><!--pnid:R2mf9QIgwPrVvjOi5mOfKJ-->在公司小时包含无法自由支配的午休，不含额外加班。输入变化会自动保存，所有数值采用年度口径。</p>
+            </form>
+            <div data-page-node-id="cJa4me9BUZaDWFVIvLX5p5" class="grid">
+              <article data-page-node-id="d76Ky3xlaug7kIqWYHhjYT" class="panel">
+                <div data-page-node-id="lC0oUaVkJCFBJ7HkE6QMrq" class="kpi-label"><!--pnid:CMza5wnFWeaxtjDNZVWz0A-->名义时薪</div><div data-page-node-id="5k7dheiWLPZvoTYymkUFY6" class="kpi-value" id="nominal-hourly"><!--pnid:4ppDs9UHPFUteQ8nOzl0Mt-->待设置</div><p data-page-node-id="5aZYHDk8HTkHvquBaVmaQA" class="subtle"><!--pnid:P6lrfsOKrMtSQECZjEt0EL-->到手月薪 ÷ 21.75 ÷ 8</p>
+              </article>
+              <article data-page-node-id="NP30dkX2G8IYemKUVjeZIb" class="panel">
+                <div data-page-node-id="bEBXsvOOHsZv6jLIGMvSjS" class="kpi-label"><!--pnid:jrjw94gxPDUcrkahouO2GN-->真实时薪</div><div data-page-node-id="1ebdGz91qRcEz612xqCDXF" class="kpi-value positive" id="real-hourly"><!--pnid:StlnFY4NhG2ps6I6Q6QWYJ-->待设置</div><p data-page-node-id="jyjOFqfTv689JbjNbcTpFA" class="subtle" id="hourly-gap"></p>
+              </article>
+              <article data-page-node-id="qF3AO8Ah1xh9xlabqEpa0p" class="panel"><h3 data-page-node-id="t8KbIjKT5b7voplFvyvcZZ"><!--pnid:D9J92PNatWEYxYJdylvOyJ-->计算过程</h3><dl data-page-node-id="fQDys0LdGjPSUV3x5xTYoC" class="formula-list" id="hourly-formulas"></dl></article>
+            </div>
+          </div>
+        </section>
+
+        <section data-page-node-id="IDvIjfFWaPeKVnpm0fPeA8" aria-labelledby="expenses-title" class="page-section" data-section="expenses">
+          <div data-page-node-id="8tksLWO6qkEow0yjsC86tf" class="section-heading"><div data-page-node-id="QKM0mWoA5WeH7tPU6vfZna"><h2 data-page-node-id="5ZcOVgvbQC7IZ6iOwTGYzV" id="expenses-title"><!--pnid:MZLBslFekYVyTxomsfl7cC-->10 秒记账</h2><p data-page-node-id="MjLLTM2Ytji6BHMtZCexT6"><!--pnid:3uwipLkwbQxtFz2WkA2zKP-->你不是乱花钱，你是在拿工时换体验。知道换了多少，选择就更踏实。</p></div></div>
+          <div data-page-node-id="5GwbtZ8qXyPuEhIRlST36M" class="grid three">
+            <article data-page-node-id="4EJXrB1nnOvkz9NTeYNlGj" class="panel"><div data-page-node-id="JRGttdKYYNCHYKH7kyCcCD" class="kpi-label"><!--pnid:I27tuNJRwNJwxMX2EMrLM6-->今日支出</div><div data-page-node-id="Nhb9aaG0yOSU8IB0I0JP2b" class="kpi-value expense-color" data-sp-bindable="database" data-sp-database-id="jHRNZYnX6X6FmDfu2YJNbQ" id="today-expense"><!--pnid:bS1fIG18FcEwtiwF2iGTpC-->¥0</div></article>
+            <article data-page-node-id="STFKOK4BT06idr6TXSJBm8" class="panel"><div data-page-node-id="1Y2Y0a5c2oGuaXJz8cURwb" class="kpi-label"><!--pnid:4cRL5IcWi8N6atS7LW86Pf-->本月支出</div><div data-page-node-id="5u7BtCChMd3fh33WaqCNzn" class="kpi-value expense-color" data-sp-bindable="database" data-sp-database-id="jHRNZYnX6X6FmDfu2YJNbQ" id="month-expense"><!--pnid:p1AoU1rBlzu0I8cU6TO63S-->¥0</div></article>
+            <article data-page-node-id="zw5mMPsxpYu934yKWG8RQh" class="panel"><div data-page-node-id="t9oIDwKYcC0S6FQ6YfiXtc" class="kpi-label"><!--pnid:MGPPFx5g2oetpTDJFWH5UQ-->本月等价工时</div><div data-page-node-id="6bUdxiJqiBqXwsipierCow" class="kpi-value" data-sp-bindable="database" data-sp-database-id="jHRNZYnX6X6FmDfu2YJNbQ" id="month-expense-hours"><!--pnid:3LnHLWrBDLyMUlEiJSqurr-->待设置</div></article>
+          </div>
+          <div data-page-node-id="Q0gTMZNgdqrvkwkv9IEsoe" class="grid two" style="margin-top:16px">
+            <form data-page-node-id="rKJOa85nAYwXQoor3JRHgz" class="panel form-grid two-cols" id="expense-form">
+              <h3 data-page-node-id="lAqETjpDVIZ2y81ePjIYAb" class="panel-title"><svg data-page-node-id="JqCfGLwkGKM4tIQocMhLiD" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="AzMUY3z55YDSACXzlitPaT" href="#icon-receipt"></use></svg><span data-page-node-id="X0QQc6tQtFThWM3oq6xvhF"><!--pnid:eHkq8QEH4xb75Aw3lN31Pa-->记下一笔体验</span></h3>
+              <input data-page-node-id="1ruEeXuMz7XVLYJiGJ7XwD" id="expense-editing-id" type="hidden">
+              <div data-page-node-id="XYVGZTPUjVoXPvOUHAXUnj" class="field"><label data-page-node-id="ePVigwV4gNRg1QeJereRd0" for="expense-date"><!--pnid:aBvrkhw75Lu9RFWlGesizV-->日期</label><input data-page-node-id="IfY1SnTMce28aFgCWSfbKa" id="expense-date" name="date" required type="date"></div>
+              <div data-page-node-id="C4M5cc6c74Bwhh3rratwVC" class="field"><label data-page-node-id="Mrb5mq4MIsG7ikowiNf8By" for="expense-amount"><!--pnid:Sf1HuQv5cDLgIbCOSCHl5M-->金额</label><input data-page-node-id="tHTy7PD1AiAbRfXE76JhTO" id="expense-amount" inputmode="decimal" min="0.01" name="amount" required step="0.01" type="number"></div>
+              <div data-page-node-id="skUI8WZy7h1rLABzbVk3y4" class="field"><label data-page-node-id="cJYg3llP59NvDS0kOHi4CC" for="expense-category"><!--pnid:Zr2LaDvUNCudSaBU9C871J-->分类</label><select data-page-node-id="eTletMdmCpgf75Og06o75X" id="expense-category" name="category"><option data-page-node-id="S3zLbZu3P3TcmoNuPfJqwx" value="吃饭"><!--pnid:OHxeFX0jCCN8AePUEimkmK-->吃饭</option><option data-page-node-id="EDTz2xeIm9AGsXpIzSHYlr" value="交通"><!--pnid:DOGstWbK7TonEEN5PlR8EZ-->交通</option><option data-page-node-id="09ueG6AxksCgTDJM4abiHw" value="购物"><!--pnid:1mKdRUwo7dCSeVrATr8EI1-->购物</option><option data-page-node-id="emAiVUWIYghtmHdMJqxr2L" value="娱乐"><!--pnid:LMXJfgEiKsJ5RZxkbOZqgv-->娱乐</option><option data-page-node-id="LUTiPF2dqog255t9ys40Zm" value="房租"><!--pnid:Ucgbs0oJglKqQio6DV92Fw-->房租</option><option data-page-node-id="SDsOOkeKq5ahYLlpSwxPG7" value="其他"><!--pnid:5ZVNsmLfd6iaCRSEYvXxmD-->其他</option></select></div>
+              <div data-page-node-id="fQSgncasCHpbfywjqHWDpD" class="field"><label data-page-node-id="IUSVwCpbArydLK4eptFfa5" for="expense-note"><!--pnid:PiwVsxRpUJLEPl05HZmtnq-->备注</label><input data-page-node-id="uB8zDa5wduqJvbLy0ZU6H9" id="expense-note" maxlength="300" name="note" placeholder="这笔体验是什么"></div>
+              <div data-page-node-id="AzBev25xlHr7UZmqQUezDW" class="form-actions span-full"><button data-page-node-id="6x1EJiu1TnzXBbDDHAQnpT" class="primary" type="submit"><!--pnid:MILUHrTwtbnbqZwodiCwOj-->保存支出</button><button data-page-node-id="qMqkJkp6PHUu4oPkKIwqsq" hidden id="expense-cancel" type="button"><!--pnid:ITfNZwzFcid8da7rgsmo5l-->取消编辑</button></div>
+              <p data-page-node-id="fINZfC9AzOTrpYQjTfDCcC" aria-live="polite" class="span-full subtle" id="expense-result"></p>
+            </form>
+            <article data-page-node-id="evlEY6pmvURC0v0nRG5SJy" class="panel"><h3 data-page-node-id="9lX4MG5wBiPB04DXk6xsiK"><!--pnid:tGTlQ3jU1yDX9kbV0c7D4F-->最近记录</h3><div data-page-node-id="gYaVK6smtsvD0wFKRpibWZ" class="record-list" data-sp-bindable="database" data-sp-database-id="jHRNZYnX6X6FmDfu2YJNbQ" id="expense-list"></div></article>
+          </div>
+        </section>
+
+        <section data-page-node-id="8TTzQ2KXyILlWj3DDaBNWH" aria-labelledby="monthly-title" class="page-section" data-section="monthly">
+          <div data-page-node-id="iQUCUbtO5rCBU5aP4RFs4x" class="section-heading"><div data-page-node-id="FXbvu00YytJnE79t5CT77m"><h2 data-page-node-id="6qBpStKdOoalscntAA0nJk" id="monthly-title"><!--pnid:8xntYw3vvyNT2NPRW7Dhv9-->月度总结</h2><p data-page-node-id="RNgIZdSrMhcC4Pv8tEGEZ5"><!--pnid:eV7cR976ywRlYJnIE6m13K-->结余不单独保存，每次都由收入减去两类支出现场计算。</p></div></div>
+          <div data-page-node-id="pelftks5xEbRzMfB5YZqAY" class="grid two">
+            <form data-page-node-id="1uM81zk5Es58fApZi0eCW9" class="panel form-grid two-cols" id="monthly-form">
+              <h3 data-page-node-id="FhI7i3jXhMVKSVHBVVpwGL" class="panel-title"><svg data-page-node-id="Sv91nnbSbUK7riChOZhrom" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="vU0c0EzRFFyUM4zwUc1YzY" href="#icon-calendar"></use></svg><span data-page-node-id="9Wan9oxsbLZdlnMiTikDDG"><!--pnid:jdeUWFnhhv8dBjnf3Ymmna-->填写本月账页</span></h3>
+              <input data-page-node-id="lrdnfRuTBXpWM3VhzPiwJe" id="monthly-editing-month" type="hidden">
+              <div data-page-node-id="v97VtUOjIOa7Lts3Bt49mi" class="field"><label data-page-node-id="idqcXMxkSjmq8y74GwoZhU" for="summary-month"><!--pnid:veiluRsPIuW7KK3GpXd4JD-->月份</label><input data-page-node-id="sTCNLS7wRV1kNUGhxFocEb" id="summary-month" name="month" required type="month"></div>
+              <div data-page-node-id="wTbsMzKPYLadWlUnubnil3" class="field"><label data-page-node-id="oynl8fF5U3ahlpgDP7IKWP" for="summary-income"><!--pnid:lVY26tj2ZXm0xOwoDP96Zn-->总收入</label><input data-page-node-id="fIY2JNeE9b6S8FdvZKBvrX" id="summary-income" inputmode="decimal" min="0" name="income" required step="0.01" type="number"></div>
+              <div data-page-node-id="Q3fY2w48LiWkupWaGRDGZv" class="field"><label data-page-node-id="6UvVuLB4WdOKXiS3ICdOHN" for="summary-fixed"><!--pnid:8LtJPn7E8Rco4YpB2GNUws-->固定支出</label><input data-page-node-id="anpt3gPkwRXDmmibn4cVCo" id="summary-fixed" inputmode="decimal" min="0" name="fixed" required step="0.01" type="number"></div>
+              <div data-page-node-id="XHdsAbZZU00iLPKidiTBJI" class="field"><label data-page-node-id="Focr0B4shRm0g7K7iGokme" for="summary-flexible"><!--pnid:Fm6bZ9qREf7ezLpb1fgbvA-->弹性支出</label><input data-page-node-id="qATIUWBBhd3RmHQT2EZ1lV" id="summary-flexible" inputmode="decimal" min="0" name="flexible" required step="0.01" type="number"></div>
+              <div data-page-node-id="lTPMeuFEZiPJ4po8e4Qc1i" class="panel soft span-full"><div data-page-node-id="8aglGMaDs4SL7gg4KFoysr" class="kpi-label"><!--pnid:tBpF64O1VPRVMjL0d2nfkz-->自动结余</div><div data-page-node-id="Gd7kMdOJT0I6wgPZeHgEfV" class="kpi-value positive" id="summary-preview"><!--pnid:fGdaCIw11CHxrBdGK41KWC-->¥0</div><div data-page-node-id="8YQc8SA7rhtNzneHS0qQIo" class="subtle" id="summary-formula"></div></div>
+              <div data-page-node-id="jpYDaRUvQDcEyJYpEjOjlk" class="form-actions span-full"><button data-page-node-id="g3KP5NBSliGTRtJ271s2kh" class="primary" type="submit"><!--pnid:zyjehuH3Ul8Pcn4GyNzPpa-->保存月度总结</button><button data-page-node-id="frT9zWgpMWcFpFDJcoQytd" hidden id="monthly-cancel" type="button"><!--pnid:fOWIDYbrGGv2kHxVwZC6iq-->取消编辑</button></div>
+            </form>
+            <div data-page-node-id="J4LfyUDbtKXd21DqiUBIIk" class="grid">
+              <article data-page-node-id="QSLTzCqn2rxGC3bXsD2vWN" class="panel"><div data-page-node-id="gKPJHgMFBMCqyDjwHs41EI" class="kpi-label"><!--pnid:BaFfPmGb9LY0HkmVFYXbjw-->最近完整月平均存款</div><div data-page-node-id="M4ylCbedmvddsjrGgTH3ZJ" class="kpi-value positive" data-sp-bindable="database" data-sp-database-id="HiroGR3TCqiE5YJUrYxJYM" id="average-savings"><!--pnid:kzGrvm8c6CQcJLDhyC7WMn-->待补充</div><p data-page-node-id="8n8B1lV9ileV8QE1mHSM5f" class="subtle" id="average-savings-note"></p></article>
+              <article data-page-node-id="d38E4FCNBW1Kyw1fLIgPax" class="panel"><h3 data-page-node-id="VBoOCEqd4yYJwVCTTFyy8m"><!--pnid:29ydsYQkkU2CXhW9e7mP2w-->月度记录</h3><div data-page-node-id="h1ID6mU8pOA3sK3Cvv9YD0" class="record-list" data-sp-bindable="database" data-sp-database-id="HiroGR3TCqiE5YJUrYxJYM" id="monthly-list"></div></article>
+            </div>
+          </div>
+        </section>
+
+        <section data-page-node-id="pVIvCme6dlRESyteGotrRf" aria-labelledby="freedom-title" class="page-section" data-section="freedom">
+          <div data-page-node-id="cQ2APb6QHUwyHdJrEz7a3n" class="section-heading"><div data-page-node-id="5qSvk8Wyc8sUdbDy9nmzLo"><h2 data-page-node-id="mdOf9beirPTT7eneMDiR6n" id="freedom-title"><!--pnid:cQ8dPCn1mMSE74vt7XcsGl-->自由基金</h2><p data-page-node-id="9vdshV9vpvFqBwRcpN6kC9"><!--pnid:wgTGhLrKCfpGsvO1PLEtBd-->账户余额由你维护，历史结余只用来估算速度和趋势，不冒充真实流水。</p></div></div>
+          <div data-page-node-id="PPJrCeoXSmIrKxQn3Rf6X7" class="grid two">
+            <form data-page-node-id="5eTBqLnHYSRA0ngDbzQREU" class="panel form-grid two-cols" id="freedom-form">
+              <h3 data-page-node-id="15DWM9jpL7tatQ0aB9zLBV" class="panel-title"><svg data-page-node-id="67hYn4OsyiZng2HxMuEwNR" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="uyBH3nFK0UbCt14rBoCHhD" href="#icon-pig"></use></svg><span data-page-node-id="ocMZOarntWOv1xS5WNzMug"><!--pnid:UEfPK3xhINB7WLlGoMzLyg-->设置自由目标</span></h3>
+              <div data-page-node-id="cS9uupUYKvkLopT6QvwEVo" class="field"><label data-page-node-id="jk2s9tVoBZqBXclD7YpbVs" for="target-amount"><!--pnid:9z93U6bb5ZwIctswgAPxam-->目标金额</label><input data-page-node-id="SHYbJUwMEeMN6sDe8NBhT9" id="target-amount" inputmode="decimal" min="0" name="targetAmount" step="0.01" type="number"></div>
+              <div data-page-node-id="rWncLs8pTitBP9b95mRR3y" class="field"><label data-page-node-id="srYb8wOlaQ2lamhYsvcisz" for="target-date"><!--pnid:3XEGlR22RHhpAuiBOGirkK-->目标月份</label><input data-page-node-id="RAMa3W5GB72XY1ZcrYBUqY" id="target-date" name="targetDate" type="month"></div>
+              <div data-page-node-id="G4MgVNT2pPEeqUjjhsYlB0" class="field"><label data-page-node-id="K8rLNOjsjtfHy82YpcMpJr" for="current-saved"><!--pnid:IOWmJHtayPwoU87YSaohJa-->当前已攒</label><input data-page-node-id="0Ygd3hB9YwCV1kMRBULR1X" id="current-saved" inputmode="decimal" min="0" name="currentSaved" step="0.01" type="number"></div>
+              <div data-page-node-id="EM2CCPqH2TRlicUuRlTFnV" class="field"><label data-page-node-id="FYOIH8d6x5XfwJxsJP6cKE" for="basic-cost"><!--pnid:h7WbZ0kNPHk0UKglPppv7n-->每月基本开销</label><input data-page-node-id="lzTLX7f4R8az1g3nd02mVT" id="basic-cost" inputmode="decimal" min="0" name="basicMonthlyCost" step="0.01" type="number"></div>
+              <div data-page-node-id="7m8UGs8mNRhG72BIJTB9RI" class="field"><label data-page-node-id="DiHZaXR7OPScKIflqZhb44" for="start-month"><!--pnid:fJTcDtswx6oKbBXTj0XtWC-->估算起始月</label><input data-page-node-id="CyvC3CGiTVHgEk95b50CLi" id="start-month" name="startMonth" type="month"></div>
+              <div data-page-node-id="8I56xYOPpMwF5n3TtAGb51" class="field span-full"><label data-page-node-id="kf08HQgkYFYprcyzy2STzZ" for="freedom-reason"><!--pnid:i7Bg2x1ZhzNaSYP7vjqoOD-->为什么想攒这笔钱</label><textarea data-page-node-id="mhFkhes0TT4xyW7WWejVf3" id="freedom-reason" maxlength="300" name="reason"></textarea></div>
+              <p data-page-node-id="LIijvcSKKitQGjhuC97Aud" class="span-full subtle"><!--pnid:E9mKgvoaWMN86CUDvYiw7H-->修改会自动保存，账户金额和目标不会由历史结余自动覆盖。</p>
+            </form>
+            <div data-page-node-id="X3K3Z66yShu1DKTZugUNsS" class="grid">
+              <article data-page-node-id="mwq4LhdQcWdPvNVR5gF2Rb" class="panel"><div data-page-node-id="5nIsSQwfnkGGbVxTRoxGjQ" class="kpi-label"><!--pnid:QP1QwUTzhSgF24cwsAOuvB-->完成率</div><div data-page-node-id="ShLY1gxrmvKOQEJZLWqxt2" class="kpi-value positive" data-sp-bindable="database" data-sp-database-id="jlCZDYK7mRcnZOoPhzN2UN" id="freedom-progress-value"><!--pnid:KVJqpjukMHplhLq2sAfDGB-->0%</div><div data-page-node-id="w1N99MChNO7AKEFgSglvmi" class="progress-track"><div data-page-node-id="YE7VJhHLd8niu1dpmPUsYL" class="progress-fill" id="freedom-progress"></div></div><p data-page-node-id="zdSnjeqDPWKHiVvZRb8oC9" class="subtle" id="freedom-progress-note"></p></article>
+              <article data-page-node-id="jyBLO4k6edrAq0BNjCgYbW" class="panel"><h3 data-page-node-id="mASMdyZS8MIYju8JcjT5aM"><!--pnid:TGah9EQdgKFkCgNh5uikS6-->预计与期限</h3><dl data-page-node-id="vVm02Wec6YdGQfhJ67wTEU" class="formula-list" id="freedom-formulas"></dl></article>
+              <article data-page-node-id="a5hXt3yf7qAVbiBIwXoAoB" class="panel"><h3 data-page-node-id="jPVYXn2qB733cH8aOHYqKP"><!--pnid:vJpyU7x4Bm5dfwGSSAy305-->安全垫</h3><div data-page-node-id="4BryIYkZP3zfzjWu2KSOcc" class="kpi-value" data-sp-bindable="database" data-sp-database-id="jlCZDYK7mRcnZOoPhzN2UN" id="safety-months"><!--pnid:P2rNjvEjmFgos2O34GoFXc-->待设置</div><div data-page-node-id="EWVlUBUM0NOBRn454heAn9" class="safety-levels" id="safety-levels"></div><p data-page-node-id="gndn8oRjLdrcEZrh2x3S9t" class="subtle" id="safety-note"></p></article>
+            </div>
+          </div>
+          <article data-page-node-id="ZLbobffMQyBBJOWUddqTSs" class="panel" style="margin-top:16px">
+            <h3 data-page-node-id="Abwa0fWccDVLcd5MHDI9Hp"><!--pnid:H64EcMWXd9iLK92glXfKjf-->估算积累曲线</h3>
+            <p data-page-node-id="YCAP7xLJTpgZ0RBfRYTSQm" class="subtle"><!--pnid:sGzoovBPpJeXjVu9PiokGw-->起点按当前已攒减去已记录结余倒推，绿色为估算积累，蓝绿色为目标线。</p>
+            <div data-page-node-id="cZHZttheLdPpkzHhEG6KYs" class="chart-wrap">
+              <svg data-page-node-id="uMLGL58Oqo3UtlwGP8b2ou" aria-label="自由基金估算积累曲线与目标线" id="freedom-chart" role="img" viewBox="0 0 760 300">
+                <path data-page-node-id="x79Ol5NIe0rGiWtcU4W7fv" data-chart-series="savings" fill="none"></path>
+                <path data-page-node-id="qFKkJUY8OavzCOlPaPC0xb" data-chart-series="target" fill="none"></path>
+              </svg>
+            </div>
+            <div data-page-node-id="jtX147feIRgmuEy99Yda0n" class="chart-legend"><span data-page-node-id="BaX6Ser7mBmp69LyKvzV1L"><i data-page-node-id="WF689BqcXLy2phzs7nZkj6" class="legend-dot"></i><!--pnid:WQGJ1ld41R2dVfodIC8GiK-->估算积累</span><span data-page-node-id="YLFgGx1VsPgrN5JhOVuc5G"><i data-page-node-id="dLWQnC2OTvvjlvrMyT2yaV" class="legend-dot target"></i><!--pnid:jkdANp91eGxHY0AXGfoBXo-->目标线</span></div>
+          </article>
+        </section>
+
+        <section data-page-node-id="M6DZbOBT9pHJOiug1OKJ8d" aria-labelledby="insights-title" class="page-section" data-section="insights">
+          <div data-page-node-id="d7AQ6u7l0s4RwfI42ABsCM" class="section-heading"><div data-page-node-id="B6D3jXDoZ1QdHGMjrm8BkA"><h2 data-page-node-id="LmrA2D5JvYjdIzjYNAj9Du" id="insights-title"><!--pnid:cPpebXih4UbsnqElcuBtyr-->有趣发现</h2><p data-page-node-id="sOVAfM3TsyESbAuiFMay79"><!--pnid:9OyL18wffQcMcKBM5VPxaY-->少一点抽象焦虑，多一点可以动手调整的变量。</p></div></div>
+          <div data-page-node-id="jd97pOT7kV0mklK8lkrRJc" class="grid three">
+            <article data-page-node-id="gOZZ18k2pBciHPPerQC822" class="panel"><div data-page-node-id="34REMBRC8JVdAaXRKXYkDP" class="kpi-label"><!--pnid:u8t9bs1FyNBpWaeZ00HP3k-->本月为公司“白干”时间</div><div data-page-node-id="fLEM8FuWUYIYipTR2xYxGP" class="kpi-value" id="unpaid-insight"><!--pnid:7rYUp46T5mu34easNQEy5M-->0 小时</div><p data-page-node-id="LELxJUhn5R4DDOChaODdXk" class="subtle" id="unpaid-insight-note"><!--pnid:icMujR6Jvw0dOBDv9JdPlC-->通勤加上额外加班，都是工作拿走的时间。</p></article>
+            <article data-page-node-id="vl0KSRcqAELn5ghMPLndeO" class="panel"><div data-page-node-id="vkxXObFEo6KB9X3p7y1zXj" class="kpi-label"><!--pnid:Lyi6KPvfcAiJlT0YmOCuJG-->其中通勤与加班</div><div data-page-node-id="bGKRESWWqKCuXldbOgHdLd" class="kpi-value" id="commute-insight"><!--pnid:lwNTtIDrnCgI4Pjo4vrCsL-->0 + 0 小时</div><p data-page-node-id="NFDeaQjKSSrm8JzJ0IFJQq" class="subtle"><!--pnid:OW6j1pQyamaO2Cd1PlQ0KH-->通勤按双程计算，加班按每周小时折算月均。</p></article>
+            <article data-page-node-id="lEJMTPfyGNmzLodTkXyRTG" class="panel"><div data-page-node-id="iaPbDZJlCG4S6ewNWZUM15" class="kpi-label"><!--pnid:dXP5hFQpZE8V3jAtZwVf9S-->本月支出折算</div><div data-page-node-id="dzGMPH1w3VnQy3jYhK1zcD" class="kpi-value" id="expense-days-insight"><!--pnid:yM8F8qMv3hU8eidOiYp0IN-->待设置</div><p data-page-node-id="Z3YRlsnCyUKobxS68SxcC7" class="subtle"><!--pnid:PCqXrivxLOY9nUFd5Nf2vo-->按每天 8 小时折算成工作日。</p></article>
+          </div>
+          <div data-page-node-id="JmgUIvcKarSIUcLhIfoQMM" class="grid two" style="margin-top:16px">
+            <article data-page-node-id="Kzjk6A3O9H0VxIlBUjub2T" class="panel"><h3 data-page-node-id="QTLimiGpHhPclQ8ggvNMSx"><!--pnid:2r4Iourz5kBiLSqjiVpKHV-->存款月份排行</h3><div data-page-node-id="9KJCMd8lxLqEWknhqNyutQ" class="record-list" data-sp-bindable="database" data-sp-database-id="HiroGR3TCqiE5YJUrYxJYM" id="savings-ranking"></div></article>
+            <form data-page-node-id="FEwml6dCAMwZIkYEdA7iR6" class="panel form-grid" id="scenario-form">
+              <h3 data-page-node-id="e2OxHbTmNTVcGnIWZFu8W1" class="panel-title"><svg data-page-node-id="ToRE3iqxnYwVH4vDPTbysw" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="WVtdDoqgggWDPH9Lr2Mgkf" href="#icon-spark"></use></svg><span data-page-node-id="nkIwscttucbFJSyhHD8FHD"><!--pnid:Y1xdek0AF8Cpin6wt2Z6na-->三情景模拟</span></h3>
+              <div data-page-node-id="tE8xoeGsMMakPDgrcxss6N" class="field"><label data-page-node-id="FJaMZtRXWUe1dvD7jx333y" for="commute-slider"><!--pnid:zNROYO6UvQDdqq0hAwM87e-->通勤减少比例</label><div data-page-node-id="tdCDM5T1EcomceGQdxGwql" class="range-row"><input data-page-node-id="26pxy61yLH8hZSMkkaYaex" id="commute-slider" max="100" min="0" name="commuteReductionPercent" step="5" type="range" value="50"><output data-page-node-id="ZcQt2vqLxRGKpN7yGH3ILq" id="commute-output"><!--pnid:MtnBv1bKjHC24m8o24y5Qj-->50%</output></div></div>
+              <div data-page-node-id="gDiyRJTtXGX4C3eqmiP5Vd" class="field"><label data-page-node-id="8xmNTSY2xTIqdafV61i8Ly" for="overtime-slider"><!--pnid:PqYMApo8CGOsQHBPJ5xwtM-->每周少加班小时</label><div data-page-node-id="0BSlIM3ndoGyAY7gfw1TJo" class="range-row"><input data-page-node-id="oyjccrDSDhrYgXjbfVioWl" id="overtime-slider" max="20" min="0" name="overtimeReductionHours" step="0.5" type="range" value="5"><output data-page-node-id="sgtTk34KyjQXWCMd4SMZGD" id="overtime-output"><!--pnid:58zHVof8K9sBAHhWGNQ7b9-->5 小时</output></div></div>
+              <div data-page-node-id="fWQLmMMN6OfuqGSlU5nfKi" class="field"><label data-page-node-id="5JVKw0ZelpAAChENapAm6G" for="salary-slider"><!--pnid:CFYfV8XPwExsTciLTyo9U0-->涨薪比例</label><div data-page-node-id="GaPrpyFASTMuAMqXdiGxVl" class="range-row"><input data-page-node-id="QuUQpIpzV6Kj2BNeectwFs" id="salary-slider" max="100" min="0" name="salaryIncreasePercent" step="5" type="range" value="20"><output data-page-node-id="9k5pU0qSwbDdW8bQEcm9Fd" id="salary-output"><!--pnid:8xm91udbI90tppAwklep13-->20%</output></div></div>
+              <p data-page-node-id="KMW7KYVPRrYXG9uoLwvkRU" class="subtle"><!--pnid:h1sfWIPAIwzvLqM2gUQ4S8-->通勤和加班先计算省下的时间。自由等价比较额外假设这些时间能按真实时薪变成副业收入或等额节省。现金确定性比较只认直接改变收入的方案。</p>
+            </form>
+          </div>
+          <div data-page-node-id="eapfrIshq2DtgpfINjsQ1t" class="grid three" id="scenario-results" style="margin-top:16px"></div>
+          <article data-page-node-id="mUlafQo3DqmOXPKkGbXt90" class="panel soft" style="margin-top:16px"><h3 data-page-node-id="1PUn6xTIkuRSo8kZJh6tab"><!--pnid:8b8xsT3mFZn9lEyJv3x1LU-->结论</h3><p data-page-node-id="xza0FYvROIifaxyy6AiXq9" aria-live="polite" id="scenario-conclusion"></p></article>
+        </section>
+      </div>
+    </main>
+
+    <nav data-page-node-id="IOZF0oPdjd7k7emKwPR2Fc" aria-label="移动端主导航" class="mobile-nav" id="mobile-nav">
+      <button data-page-node-id="WcFzkpjUdfFDRBJvysWXM6" class="active" data-target="dashboard" type="button"><svg data-page-node-id="fDAGWnSc08ZZ3hcl5R0yh8" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="ZBtZVHacKkLIuc6gBV632j" href="#icon-dashboard"></use></svg><span data-page-node-id="Ac6OMQdwclyLt54Ia8vSCo"><!--pnid:NdfO8gXVY9W8wGjgiElwn3-->今日</span></button>
+      <button data-page-node-id="93is06lp8CYVn3hgKuj0Xh" data-target="hourly" type="button"><svg data-page-node-id="kuiXuFOoigh4r0SZnbFuQY" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="L1EXnbQO6RyIbaH8fhubgF" href="#icon-clock"></use></svg><span data-page-node-id="FiEDAxkUCYhZkzMy3vVZPw"><!--pnid:PlmUrOTVzXoGgThg909HpR-->时薪</span></button>
+      <button data-page-node-id="QhjzfDOXMWYZjCTTXm1xSF" data-target="expenses" type="button"><svg data-page-node-id="A2aRPr7MMCBSAyslRx18Fb" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="bCyMKVhNkS2M8wLu2ddosK" href="#icon-receipt"></use></svg><span data-page-node-id="SnVaXOWh7s8AUbfiW2Jkwp"><!--pnid:PCU82Ycf3zHKHv88nBd9z3-->记账</span></button>
+      <button data-page-node-id="2RFIFtphehvgF6vVrTtt3v" data-target="monthly" type="button"><svg data-page-node-id="yEWlmJoLnt1wvZWzmFNczb" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="3stW90QP2uEwrGmGDH68Xy" href="#icon-calendar"></use></svg><span data-page-node-id="H5obczJc6AzLjvwqq1YiHg"><!--pnid:d2Yh2oHONN9r97hLtKoMed-->月结</span></button>
+      <button data-page-node-id="W0rYnjylqYy6k1CZRwmdF9" data-target="freedom" type="button"><svg data-page-node-id="q3DS9io4H2Wi4ISAb4MLY5" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="BnnuiTxCB3HmmfQsKsCzWm" href="#icon-pig"></use></svg><span data-page-node-id="JJdmqc2T3pZ8vvYP1c3h09"><!--pnid:aghyKaOxdTKBuvPjQFgrAc-->自由</span></button>
+      <button data-page-node-id="GTyHgL5T2nopSrdanaFM90" data-target="insights" type="button"><svg data-page-node-id="ye2roXaOJTeHNGBlMc8ZVi" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="ML4tU6ZRGB7bvKANyKsxJc" href="#icon-spark"></use></svg><span data-page-node-id="KjnKRM0SV2YaSpAIngWYrF"><!--pnid:HV9dLOBNdCkEIwg7uqqelc-->发现</span></button>
+    </nav>
+  </div>
+
+  <div data-page-node-id="puU7HZdXXGU1CDyiWqS3jS" aria-live="polite" class="toast" id="save-toast" role="status"></div>
+
+  <script data-page-node-id="Jvb1bS3kl7AH1xgD3PbHdR" data-pnid-children="PsHsAktusr95VAsDmYBZwa">
+/* ================= Database SDK Integration =================
+ * 本工作台通过 WorkBuddy「资料库」能力搭建、存储和部署。
+ * 三张在线数据表：
+ *   流水记录 —— 每一笔支出（金额 / 分类 / 备注 / 日期 / 换算工时）
+ *   月度总结 —— 每月收入、固定与弹性支出、结余
+ *   个人设置 —— 时薪参数与自由基金目标
+ * 记一笔、改一笔、删一笔都即时写回线上；换设备或换浏览器打开，数据都在。
+ * =========================================================== */
+var DB_EXPENSE = 'jHRNZYnX6X6FmDfu2YJNbQ';   // 流水记录
+var DB_SUMMARY = 'HiroGR3TCqiE5YJUrYxJYM';   // 月度总结
+var DB_SETTINGS = 'jlCZDYK7mRcnZOoPhzN2UN';  // 个人设置
+var ONLINE = false;
+try { if (window.__SMART_PAGE__ && window.__SMART_PAGE__.database) { var db = window.__SMART_PAGE__.database; ONLINE = true; } } catch (e) {}
+
+/* 同步状态：syncing 同步中 / ok 已同步 / error 失败可重试 / offline 本地模式 */
+var SYNC = { phase: 'syncing', message: '', settingsId: '', settingsProbed: false, retry: null, localOnly: false, lastWrite: 0 };
+
+function setSync(phase, message) {
+  SYNC.phase = phase;
+  SYNC.message = message || '';
+  if (typeof renderSyncStatus === 'function') renderSyncStatus();
+}
+
+function queueRetry(fn) { SYNC.retry = fn || null; }
+
+/* ---------- SDK 调用分发（databaseId 全部硬编码在页面里） ---------- */
+function sdkQuery(databaseId, startCursor) {
+  switch (databaseId) {
+    case DB_SUMMARY: return db.query({ databaseId: 'HiroGR3TCqiE5YJUrYxJYM', pageSize: 200, startCursor: startCursor });
+    case DB_SETTINGS: return db.query({ databaseId: 'jlCZDYK7mRcnZOoPhzN2UN', pageSize: 200, startCursor: startCursor });
+    default: return db.query({ databaseId: 'jHRNZYnX6X6FmDfu2YJNbQ', pageSize: 200, startCursor: startCursor });
+  }
+}
+function sdkAdd(databaseId, properties) {
+  switch (databaseId) {
+    case DB_SUMMARY: return db.addRecord({ databaseId: 'HiroGR3TCqiE5YJUrYxJYM', properties: properties });
+    case DB_SETTINGS: return db.addRecord({ databaseId: 'jlCZDYK7mRcnZOoPhzN2UN', properties: properties });
+    default: return db.addRecord({ databaseId: 'jHRNZYnX6X6FmDfu2YJNbQ', properties: properties });
+  }
+}
+function sdkUpdate(databaseId, recordId, properties) {
+  switch (databaseId) {
+    case DB_SUMMARY: return db.updateRecord({ databaseId: 'HiroGR3TCqiE5YJUrYxJYM', recordId: recordId, properties: properties });
+    case DB_SETTINGS: return db.updateRecord({ databaseId: 'jlCZDYK7mRcnZOoPhzN2UN', recordId: recordId, properties: properties });
+    default: return db.updateRecord({ databaseId: 'jHRNZYnX6X6FmDfu2YJNbQ', recordId: recordId, properties: properties });
+  }
+}
+function sdkDelete(databaseId, recordId) {
+  switch (databaseId) {
+    case DB_SUMMARY: return db.deleteRecord({ databaseId: 'HiroGR3TCqiE5YJUrYxJYM', recordId: recordId });
+    case DB_SETTINGS: return db.deleteRecord({ databaseId: 'jlCZDYK7mRcnZOoPhzN2UN', recordId: recordId });
+    default: return db.deleteRecord({ databaseId: 'jHRNZYnX6X6FmDfu2YJNbQ', recordId: recordId });
+  }
+}
+
+/* ---------- 底层读写（全部走线上，带错误回调） ---------- */
+function dbQueryAll(databaseId, cb) {
+  if (!ONLINE || SYNC.localOnly) { cb(new Error('not-online'), null); return; }
+  var all = [], cursor, guard = 0;
+  function step() {
+    if (guard++ > 100) { cb(null, all); return; }
+    sdkQuery(databaseId, cursor)
+      .then(function (result) {
+        var rows = (result && result.results) || [];
+        all = all.concat(rows);                                     // 只从 result.results 取数据
+        var next = result && result.nextCursor;
+        if (result && result.hasMore && next && next !== cursor && rows.length) { cursor = next; step(); }
+        else cb(null, all);
+      })
+      .catch(function (err) { cb(err, null); });
+  }
+  step();
+}
+
+function dbAdd(databaseId, props, cb) {
+  if (!ONLINE || SYNC.localOnly) { cb(new Error('not-online'), null); return; }
+  SYNC.lastWrite = Date.now();
+  try {
+    sdkAdd(databaseId, props)
+      .then(function (r) { cb(null, r || {}); })
+      .catch(function (err) { cb(err, null); });
+  } catch (e) { cb(e, null); }
+}
+
+function dbUpdate(databaseId, recordId, props, cb) {
+  if (!ONLINE || SYNC.localOnly) { cb(new Error('not-online'), null); return; }
+  SYNC.lastWrite = Date.now();
+  try {
+    sdkUpdate(databaseId, recordId, props)
+      .then(function (r) { cb(null, r || {}); })
+      .catch(function (err) { cb(err, null); });
+  } catch (e) { cb(e, null); }
+}
+
+function dbRemove(databaseId, recordId, cb) {
+  if (!ONLINE || SYNC.localOnly) { cb(new Error('not-online'), null); return; }
+  SYNC.lastWrite = Date.now();
+  try {
+    sdkDelete(databaseId, recordId)
+      .then(function () { cb(null, true); })
+      .catch(function (err) { cb(err, null); });
+  } catch (e) { cb(e, null); }
+}
+
+function recordIdOf(r) {
+  if (!r) return '';
+  if (typeof r === 'string') return r;
+  if (r.id) return String(r.id);
+  if (r.recordId) return String(r.recordId);
+  if (r._id) return String(r._id);
+  if (r.record && (r.record.id || r.record._id)) return String(r.record.id || r.record._id);
+  if (r.result && (r.result.id || r.result._id)) return String(r.result.id || r.result._id);
+  return '';
+}
+
+/* ---------- 字段映射 ---------- */
+function numOr(value, fallback) {
+  var n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+function strOr(value) { return value === null || value === undefined ? '' : String(value); }
+
+function expenseSignature(item) { return [item.date, item.category, Number(item.amount) || 0, item.note || ''].join('|'); }
+function summarySignature(item) { return [item.month, Number(item.income) || 0, Number(item.fixed) || 0, Number(item.flexible) || 0].join('|'); }
+
+function toExpenseItem(row) {
+  var iso = row['日期'] ? String(row['日期']) : '';
+  return {
+    id: 'expense-' + (row._id || iso || Date.now()),
+    remoteId: row._id ? String(row._id) : '',
+    date: iso ? iso.slice(0, 10) : localDateString(),
+    amount: numOr(row['金额'], 0),
+    category: strOr(row['分类']) || '其他',
+    note: strOr(row['备注']),
+    createdAt: iso || new Date().toISOString(),
+    isSample: false
+  };
+}
+
+function expenseProperties(item, hourly) {
+  var hours = hourly > 0 ? (Number(item.amount) || 0) / hourly : 0;
+  var props = {};
+  props['备注'] = { text: item.note || '' };
+  props['分类'] = { text: item.category || '' };
+  props['金额'] = { currency: Number(item.amount) || 0 };
+  props['日期'] = { date: item.date };
+  props['换算工时'] = { number: Math.round(hours * 100) / 100 };
+  return props;
+}
+
+function toSummaryItem(row) {
+  return {
+    month: strOr(row['月份']),
+    remoteId: row._id ? String(row._id) : '',
+    income: numOr(row['收入'], 0),
+    fixed: numOr(row['固定支出'], 0),
+    flexible: numOr(row['弹性支出'], 0),
+    updatedAt: new Date().toISOString(),
+    isSample: false
+  };
+}
+
+function summaryProperties(item) {
+  var props = {};
+  props['月份'] = { text: item.month || '' };
+  props['收入'] = { currency: Number(item.income) || 0 };
+  props['固定支出'] = { currency: Number(item.fixed) || 0 };
+  props['弹性支出'] = { currency: Number(item.flexible) || 0 };
+  props['结余'] = { currency: calculateMonthlyBalance(item) || 0 };
+  return props;
+}
+
+function settingsProperties() {
+  var p = (state && state.profile) || {};
+  var f = (state && state.freedom) || {};
+  var props = {};
+  props['名称'] = { text: '我的账本设置' };
+  props['到手月薪'] = { currency: Number(p.monthlySalary) || 0 };
+  props['一年发薪月数'] = { number: Number(p.payMonths) || 0 };
+  props['每月为工作花的钱'] = { currency: Number(p.monthlyWorkCost) || 0 };
+  props['每天常规在公司小时'] = { number: Number(p.dailyOfficeHours) || 0 };
+  props['单程通勤分钟'] = { number: Number(p.oneWayCommuteMinutes) || 0 };
+  props['每周额外加班小时'] = { number: Number(p.weeklyOvertimeHours) || 0 };
+  props['自由基金目标金额'] = { currency: Number(f.targetAmount) || 0 };
+  props['自由基金目标月份'] = { text: f.targetDate || '' };
+  props['自由基金已攒'] = { currency: Number(f.currentSaved) || 0 };
+  props['每月基本开销'] = { currency: Number(f.basicMonthlyCost) || 0 };
+  props['估算起始月'] = { text: f.startMonth || '' };
+  props['自由宣言'] = { text: f.reason || '' };
+  props['主题'] = { text: (state && state.settings && state.settings.theme) === 'dark' ? 'dark' : 'light' };
+  return props;
+}
+
+function applySettingsRow(row) {
+  if (!row) return;
+  var payMonths = numOr(row['一年发薪月数'], 0);
+  var officeHours = numOr(row['每天常规在公司小时'], 0);
+  state.profile = {
+    monthlySalary: numOr(row['到手月薪'], 0),
+    payMonths: payMonths > 0 ? payMonths : 12,
+    monthlyWorkCost: numOr(row['每月为工作花的钱'], 0),
+    dailyOfficeHours: officeHours > 0 ? officeHours : 8,
+    oneWayCommuteMinutes: numOr(row['单程通勤分钟'], 0),
+    weeklyOvertimeHours: numOr(row['每周额外加班小时'], 0),
+    isSample: false
+  };
+  state.freedom = {
+    targetAmount: numOr(row['自由基金目标金额'], 0),
+    targetDate: strOr(row['自由基金目标月份']),
+    reason: strOr(row['自由宣言']),
+    currentSaved: numOr(row['自由基金已攒'], 0),
+    basicMonthlyCost: numOr(row['每月基本开销'], 0),
+    startMonth: strOr(row['估算起始月']),
+    isSample: false
+  };
+  var theme = strOr(row['主题']);
+  if (theme === 'dark' || theme === 'light') state.settings.theme = theme;
+  SYNC.settingsId = row._id ? String(row._id) : '';
+}
+
+/* ---------- 远端数据合并（云端为准，本地待同步项保留） ---------- */
+function applyRemoteExpenses(rows) {
+  var remote = (rows || []).map(toExpenseItem);
+  if (!remote.length) {
+    state.expenses = state.expenses.filter(function (item) { return item.isSample || !item.remoteId; });
+    return;
+  }
+  var sigCount = {};
+  remote.forEach(function (item) { var k = expenseSignature(item); sigCount[k] = (sigCount[k] || 0) + 1; });
+  var keep = [];
+  state.expenses.forEach(function (item) {
+    if (item.isSample || item.remoteId) return;
+    var k = expenseSignature(item);
+    if (sigCount[k] > 0) { sigCount[k] -= 1; return; }   // 已被云端收录，改用远端记录
+    keep.push(item);
+  });
+  state.expenses = remote.concat(keep);
+}
+
+function applyRemoteSummaries(rows) {
+  var remote = (rows || []).map(toSummaryItem);
+  if (!remote.length) {
+    state.monthlySummaries = state.monthlySummaries.filter(function (item) { return item.isSample || !item.remoteId; });
+    return;
+  }
+  var sigCount = {};
+  remote.forEach(function (item) { var k = summarySignature(item); sigCount[k] = (sigCount[k] || 0) + 1; });
+  var keep = [];
+  state.monthlySummaries.forEach(function (item) {
+    if (item.isSample || item.remoteId) return;
+    var k = summarySignature(item);
+    if (sigCount[k] > 0) { sigCount[k] -= 1; return; }
+    keep.push(item);
+  });
+  state.monthlySummaries = remote.concat(keep);
+}
+
+/* ---------- 拉取全部线上数据 ---------- */
+function pullAllRemote(cb) {
+  if (!ONLINE || SYNC.localOnly) {
+    setSync('offline', t('sync.offlineHint'));
+    if (cb) cb(false);
+    return;
+  }
+  setSync('syncing', '');
+  var remaining = 3, failed = 0;
+  function done() {
+    remaining -= 1;
+    if (remaining > 0) return;
+    if (failed) {
+      setSync('error', t('sync.readFailed'));
+      queueRetry(function () { pullAllRemote(refreshCallback); });
+    } else {
+      setSync('ok', '');
+      SYNC.retry = null;
+    }
+    if (cb) cb(!failed);
+  }
+  dbQueryAll(DB_EXPENSE, function (err, rows) { if (err) failed += 1; else applyRemoteExpenses(rows); done(); });
+  dbQueryAll(DB_SUMMARY, function (err, rows) { if (err) failed += 1; else applyRemoteSummaries(rows); done(); });
+  dbQueryAll(DB_SETTINGS, function (err, rows) {
+    if (err) { failed += 1; }
+    else if (rows && rows.length) { applySettingsRow(rows[0]); }
+    else if (!SYNC.settingsProbed) { SYNC.settingsProbed = true; pushSettings(); }  // 首次使用：把当前设置落成线上第一行
+    done();
+  });
+}
+
+function refreshCallback(ok) {
+  if (!ok) return;
+  saveState();
+  renderAll();
+  refillSettingsForms();   // 线上设置拉回来后，把表单也同步成最新值
+}
+
+/* 回填时避开正在输入的输入框，避免打断用户 */
+function refillSettingsForms() {
+  const active = document.activeElement;
+  const profileForm = document.getElementById('profile-form');
+  const freedomForm = document.getElementById('freedom-form');
+  if (profileForm && !profileForm.contains(active)) fillProfileForm();
+  if (freedomForm && !freedomForm.contains(active)) fillFreedomForm();
+}
+
+function refreshRemote() { pullAllRemote(refreshCallback); }
+
+/* ---------- 写回线上 ---------- */
+function pushSettings(onDone) {
+  if (!ONLINE || SYNC.localOnly) { if (onDone) onDone(new Error('not-online')); return; }
+  var props = settingsProperties();
+  function ok() { setSync('ok', ''); if (onDone) onDone(null); }
+  function fail(err) {
+    setSync('error', t('sync.writeFailed'));
+    queueRetry(function () { pushSettings(); });
+    if (onDone) onDone(err);
+  }
+  if (SYNC.settingsId) {
+    dbUpdate(DB_SETTINGS, SYNC.settingsId, props, function (err) { if (err) fail(err); else ok(); });
+  } else {
+    dbAdd(DB_SETTINGS, props, function (err, r) {
+      if (err) { fail(err); return; }
+      var rid = recordIdOf(r);
+      if (rid) { SYNC.settingsId = rid; ok(); return; }
+      // 未返回记录 ID 时，回读一次拿到它
+      dbQueryAll(DB_SETTINGS, function (qerr, rows) {
+        if (!qerr && rows && rows.length) SYNC.settingsId = rows[0]._id ? String(rows[0]._id) : '';
+        ok();
+      });
+    });
+  }
+}
+
+function pushExpense(item, isEdit, onDone) {
+  if (!ONLINE || SYNC.localOnly) { if (onDone) onDone(new Error('not-online')); return; }
+  var hourly = 0;
+  try { hourly = currentHourly().realHourly || 0; } catch (e) { hourly = 0; }
+  var props = expenseProperties(item, hourly);
+  function handle(err, r) {
+    if (err) {
+      setSync('error', t('sync.writeFailed'));
+      queueRetry(function () { pushExpense(item, isEdit, null); });
+      if (onDone) onDone(err);
+      return;
+    }
+    if (!isEdit) { var rid = recordIdOf(r); if (rid) item.remoteId = rid; }
+    refreshRemote();
+    if (onDone) onDone(null);
+  }
+  if (isEdit && item.remoteId) dbUpdate(DB_EXPENSE, item.remoteId, props, handle);
+  else dbAdd(DB_EXPENSE, props, handle);
+}
+
+function pushSummary(item, isEdit, onDone) {
+  if (!ONLINE || SYNC.localOnly) { if (onDone) onDone(new Error('not-online')); return; }
+  var props = summaryProperties(item);
+  function handle(err, r) {
+    if (err) {
+      setSync('error', t('sync.writeFailed'));
+      queueRetry(function () { pushSummary(item, isEdit, null); });
+      if (onDone) onDone(err);
+      return;
+    }
+    if (!isEdit) { var rid = recordIdOf(r); if (rid) item.remoteId = rid; }
+    refreshRemote();
+    if (onDone) onDone(null);
+  }
+  if (isEdit && item.remoteId) dbUpdate(DB_SUMMARY, item.remoteId, props, handle);
+  else dbAdd(DB_SUMMARY, props, handle);
+}
+
+function removeExpense(item, onDone) {
+  if (!item || !item.remoteId) { if (onDone) onDone(null); return; }
+  dbRemove(DB_EXPENSE, item.remoteId, function (err) {
+    if (err) {
+      setSync('error', t('sync.writeFailed'));
+      queueRetry(function () { removeExpense(item, null); });
+      if (onDone) onDone(err);
+      return;
+    }
+    refreshRemote();
+    if (onDone) onDone(null);
+  });
+}
+
+function removeSummary(item, onDone) {
+  if (!item || !item.remoteId) { if (onDone) onDone(null); return; }
+  dbRemove(DB_SUMMARY, item.remoteId, function (err) {
+    if (err) {
+      setSync('error', t('sync.writeFailed'));
+      queueRetry(function () { removeSummary(item, null); });
+      if (onDone) onDone(err);
+      return;
+    }
+    refreshRemote();
+    if (onDone) onDone(null);
+  });
+}
+
+function retrySync() {
+  if (SYNC.localOnly) { SYNC.localOnly = false; SYNC.settingsProbed = false; }
+  var fn = SYNC.retry;
+  SYNC.retry = null;
+  if (fn) { fn(); } else { pullAllRemote(refreshCallback); }
+}
+
+function useLocalData() {
+  SYNC.localOnly = true;
+  SYNC.retry = null;
+  setSync('offline', t('sync.localMode'));
+}
+
+
+const I18N = {
+  zh: {
+    'app.name': '打工人小账本', 'app.tagline': '把钱和时间都算明白', 'app.documentTitle': '{page} | 打工人小账本',
+    'aria.mainNav': '主导航', 'aria.mobileTools': '手机数据工具', 'aria.mobileNav': '移动端主导航', 'aria.hero': '小猪存钱罐托着硬币与嫩芽', 'aria.chart': '自由基金估算积累曲线与目标线',
+    'nav.dashboard': '今日驾驶舱', 'nav.hourly': '我的时薪', 'nav.expenses': '10 秒记账', 'nav.monthly': '月度总结', 'nav.freedom': '自由基金', 'nav.insights': '有趣发现',
+    'nav.mobile.dashboard': '今日', 'nav.mobile.hourly': '时薪', 'nav.mobile.expenses': '记账', 'nav.mobile.monthly': '月结', 'nav.mobile.freedom': '自由', 'nav.mobile.insights': '发现',
+    'page.dashboard': '今日驾驶舱', 'page.hourly': '工作价值', 'page.expenses': '今天花了多少', 'page.monthly': '这个月过得怎样', 'page.freedom': '自由坐标', 'page.insights': '今日小发现',
+    'action.exportJson': '导出 JSON', 'action.importJson': '导入 JSON', 'action.clearSamples': '清空示例', 'action.export': '导出', 'action.import': '导入', 'action.clearShort': '清示例',
+    'action.viewAll': '查看全部', 'action.saveQuick': '保存并换算工时', 'action.saveExpense': '保存支出', 'action.cancelEdit': '取消编辑', 'action.saveMonthly': '保存月度总结', 'action.edit': '编辑', 'action.delete': '删除', 'action.loadMore': '再看 {count} 条',
+    'theme.toDark': '切换深色', 'theme.toLight': '切换浅色',
+    'dashboard.title': '今天也要算清楚', 'dashboard.subtitle': '不是为了苛责每一笔钱，而是让每一小时更接近你想要的生活。', 'dashboard.realHourly': '真实时薪', 'dashboard.monthExpense': '本月支出', 'dashboard.freedomProgress': '自由基金进度', 'dashboard.declaration': '自由宣言', 'dashboard.recent': '刚刚花掉的时光', 'dashboard.quickEntry': '现在记一笔',
+    'field.amount': '金额', 'field.category': '分类', 'field.quickNote': '随手一句', 'field.date': '日期', 'field.note': '备注', 'placeholder.quickNote': '可不填，写一句更有记忆点', 'placeholder.expenseNote': '这笔体验是什么',
+    'hourly.title': '我的时薪', 'hourly.subtitle': '老板想让我以为的数字，和生活实际拿走时间后剩下的数字，都摊开来看。', 'hourly.parameters': '工作时间参数', 'field.monthlySalary': '到手月薪', 'field.payMonths': '一年发薪月数', 'field.monthlyWorkCost': '每月为工作花的钱', 'field.dailyOfficeHours': '每天常规在公司小时', 'field.commuteMinutes': '单程通勤分钟', 'field.overtimeHours': '每周额外加班小时', 'hourly.hint': '在公司小时包含无法自由支配的午休，不含额外加班。输入变化会自动保存，所有数值采用年度口径。', 'hourly.nominal': '名义时薪', 'hourly.real': '真实时薪', 'hourly.nominalFormula': '到手月薪 ÷ 21.75 ÷ 8', 'hourly.calculation': '计算过程',
+    'expenses.title': '10 秒记账', 'expenses.subtitle': '你不是乱花钱，你是在拿工时换体验。知道换了多少，选择就更踏实。', 'expenses.today': '今日支出', 'expenses.month': '本月支出', 'expenses.monthHours': '本月等价工时', 'expenses.entry': '记下一笔体验', 'expenses.recent': '最近记录',
+    'monthly.title': '月度总结', 'monthly.subtitle': '结余不单独保存，每次都由收入减去两类支出现场计算。', 'monthly.entry': '填写本月账页', 'field.month': '月份', 'field.income': '总收入', 'field.fixed': '固定支出', 'field.flexible': '弹性支出', 'monthly.autoBalance': '自动结余', 'monthly.average': '最近完整月平均存款', 'monthly.records': '月度记录',
+    'freedom.title': '自由基金', 'freedom.subtitle': '账户余额由你维护，历史结余只用来估算速度和趋势，不冒充真实流水。', 'freedom.settings': '设置自由目标', 'field.targetAmount': '目标金额', 'field.targetDate': '目标月份', 'field.currentSaved': '当前已攒', 'field.basicCost': '每月基本开销', 'field.startMonth': '估算起始月', 'field.freedomReason': '为什么想攒这笔钱', 'freedom.hint': '修改会自动保存，账户金额和目标不会由历史结余自动覆盖。', 'freedom.completion': '完成率', 'freedom.forecast': '预计与期限', 'freedom.safety': '安全垫', 'freedom.chartTitle': '估算积累曲线', 'freedom.chartHint': '起点按当前已攒减去已记录结余倒推，绿色为估算积累，蓝绿色为目标线。', 'freedom.chartSavings': '估算积累', 'freedom.chartTarget': '目标线',
+    'insights.title': '有趣发现', 'insights.subtitle': '少一点抽象焦虑，多一点可以动手调整的变量。', 'insights.unpaid': '本月为公司“白干”时间', 'insights.unpaidHint': '通勤加上额外加班，都是工作拿走的时间。', 'insights.commuteOvertime': '其中通勤与加班', 'insights.commuteHint': '通勤按双程计算，加班按每周小时折算月均。', 'insights.expenseDays': '本月支出折算', 'insights.expenseDaysHint': '按每天 8 小时折算成工作日。', 'insights.ranking': '存款月份排行', 'insights.scenarios': '三情景模拟', 'field.commuteReduction': '通勤减少比例', 'field.overtimeReduction': '每周少加班小时', 'field.salaryIncrease': '涨薪比例', 'insights.scenarioHint': '通勤和加班先计算省下的时间。自由等价比较额外假设这些时间能按真实时薪变成副业收入或等额节省。现金确定性比较只认直接改变收入的方案。', 'insights.conclusion': '结论',
+    'category.吃饭': '吃饭', 'category.交通': '交通', 'category.购物': '购物', 'category.娱乐': '娱乐', 'category.房租': '房租', 'category.其他': '其他',
+    'common.pending': '待设置', 'common.missing': '待补充', 'common.noData': '缺数据', 'common.noForecast': '暂不预测', 'common.bestMonth': '最佳月',
+    'reminder.setup': '先完成时薪设置，之后每笔支出都会自动换算成时间。', 'reminder.monthly': '这个月还没有月度总结。可以先随手记账，月底再补完整收入和支出。', 'reminder.ready': '真实时薪为 {rate}，今天的每一个选择都有了更诚实的刻度。',
+    'dashboard.hourlyRate': '{rate}/时', 'dashboard.gapLower': '比名义时薪少 {ratio}', 'dashboard.gapHigher': '比名义时薪高 {ratio}', 'dashboard.gapPending': '补全参数后查看差距', 'dashboard.todayExpense': '今日 {amount}', 'dashboard.savedRemaining': '已攒 {saved}，还差 {remaining}', 'dashboard.targetPrompt': '设置一个自由基金目标，进度会在这里出现。', 'dashboard.reasonPrompt': '先写下你想攒这笔钱的理由。数字会变，理由帮你记住方向。', 'dashboard.emptyRecent': '还没有花掉的时光，第一笔会在这里变成小纸片。', 'expenses.pendingEquivalent': '待换算工时',
+    'hourly.gapLower': '真实少了', 'hourly.gapHigher': '真实反而高了', 'hourly.gapEqual': '两者相同', 'hourly.gapInvalid': '参数还不足', 'hourly.formula.annualIncome': '年到手收入', 'hourly.formula.annualCost': '年工作成本', 'hourly.formula.monthOffice': '月在场时间', 'hourly.formula.monthCommute': '月通勤时间', 'hourly.formula.monthOvertime': '月加班时间', 'hourly.formula.annualHours': '年总投入时间', 'hourly.formula.real': '真实时薪', 'hourly.formula.monthlyHoursSum': '三项月时间之和 × 12 = {hours}', 'hourly.formula.invalid': '净年收入或总投入时间无效，暂不计算',
+    'expenses.setHourly': '先设时薪', 'expenses.empty': '还没有支出记录。第一笔通常只要 10 秒。', 'expenses.metaPending': '完成时薪设置后换算工时', 'expenses.currentOnly': '已记在当前页面，但云端保存失败，刷新后可能丢失。', 'expenses.savedEquivalent': '这笔 {amount} 相当于 {time} 的真实工作时间。', 'expenses.savedPending': '已保存。完成时薪设置后，这里会显示等价工时。', 'toast.saveFailed': '保存失败，请稍后重试。', 'toast.quickSaved': '记好啦，这笔时间已收进账本。', 'toast.expenseSaved': '支出已保存。',
+    'monthly.averageNote': '采用 {months} 共 {count} 个完整月，亏损月同样计入。', 'monthly.averageEmpty': '至少填写一个已结束月份，中间缺失月份不会补 0。', 'monthly.empty': '还没有月度总结。月底来一次三项录入即可。', 'monthly.meta': '收入 {income} · 固定 {fixed} · 弹性 {flexible}',
+    'freedom.noTarget': '先设置目标金额，再看离自由还有多远。', 'freedom.excess': '已超出目标 {amount}', 'freedom.averageSpeed': '最近完整月平均速度', 'freedom.remainingMonths': '预计剩余月数', 'freedom.estimatedDate': '预计达成日', 'freedom.requiredSavings': '期限所需月存款', 'freedom.achieved': '本月已达成', 'freedom.speedInvalid': '速度不大于 0，暂不预测', 'freedom.waitPositive': '待平均存款转正后计算', 'freedom.targetPast': '目标月份已过，请更新目标', 'freedom.setTargetDate': '请设置目标月份', 'freedom.safetyReached': '{months} 已点亮', 'freedom.safetyLevel': '{months}', 'freedom.safetyNote': '已经守住 {months} 个月基本生活，做选择时更有底气。', 'freedom.safetyPrompt': '先向 3 个月安全垫靠近。', 'freedom.chartEmpty': '补充月度总结后显示估算曲线',
+    'insights.unpaidDetail': '通勤 {commute} + 额外加班 {overtime}。', 'insights.commuteValue': '{commute} + {overtime}', 'insights.rankingEmpty': '补充月度总结后查看排行。',
+    'scenario.commute': '通勤减少', 'scenario.overtime': '少加班', 'scenario.salary': '涨薪', 'scenario.commuteDesc': '现金不会自动增加。自由等价采用省下时间能变现或替代支出的假设。', 'scenario.overtimeDesc': '最多减到每周加班为 0。现金不会自动增加。', 'scenario.salaryDesc': '工作成本和投入时间不变，按全年收入增量折算到每月。', 'scenario.cashFastest': '现金确定性最快', 'scenario.freedomFastest': '自由等价最快', 'scenario.cashGain': '每月现金增益', 'scenario.timeSaved': '每月省下时间', 'scenario.freedomGain': '自由等价增益', 'scenario.targetMonths': '预计目标月数', 'scenario.noCash': '暂无直接现金方案', 'scenario.noPredictable': '暂无可预测方案', 'scenario.conclusion': '现金确定性最快：{cash}。自由等价最快：{freedom}。后者包含时间能变现或替代支出的假设，不代表现金已经到账。',
+    'sample.expense1': '午餐加一杯咖啡', 'sample.expense2': '下班晚了打车接驳', 'sample.expense3': '一本想读很久的书', 'sample.reason': '攒出半年缓冲期，给下一次选择留出底气',
+    'unit.hourRate': '{amount}/时', 'unit.hours': '{value} 小时', 'unit.minutes': '{value} 分钟', 'unit.months': '{value} 个月', 'unit.workdays': '{value} 个工作日',
+    'storage.unavailable': '云端存储暂不可用，本次修改只能保留在当前页面。原因：{reason}', 'storage.corrupt': '数据读取异常，已临时载入示例。修改任意内容后可覆盖。原因：{reason}', 'storage.saveFailed': '保存失败，可能是网络问题或空间不足，请稍后重试。原因：{reason}',
+    'import.tooLarge': '导入失败：文件超过 2 MB。', 'import.failed': '导入失败，现有数据未被覆盖。原因：{reason}', 'import.storageUnavailable': '本地存储不可用，无法安全导入', 'confirm.clearSamples': '只会清除仍带示例标记的数据，编辑过和新建的数据都会保留。继续吗？', 'confirm.deleteExpense': '删除这笔支出吗？', 'confirm.deleteMonthly': '删除这个月度总结吗？', 'monthly.conflict': '这个月份已经有一份总结。请先删除原记录，或继续编辑已有月份。',
+    'error.required': '{field}不能为空', 'error.tooLong': '{field}过长', 'error.nonNegative': '{field}必须是非负有限数', 'error.expensesArray': '支出记录必须是数组', 'error.expensesLarge': '支出记录数量过大', 'error.expenseDuplicate': '支出记录存在重复 ID', 'error.expenseDate': '支出日期非法', 'error.createdAt': '创建时间非法', 'error.summariesArray': '月度总结必须是数组', 'error.summariesLarge': '月度总结数量过大', 'error.summaryMonth': '总结月份非法', 'error.summaryDuplicate': '月度总结存在重复月份', 'error.targetMonth': '目标月份非法', 'error.startMonth': '起始月份非法', 'error.importFormat': '导入包格式无效', 'error.importUnreadable': '导入包无法读取', 'error.importLarge': '导入文件过大', 'error.appId': '应用标识不匹配', 'error.importVersion': '导入版本无效', 'error.importFuture': '导入版本高于当前版本', 'error.importState': '导入状态无效',
+    'field.expenseId': '支出 ID', 'field.createdAt': '创建时间', 'field.expenseAmount': '支出金额', 'field.expenseCategory': '支出分类', 'field.expenseNote': '支出备注', 'field.monthIncome': '月收入', 'field.freedomTarget': '自由基金目标', 'field.freedomCurrent': '当前已攒', 'field.freedomBasic': '基本月开销', 'field.freedomReasonShort': '自由理由', 'field.salaryMonths': '发薪月数', 'field.workCost': '工作成本', 'field.officeTime': '在场时间', 'field.commuteTime': '通勤时间', 'field.overtimeTime': '加班时间',
+    'export.filename': '打工人小账本-{date}.json',
+    'sync.syncing': '同步中', 'sync.ok': '已同步', 'sync.error': '同步失败', 'sync.offline': '本地模式',
+    'sync.readFailed': '云端数据没读上，现在显示的是本机缓存。点「重试同步」再拉一次。',
+    'sync.writeFailed': '这次修改没写到云端，已先存在本机。点「重试同步」可以重发。',
+    'sync.offlineHint': '资料库暂时连不上，已切到本地模式，数据只在这台设备上。',
+    'sync.localMode': '已切到本地模式，修改只保存在本机。',
+    'sync.retry': '重试同步', 'sync.useLocal': '先用本地数据', 'sync.retryDone': '已重新同步。', 'common.saving': '保存中…'
+  },
+  en: {
+    'app.name': 'Worker Ledger', 'app.tagline': 'Make every yuan and hour count', 'app.documentTitle': '{page} | Worker Ledger',
+    'aria.mainNav': 'Main navigation', 'aria.mobileTools': 'Mobile data tools', 'aria.mobileNav': 'Mobile main navigation', 'aria.hero': 'A piggy bank holding a coin and a sprout', 'aria.chart': 'Estimated freedom fund growth and target line',
+    'nav.dashboard': 'Today Dashboard', 'nav.hourly': 'My Hourly Rate', 'nav.expenses': '10-Second Entry', 'nav.monthly': 'Monthly Review', 'nav.freedom': 'Freedom Fund', 'nav.insights': 'Insights',
+    'nav.mobile.dashboard': 'Today', 'nav.mobile.hourly': 'Rate', 'nav.mobile.expenses': 'Expense', 'nav.mobile.monthly': 'Monthly', 'nav.mobile.freedom': 'Freedom', 'nav.mobile.insights': 'Insights',
+    'page.dashboard': 'Today Dashboard', 'page.hourly': 'Value of Work', 'page.expenses': 'Today’s Spending', 'page.monthly': 'How This Month Went', 'page.freedom': 'Freedom Plan', 'page.insights': 'Today’s Insights',
+    'action.exportJson': 'Export JSON', 'action.importJson': 'Import JSON', 'action.clearSamples': 'Clear Samples', 'action.export': 'Export', 'action.import': 'Import', 'action.clearShort': 'Clear Samples',
+    'action.viewAll': 'View All', 'action.saveQuick': 'Save & Convert to Work Time', 'action.saveExpense': 'Save Expense', 'action.cancelEdit': 'Cancel Editing', 'action.saveMonthly': 'Save Monthly Review', 'action.edit': 'Edit', 'action.delete': 'Delete', 'action.loadMore': 'Show {count} More',
+    'theme.toDark': 'Switch to Dark', 'theme.toLight': 'Switch to Light',
+    'dashboard.title': 'Make Today Count', 'dashboard.subtitle': 'Not to judge every expense, but to bring every hour closer to the life you want.', 'dashboard.realHourly': 'Real Hourly Rate', 'dashboard.monthExpense': 'Spending This Month', 'dashboard.freedomProgress': 'Freedom Fund Progress', 'dashboard.declaration': 'Freedom Statement', 'dashboard.recent': 'Time Spent Recently', 'dashboard.quickEntry': 'Add an Expense Now',
+    'field.amount': 'Amount', 'field.category': 'Category', 'field.quickNote': 'Quick Note', 'field.date': 'Date', 'field.note': 'Note', 'placeholder.quickNote': 'Optional, but a note makes it memorable', 'placeholder.expenseNote': 'What was this experience?',
+    'hourly.title': 'My Hourly Rate', 'hourly.subtitle': 'Compare the number your employer wants you to see with what remains after work takes its share of your life.', 'hourly.parameters': 'Work Time Settings', 'field.monthlySalary': 'Monthly Take-Home Pay', 'field.payMonths': 'Pay Months per Year', 'field.monthlyWorkCost': 'Monthly Work-Related Costs', 'field.dailyOfficeHours': 'Regular Office Hours per Day', 'field.commuteMinutes': 'One-Way Commute Minutes', 'field.overtimeHours': 'Extra Overtime Hours per Week', 'hourly.hint': 'Office hours include non-discretionary lunch breaks but exclude extra overtime. Changes save automatically; calculations use annualized values.', 'hourly.nominal': 'Nominal Hourly Rate', 'hourly.real': 'Real Hourly Rate', 'hourly.nominalFormula': 'Monthly take-home ÷ 21.75 ÷ 8', 'hourly.calculation': 'Calculation',
+    'expenses.title': '10-Second Expense Entry', 'expenses.subtitle': 'You are not simply spending money—you are trading work time for experiences. Knowing the exchange makes each choice clearer.', 'expenses.today': 'Spent Today', 'expenses.month': 'Spent This Month', 'expenses.monthHours': 'Equivalent Work Time This Month', 'expenses.entry': 'Record an Experience', 'expenses.recent': 'Recent Records',
+    'monthly.title': 'Monthly Review', 'monthly.subtitle': 'Savings are calculated live as income minus fixed and flexible expenses, not stored separately.', 'monthly.entry': 'Complete This Month’s Page', 'field.month': 'Month', 'field.income': 'Total Income', 'field.fixed': 'Fixed Expenses', 'field.flexible': 'Flexible Expenses', 'monthly.autoBalance': 'Calculated Savings', 'monthly.average': 'Average Savings for Recent Complete Months', 'monthly.records': 'Monthly Records',
+    'freedom.title': 'Freedom Fund', 'freedom.subtitle': 'You maintain the account balance. Past savings estimate speed and trends; they are not treated as real transactions.', 'freedom.settings': 'Set Your Freedom Goal', 'field.targetAmount': 'Target Amount', 'field.targetDate': 'Target Month', 'field.currentSaved': 'Saved So Far', 'field.basicCost': 'Basic Monthly Costs', 'field.startMonth': 'Forecast Start Month', 'field.freedomReason': 'Why Do You Want This Fund?', 'freedom.hint': 'Changes save automatically. Historical savings never overwrite your account balance or target.', 'freedom.completion': 'Completion', 'freedom.forecast': 'Forecast & Deadline', 'freedom.safety': 'Safety Buffer', 'freedom.chartTitle': 'Estimated Growth Curve', 'freedom.chartHint': 'The starting point is back-calculated from current savings minus recorded savings. Green shows estimated growth; teal shows the target line.', 'freedom.chartSavings': 'Estimated Growth', 'freedom.chartTarget': 'Target Line',
+    'insights.title': 'Insights', 'insights.subtitle': 'Less abstract anxiety, more variables you can actually adjust.', 'insights.unpaid': 'Unpaid Time Given to Work This Month', 'insights.unpaidHint': 'Commute and extra overtime are both time claimed by work.', 'insights.commuteOvertime': 'Commute + Overtime', 'insights.commuteHint': 'Commute counts both ways; weekly overtime is converted to a monthly average.', 'insights.expenseDays': 'Spending in Workdays', 'insights.expenseDaysHint': 'Converted using 8 hours per workday.', 'insights.ranking': 'Monthly Savings Ranking', 'insights.scenarios': 'Three-Scenario Simulation', 'field.commuteReduction': 'Commute Reduction', 'field.overtimeReduction': 'Weekly Overtime Reduction', 'field.salaryIncrease': 'Salary Increase', 'insights.scenarioHint': 'Commute and overtime first calculate time saved. The freedom-equivalent comparison additionally assumes saved time can become side income or replace spending. The cash-certainty comparison counts only direct income changes.', 'insights.conclusion': 'Conclusion',
+    'category.吃饭': 'Food', 'category.交通': 'Transport', 'category.购物': 'Shopping', 'category.娱乐': 'Entertainment', 'category.房租': 'Rent', 'category.其他': 'Other',
+    'common.pending': 'Not Set', 'common.missing': 'Add Data', 'common.noData': 'No Data', 'common.noForecast': 'No Forecast', 'common.bestMonth': 'Best Month',
+    'reminder.setup': 'Set up your hourly rate first. Every expense will then be converted into work time.', 'reminder.monthly': 'There is no monthly review for this month yet. Track expenses now and add complete income and spending at month-end.', 'reminder.ready': 'Your real hourly rate is {rate}. Every choice today now has a more honest scale.',
+    'dashboard.hourlyRate': '{rate}/hr', 'dashboard.gapLower': '{ratio} below nominal rate', 'dashboard.gapHigher': '{ratio} above nominal rate', 'dashboard.gapPending': 'Complete the settings to see the difference', 'dashboard.todayExpense': 'Today: {amount}', 'dashboard.savedRemaining': '{saved} saved, {remaining} to go', 'dashboard.targetPrompt': 'Set a freedom fund goal to see progress here.', 'dashboard.reasonPrompt': 'Write down why you want this fund. Numbers change; your reason keeps the direction clear.', 'dashboard.emptyRecent': 'No time spent yet. Your first expense will appear here.', 'expenses.pendingEquivalent': 'Work time pending',
+    'hourly.gapLower': 'Real rate is lower by', 'hourly.gapHigher': 'Real rate is higher by', 'hourly.gapEqual': 'The rates are equal', 'hourly.gapInvalid': 'More settings are needed', 'hourly.formula.annualIncome': 'Annual Take-Home Income', 'hourly.formula.annualCost': 'Annual Work Costs', 'hourly.formula.monthOffice': 'Monthly Office Time', 'hourly.formula.monthCommute': 'Monthly Commute Time', 'hourly.formula.monthOvertime': 'Monthly Overtime', 'hourly.formula.annualHours': 'Annual Time Invested', 'hourly.formula.real': 'Real Hourly Rate', 'hourly.formula.monthlyHoursSum': 'Sum of the three monthly time values × 12 = {hours}', 'hourly.formula.invalid': 'Net annual income or total invested time is invalid, so no rate is calculated.',
+    'expenses.setHourly': 'Set Hourly Rate', 'expenses.empty': 'No expenses yet. The first one usually takes only 10 seconds.', 'expenses.metaPending': 'Set your hourly rate to convert this expense', 'expenses.currentOnly': 'Recorded on this page, but cloud saving failed. It may be lost after refresh.', 'expenses.savedEquivalent': '{amount} equals {time} of real work time.', 'expenses.savedPending': 'Saved. Set up your hourly rate to see equivalent work time here.', 'toast.saveFailed': 'Save failed. Please try again later.', 'toast.quickSaved': 'Recorded. This time is now in your ledger.', 'toast.expenseSaved': 'Expense saved.',
+    'monthly.averageNote': 'Based on {count} complete months ({months}), including months with losses.', 'monthly.averageEmpty': 'Add at least one completed month. Missing months are not filled with zero.', 'monthly.empty': 'No monthly reviews yet. Add income and two expense totals at month-end.', 'monthly.meta': 'Income {income} · Fixed {fixed} · Flexible {flexible}',
+    'freedom.noTarget': 'Set a target amount to see how far freedom is.', 'freedom.excess': '{amount} above target', 'freedom.averageSpeed': 'Recent Complete-Month Average', 'freedom.remainingMonths': 'Estimated Months Remaining', 'freedom.estimatedDate': 'Estimated Completion Date', 'freedom.requiredSavings': 'Monthly Savings Needed by Deadline', 'freedom.achieved': 'Achieved This Month', 'freedom.speedInvalid': 'Savings speed is not positive, so no forecast is available.', 'freedom.waitPositive': 'Calculated after average savings turn positive', 'freedom.targetPast': 'The target month has passed. Update the target.', 'freedom.setTargetDate': 'Set a target month', 'freedom.safetyReached': '{months} reached', 'freedom.safetyLevel': '{months}', 'freedom.safetyNote': 'You have covered {months} of basic living costs, giving you more room to choose.', 'freedom.safetyPrompt': 'Build toward a 3-month safety buffer first.', 'freedom.chartEmpty': 'Add monthly reviews to display the estimated curve',
+    'insights.unpaidDetail': 'Commute {commute} + extra overtime {overtime}.', 'insights.commuteValue': '{commute} + {overtime}', 'insights.rankingEmpty': 'Add monthly reviews to see the ranking.',
+    'scenario.commute': 'Reduce Commute', 'scenario.overtime': 'Reduce Overtime', 'scenario.salary': 'Increase Salary', 'scenario.commuteDesc': 'Cash does not increase automatically. The freedom equivalent assumes saved time can generate income or replace spending.', 'scenario.overtimeDesc': 'Reduction stops at zero weekly overtime. Cash does not increase automatically.', 'scenario.salaryDesc': 'Work costs and time stay unchanged; annual additional income is converted to a monthly amount.', 'scenario.cashFastest': 'Fastest Certain Cash', 'scenario.freedomFastest': 'Fastest Freedom Equivalent', 'scenario.cashGain': 'Monthly Cash Gain', 'scenario.timeSaved': 'Monthly Time Saved', 'scenario.freedomGain': 'Freedom-Equivalent Gain', 'scenario.targetMonths': 'Estimated Months to Target', 'scenario.noCash': 'No Direct-Cash Option', 'scenario.noPredictable': 'No Predictable Option', 'scenario.conclusion': 'Fastest certain cash: {cash}. Fastest freedom equivalent: {freedom}. The latter assumes time can generate income or replace spending; it does not mean cash has already arrived.',
+    'sample.expense1': 'Lunch and a cup of coffee', 'sample.expense2': 'Late-night taxi connection after work', 'sample.expense3': 'A book I had wanted to read for a long time', 'sample.reason': 'Build a six-month buffer and create room for my next choice',
+    'unit.hourRate': '{amount}/hr', 'unit.hours': '{value} {unit}', 'unit.minutes': '{value} {unit}', 'unit.months': '{value} {unit}', 'unit.workdays': '{value} {unit}',
+    'storage.unavailable': 'Cloud storage is unavailable. Changes will remain only on this page. Reason: {reason}', 'storage.corrupt': 'Data read error, so sample data was loaded temporarily. Overwrite it by changing any value. Reason: {reason}', 'storage.saveFailed': 'Saving failed, possibly due to network issues or insufficient space. Please try again later. Reason: {reason}',
+    'import.tooLarge': 'Import failed: the file exceeds 2 MB.', 'import.failed': 'Import failed. Existing data was not overwritten. Reason: {reason}', 'import.storageUnavailable': 'Local storage is unavailable; data cannot be imported safely', 'confirm.clearSamples': 'Only data still marked as sample will be removed. Edited and newly created data will remain. Continue?', 'confirm.deleteExpense': 'Delete this expense?', 'confirm.deleteMonthly': 'Delete this monthly review?', 'monthly.conflict': 'A review already exists for this month. Delete the original or continue editing the existing month.',
+    'error.required': '{field} is required', 'error.tooLong': '{field} is too long', 'error.nonNegative': '{field} must be a non-negative finite number', 'error.expensesArray': 'Expense records must be an array', 'error.expensesLarge': 'There are too many expense records', 'error.expenseDuplicate': 'Expense records contain duplicate IDs', 'error.expenseDate': 'Expense date is invalid', 'error.createdAt': 'Creation time is invalid', 'error.summariesArray': 'Monthly reviews must be an array', 'error.summariesLarge': 'There are too many monthly reviews', 'error.summaryMonth': 'Review month is invalid', 'error.summaryDuplicate': 'Monthly reviews contain duplicate months', 'error.targetMonth': 'Target month is invalid', 'error.startMonth': 'Start month is invalid', 'error.importFormat': 'Import package format is invalid', 'error.importUnreadable': 'Import package cannot be read', 'error.importLarge': 'Import file is too large', 'error.appId': 'Application ID does not match', 'error.importVersion': 'Import version is invalid', 'error.importFuture': 'Import version is newer than this app', 'error.importState': 'Imported state is invalid',
+    'field.expenseId': 'Expense ID', 'field.createdAt': 'Creation Time', 'field.expenseAmount': 'Expense Amount', 'field.expenseCategory': 'Expense Category', 'field.expenseNote': 'Expense Note', 'field.monthIncome': 'Monthly Income', 'field.freedomTarget': 'Freedom Fund Target', 'field.freedomCurrent': 'Current Savings', 'field.freedomBasic': 'Basic Monthly Costs', 'field.freedomReasonShort': 'Freedom Reason', 'field.salaryMonths': 'Pay Months', 'field.workCost': 'Work Costs', 'field.officeTime': 'Office Time', 'field.commuteTime': 'Commute Time', 'field.overtimeTime': 'Overtime',
+    'export.filename': 'worker-ledger-{date}.json',
+    'sync.syncing': 'Syncing', 'sync.ok': 'Synced', 'sync.error': 'Sync failed', 'sync.offline': 'Local mode',
+    'sync.readFailed': 'Cloud data could not be loaded, so cached local data is shown. Tap "Retry sync" to try again.',
+    'sync.writeFailed': 'This change did not reach the cloud and is stored on this device. Tap "Retry sync" to resend it.',
+    'sync.offlineHint': 'The library is unreachable, so local mode is on and data stays on this device.',
+    'sync.localMode': 'Local mode is on. Changes are stored on this device only.',
+    'sync.retry': 'Retry sync', 'sync.useLocal': 'Use local data', 'sync.retryDone': 'Synced again.', 'common.saving': 'Saving…'
+  }
+};
+const LANG = new URL(location.href).searchParams.get('lang') === 'en' ? 'en' : 'zh';
+const LOCALE = LANG === 'en' ? 'en-US' : 'zh-CN';
+document.documentElement.lang = LANG === 'en' ? 'en' : 'zh-CN';
+function t(key, vars = {}) {
+  const template = I18N[LANG][key] ?? I18N.zh[key] ?? key;
+  return String(template).replace(/\{(\w+)\}/g, (_, name) => Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : `{${name}}`);
+}
+const WORK_DAYS_PER_MONTH = 21.75;
+const CURRENT_VERSION = 1;
+const APP_ID = 'worker-ledger';
+
+function finiteNonNegative(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : fallback;
+}
+
+function round(value, digits = 2) {
+  if (!Number.isFinite(value)) return null;
+  const power = 10 ** digits;
+  return Math.round((value + Number.EPSILON) * power) / power;
+}
+
+function calculateHourlyProfile(profile = {}) {
+  const monthlySalary = finiteNonNegative(profile.monthlySalary);
+  const payMonths = finiteNonNegative(profile.payMonths);
+  const monthlyWorkCost = finiteNonNegative(profile.monthlyWorkCost);
+  const dailyOfficeHours = finiteNonNegative(profile.dailyOfficeHours);
+  const oneWayCommuteMinutes = finiteNonNegative(profile.oneWayCommuteMinutes);
+  const weeklyOvertimeHours = finiteNonNegative(profile.weeklyOvertimeHours);
+
+  const nominalHourly = monthlySalary > 0
+    ? monthlySalary / WORK_DAYS_PER_MONTH / 8
+    : null;
+  const annualIncome = monthlySalary * payMonths;
+  const annualWorkCost = monthlyWorkCost * 12;
+  const netAnnualIncome = annualIncome - annualWorkCost;
+  const monthlyOfficeHours = dailyOfficeHours * WORK_DAYS_PER_MONTH;
+  const monthlyCommuteHours = oneWayCommuteMinutes * 2 * WORK_DAYS_PER_MONTH / 60;
+  const monthlyOvertimeHours = weeklyOvertimeHours * 52 / 12;
+  const annualInvestedHours = (monthlyOfficeHours + monthlyCommuteHours + monthlyOvertimeHours) * 12;
+  const realHourly = netAnnualIncome > 0 && annualInvestedHours > 0
+    ? netAnnualIncome / annualInvestedHours
+    : null;
+
+  let gapDirection = 'invalid';
+  let gapRatio = null;
+  if (nominalHourly > 0 && realHourly !== null) {
+    gapRatio = Math.abs(nominalHourly - realHourly) / nominalHourly;
+    if (Math.abs(nominalHourly - realHourly) < 0.000001) gapDirection = 'equal';
+    else gapDirection = realHourly < nominalHourly ? 'lower' : 'higher';
+  }
+
+  return {
+    nominalHourly: round(nominalHourly),
+    realHourly: round(realHourly),
+    gapDirection,
+    gapRatio: round(gapRatio, 4),
+    annualIncome: round(annualIncome),
+    annualWorkCost: round(annualWorkCost),
+    netAnnualIncome: round(netAnnualIncome),
+    monthlyOfficeHours: round(monthlyOfficeHours),
+    monthlyCommuteHours: round(monthlyCommuteHours),
+    monthlyOvertimeHours: round(monthlyOvertimeHours),
+    annualInvestedHours: round(annualInvestedHours)
+  };
+}
+
+function calculateMonthlyBalance(summary = {}) {
+  return round(
+    finiteNonNegative(summary.income)
+      - finiteNonNegative(summary.fixed)
+      - finiteNonNegative(summary.flexible)
+  );
+}
+
+function getRecentExpenses(expenses, limit = 4) {
+  if (!Array.isArray(expenses)) return [];
+  const safeLimit = Math.max(0, Math.floor(Number(limit) || 0));
+  const createdTime = (item) => {
+    const timestamp = Date.parse(String(item && item.createdAt || ''));
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  };
+  return [...expenses]
+    .sort((a, b) => String(b && b.date || '').localeCompare(String(a && a.date || ''))
+      || createdTime(b) - createdTime(a))
+    .slice(0, safeLimit);
+}
+
+function buildFreedomChartModel(input = {}) {
+  const summaries = Array.isArray(input.summaries)
+    ? input.summaries
+      .filter((item) => item && /^\d{4}-(0[1-9]|1[0-2])$/.test(String(item.month)))
+      .map((item) => ({ ...item, month: String(item.month) }))
+      .sort((a, b) => a.month.localeCompare(b.month))
+    : [];
+  if (!summaries.length) return null;
+
+  const balances = summaries.map(calculateMonthlyBalance);
+  const total = balances.reduce((sum, value) => sum + value, 0);
+  const baseline = round(finiteNonNegative(input.currentSaved) - total);
+  const requestedStart = /^\d{4}-(0[1-9]|1[0-2])$/.test(String(input.startMonth || ''))
+    ? String(input.startMonth)
+    : summaries[0].month;
+  const domainStartMonth = requestedStart < summaries[0].month ? requestedStart : summaries[0].month;
+  let running = baseline;
+  const savingsPoints = [{ month: requestedStart, value: baseline }];
+  summaries.forEach((item, index) => {
+    running = round(running + balances[index]);
+    savingsPoints.push({ month: item.month, value: running });
+  });
+  const lastSummaryMonth = summaries.at(-1).month;
+  const requestedTarget = /^\d{4}-(0[1-9]|1[0-2])$/.test(String(input.targetDate || ''))
+    ? String(input.targetDate)
+    : lastSummaryMonth;
+  const domainEndMonth = requestedTarget > lastSummaryMonth ? requestedTarget : lastSummaryMonth;
+  const targetAmount = finiteNonNegative(input.targetAmount, Math.max(...savingsPoints.map((point) => point.value), 1));
+
+  return {
+    domainStartMonth,
+    domainEndMonth,
+    savingsPoints,
+    targetPoints: [
+      { month: requestedStart, value: baseline },
+      { month: requestedTarget, value: targetAmount }
+    ]
+  };
+}
+
+function averageRecentCompleteMonths(summaries = [], currentMonth) {
+  const monthLimit = /^\d{4}-\d{2}$/.test(String(currentMonth || ''))
+    ? currentMonth
+    : new Date().toISOString().slice(0, 7);
+  const recent = summaries
+    .filter((item) => item && /^\d{4}-(0[1-9]|1[0-2])$/.test(String(item.month)) && item.month < monthLimit)
+    .map((item) => ({ month: item.month, balance: calculateMonthlyBalance(item) }))
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .slice(-6);
+  const balances = recent.map((item) => item.balance);
+  const average = balances.length
+    ? round(balances.reduce((sum, value) => sum + value, 0) / balances.length)
+    : null;
+  return {
+    average,
+    months: recent.map((item) => item.month),
+    balances,
+    count: recent.length
+  };
+}
+
+function lastDayOfMonthAfter(date, monthsToAdd) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const target = new Date(year, month + monthsToAdd + 1, 0);
+  const targetYear = target.getFullYear();
+  const targetMonth = String(target.getMonth() + 1).padStart(2, '0');
+  const targetDay = String(target.getDate()).padStart(2, '0');
+  return `${targetYear}-${targetMonth}-${targetDay}`;
+}
+
+function calculateFreedomForecast(input = {}) {
+  const currentSaved = finiteNonNegative(input.currentSaved);
+  const targetAmount = finiteNonNegative(input.targetAmount);
+  const averageMonthlySavings = Number(input.averageMonthlySavings);
+  const now = input.now instanceof Date && Number.isFinite(input.now.getTime())
+    ? input.now
+    : new Date();
+  const remainingAmount = Math.max(0, targetAmount - currentSaved);
+  const progressRatio = targetAmount > 0 ? currentSaved / targetAmount : null;
+
+  if (targetAmount > 0 && remainingAmount === 0) {
+    return {
+      remainingAmount: 0,
+      progressRatio: round(progressRatio, 4),
+      remainingMonths: 0,
+      estimatedDate: lastDayOfMonthAfter(now, 0),
+      achieved: true
+    };
+  }
+  if (!Number.isFinite(averageMonthlySavings) || averageMonthlySavings <= 0 || targetAmount <= 0) {
+    return {
+      remainingAmount: round(remainingAmount),
+      progressRatio: round(progressRatio, 4),
+      remainingMonths: null,
+      estimatedDate: null,
+      achieved: false
+    };
+  }
+
+  const remainingMonths = Math.ceil(remainingAmount / averageMonthlySavings);
+  return {
+    remainingAmount: round(remainingAmount),
+    progressRatio: round(progressRatio, 4),
+    remainingMonths,
+    estimatedDate: lastDayOfMonthAfter(now, remainingMonths),
+    achieved: false
+  };
+}
+
+function calculateSafetyBuffer(currentSaved, basicMonthlyCost) {
+  const saved = finiteNonNegative(currentSaved);
+  const cost = finiteNonNegative(basicMonthlyCost);
+  const months = cost > 0 ? saved / cost : null;
+  return {
+    months: round(months),
+    levels: [3, 6, 12].map((level) => ({
+      months: level,
+      reached: months !== null && months >= level
+    }))
+  };
+}
+
+function projectedMonths(remainingAmount, monthlySpeed) {
+  if (!(remainingAmount > 0)) return 0;
+  return monthlySpeed > 0 ? Math.ceil(remainingAmount / monthlySpeed) : null;
+}
+
+function simulateScenarios(input = {}) {
+  const profile = input.profile || {};
+  const realHourly = finiteNonNegative(input.realHourly);
+  const remainingAmount = finiteNonNegative(input.remainingAmount);
+  const baseSavings = Number.isFinite(Number(input.averageMonthlySavings))
+    ? Number(input.averageMonthlySavings)
+    : 0;
+  const commuteReductionPercent = Math.min(100, finiteNonNegative(input.commuteReductionPercent));
+  const overtimeReductionHours = Math.min(
+    finiteNonNegative(profile.weeklyOvertimeHours),
+    finiteNonNegative(input.overtimeReductionHours)
+  );
+  const salaryIncreasePercent = Math.min(300, finiteNonNegative(input.salaryIncreasePercent));
+
+  const commuteTime = finiteNonNegative(profile.oneWayCommuteMinutes)
+    * 2 * WORK_DAYS_PER_MONTH / 60 * commuteReductionPercent / 100;
+  const overtimeTime = overtimeReductionHours * 52 / 12;
+  const salaryCash = finiteNonNegative(profile.monthlySalary)
+    * finiteNonNegative(profile.payMonths) * salaryIncreasePercent / 100 / 12;
+
+  const scenarios = [
+    {
+      id: 'commute',
+      monthlyCashGain: 0,
+      monthlyTimeSaved: round(commuteTime),
+      freedomEquivalentGain: round(commuteTime * realHourly),
+      cashProjectedMonths: projectedMonths(remainingAmount, baseSavings),
+      freedomProjectedMonths: projectedMonths(remainingAmount, baseSavings + commuteTime * realHourly)
+    },
+    {
+      id: 'overtime',
+      monthlyCashGain: 0,
+      monthlyTimeSaved: round(overtimeTime),
+      freedomEquivalentGain: round(overtimeTime * realHourly),
+      cashProjectedMonths: projectedMonths(remainingAmount, baseSavings),
+      freedomProjectedMonths: projectedMonths(remainingAmount, baseSavings + overtimeTime * realHourly)
+    },
+    {
+      id: 'salary',
+      monthlyCashGain: round(salaryCash),
+      monthlyTimeSaved: 0,
+      freedomEquivalentGain: round(salaryCash),
+      cashProjectedMonths: projectedMonths(remainingAmount, baseSavings + salaryCash),
+      freedomProjectedMonths: projectedMonths(remainingAmount, baseSavings + salaryCash)
+    }
+  ];
+
+  const directCash = scenarios.filter((item) => item.monthlyCashGain > 0);
+  const cashFastest = directCash.sort((a, b) => {
+    if (a.cashProjectedMonths === null) return 1;
+    if (b.cashProjectedMonths === null) return -1;
+    return a.cashProjectedMonths - b.cashProjectedMonths;
+  })[0];
+  const freedomFastest = [...scenarios].sort((a, b) => {
+    if (a.freedomProjectedMonths === null) return 1;
+    if (b.freedomProjectedMonths === null) return -1;
+    return a.freedomProjectedMonths - b.freedomProjectedMonths;
+  })[0];
+
+  return {
+    scenarios,
+    cashFastestId: cashFastest ? cashFastest.id : null,
+    freedomFastestId: freedomFastest && freedomFastest.freedomProjectedMonths !== null
+      ? freedomFastest.id
+      : null
+  };
+}
+
+function validDate(value) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(String(value))) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function validMonth(value) {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(String(value));
+}
+
+function cleanText(value, field, maxLength, allowEmpty = true) {
+  const text = value == null ? '' : String(value);
+  if (!allowEmpty && !text.trim()) throw new Error(t('error.required', { field }));
+  if (text.length > maxLength) throw new Error(t('error.tooLong', { field }));
+  return text;
+}
+
+function cleanNumber(value, field, fallback = 0) {
+  if (value == null || value === '') return fallback;
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) throw new Error(t('error.nonNegative', { field }));
+  return round(number);
+}
+
+function cleanProfile(value = {}) {
+  return {
+    monthlySalary: cleanNumber(value.monthlySalary, t('field.monthlySalary')),
+    payMonths: cleanNumber(value.payMonths, t('field.salaryMonths'), 12),
+    monthlyWorkCost: cleanNumber(value.monthlyWorkCost, t('field.workCost')),
+    dailyOfficeHours: cleanNumber(value.dailyOfficeHours, t('field.officeTime'), 8),
+    oneWayCommuteMinutes: cleanNumber(value.oneWayCommuteMinutes, t('field.commuteTime')),
+    weeklyOvertimeHours: cleanNumber(value.weeklyOvertimeHours, t('field.overtimeTime')),
+    isSample: value.isSample === true
+  };
+}
+
+function cleanExpenseCategory(value) {
+  const aliases = { '餐饮': '吃饭', '居住': '房租', '学习': '其他' };
+  const category = aliases[String(value || '')] || String(value || '');
+  return ['吃饭', '交通', '购物', '娱乐', '房租', '其他'].includes(category) ? category : '其他';
+}
+
+function cleanExpenses(value) {
+  if (!Array.isArray(value)) throw new Error(t('error.expensesArray'));
+  if (value.length > 2000) throw new Error(t('error.expensesLarge'));
+  const ids = new Set();
+  return value.map((item) => {
+    const id = cleanText(item && item.id, t('field.expenseId'), 100, false);
+    if (ids.has(id)) throw new Error(t('error.expenseDuplicate'));
+    ids.add(id);
+    if (!validDate(item.date)) throw new Error(t('error.expenseDate'));
+    const createdAt = cleanText(item.createdAt, t('field.createdAt'), 50, false);
+    if (!Number.isFinite(Date.parse(createdAt))) throw new Error(t('error.createdAt'));
+    return {
+      id,
+      date: item.date,
+      amount: cleanNumber(item.amount, t('field.expenseAmount')),
+      category: cleanExpenseCategory(cleanText(item.category, t('field.expenseCategory'), 30, false)),
+      note: cleanText(item.note, t('field.expenseNote'), 300),
+      createdAt,
+      isSample: item.isSample === true
+    };
+  });
+}
+
+function cleanSummaries(value) {
+  if (!Array.isArray(value)) throw new Error(t('error.summariesArray'));
+  if (value.length > 240) throw new Error(t('error.summariesLarge'));
+  const months = new Set();
+  return value.map((item) => {
+    if (!validMonth(item && item.month)) throw new Error(t('error.summaryMonth'));
+    if (months.has(item.month)) throw new Error(t('error.summaryDuplicate'));
+    months.add(item.month);
+    const result = {
+      month: item.month,
+      income: cleanNumber(item.income, t('field.monthIncome')),
+      fixed: cleanNumber(item.fixed, t('field.fixed')),
+      flexible: cleanNumber(item.flexible, t('field.flexible')),
+      updatedAt: item.updatedAt && Number.isFinite(Date.parse(item.updatedAt))
+        ? String(item.updatedAt)
+        : new Date(0).toISOString(),
+      isSample: item.isSample === true
+    };
+    return result;
+  });
+}
+
+function cleanFreedom(value = {}) {
+  if (value.targetDate && !validMonth(value.targetDate)) throw new Error(t('error.targetMonth'));
+  if (value.startMonth && !validMonth(value.startMonth)) throw new Error(t('error.startMonth'));
+  return {
+    targetAmount: cleanNumber(value.targetAmount, t('field.freedomTarget')),
+    targetDate: value.targetDate ? String(value.targetDate) : '',
+    reason: cleanText(value.reason, t('field.freedomReasonShort'), 300),
+    currentSaved: cleanNumber(value.currentSaved, t('field.freedomCurrent')),
+    basicMonthlyCost: cleanNumber(value.basicMonthlyCost, t('field.freedomBasic')),
+    startMonth: value.startMonth ? String(value.startMonth) : '',
+    isSample: value.isSample === true
+  };
+}
+
+function cleanSettings(value = {}) {
+  const theme = value.theme === 'dark' ? 'dark' : 'light';
+  const sampleState = ['active', 'cleared', 'custom'].includes(value.sampleState)
+    ? value.sampleState
+    : 'custom';
+  return { theme, sampleState, version: CURRENT_VERSION };
+}
+
+function sanitizeImport(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new Error(t('error.importFormat'));
+  let serialized;
+  try {
+    serialized = JSON.stringify(payload);
+  } catch {
+    throw new Error(t('error.importUnreadable'));
+  }
+  if (serialized.length > 2_000_000) throw new Error(t('error.importLarge'));
+  if (payload.appId !== APP_ID) throw new Error(t('error.appId'));
+  if (!Number.isInteger(payload.version) || payload.version < 1) throw new Error(t('error.importVersion'));
+  if (payload.version > CURRENT_VERSION) throw new Error(t('error.importFuture'));
+  if (!payload.state || typeof payload.state !== 'object' || Array.isArray(payload.state)) {
+    throw new Error(t('error.importState'));
+  }
+
+  return {
+    profile: cleanProfile(payload.state.profile),
+    expenses: cleanExpenses(payload.state.expenses || []),
+    monthlySummaries: cleanSummaries(payload.state.monthlySummaries || []),
+    freedom: cleanFreedom(payload.state.freedom),
+    settings: cleanSettings(payload.state.settings)
+  };
+}
+
+
+    const STORAGE_KEY = 'wb_workspace_worker_ledger_state_v1';
+    const RECOVERY_KEY = STORAGE_KEY + '_recovery';
+    const SVG_NS = 'http' + '://www.w3.org/2000/svg';
+    const pageNames = { dashboard: 'page.dashboard', hourly: 'page.hourly', expenses: 'page.expenses', monthly: 'page.monthly', freedom: 'page.freedom', insights: 'page.insights' };
+    let storageAvailable = true;
+    let expenseRenderLimit = 30;
+    let toastTimer;
+    let state;
+    const categoryIcons = { '吃饭': 'bowl', '交通': 'bus', '购物': 'bag', '娱乐': 'star', '房租': 'house', '其他': 'dot' };
+
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+    function applyStaticI18n() {
+      const textMap = [
+        ['.brand h1', 'app.name'], ['.brand p', 'app.tagline'],
+        ['#desktop-nav [data-target="dashboard"] span', 'nav.dashboard'], ['#desktop-nav [data-target="hourly"] span', 'nav.hourly'], ['#desktop-nav [data-target="expenses"] span', 'nav.expenses'], ['#desktop-nav [data-target="monthly"] span', 'nav.monthly'], ['#desktop-nav [data-target="freedom"] span', 'nav.freedom'], ['#desktop-nav [data-target="insights"] span', 'nav.insights'],
+        ['#clear-sample-button span', 'action.clearSamples'],
+        ['#mobile-clear-sample-button span', 'action.clearShort'],
+        ['#dashboard-title', 'dashboard.title'], ['[data-section="dashboard"] .hero-copy p', 'dashboard.subtitle'], ['[data-section="dashboard"] .grid.two article:first-child .kpi-label', 'dashboard.realHourly'], ['[data-section="dashboard"] .grid.two article:last-child .kpi-label', 'dashboard.monthExpense'], ['[data-section="dashboard"] article.sun .kpi-label', 'dashboard.freedomProgress'], ['[data-section="dashboard"] article.soft .panel-title span', 'dashboard.declaration'], ['#dashboard-recent-title span', 'dashboard.recent'], ['#dashboard-recent-title + button', 'action.viewAll'], ['.dashboard-form-card .panel-title span', 'dashboard.quickEntry'],
+        ['label[for="quick-amount"]', 'field.amount'], ['label[for="quick-category"]', 'field.category'], ['label[for="quick-note"]', 'field.quickNote'], ['#dashboard-expense-form button[type="submit"]', 'action.saveQuick'],
+        ['#hourly-title', 'hourly.title'], ['[data-section="hourly"] .section-heading p', 'hourly.subtitle'], ['#profile-form .panel-title span', 'hourly.parameters'], ['label[for="monthly-salary"]', 'field.monthlySalary'], ['label[for="pay-months"]', 'field.payMonths'], ['label[for="work-cost"]', 'field.monthlyWorkCost'], ['label[for="office-hours"]', 'field.dailyOfficeHours'], ['label[for="commute-minutes"]', 'field.commuteMinutes'], ['label[for="overtime-hours"]', 'field.overtimeHours'], ['.office-hours-hint', 'hourly.hint'], ['#nominal-hourly + .subtle', 'hourly.nominalFormula'], ['#nominal-hourly ~ .kpi-label', 'hourly.nominal'], ['#real-hourly ~ .kpi-label', 'hourly.real'], ['#hourly-formulas', 'hourly.calculation'],
+        ['#expenses-title', 'expenses.title'], ['[data-section="expenses"] .section-heading p', 'expenses.subtitle'], ['#today-expense', 'expenses.today'], ['#month-expense', 'expenses.month'], ['#month-expense-hours', 'expenses.monthHours'], ['#expense-form .panel-title span', 'expenses.entry'], ['label[for="expense-date"]', 'field.date'], ['label[for="expense-amount"]', 'field.amount'], ['label[for="expense-category"]', 'field.category'], ['label[for="expense-note"]', 'field.note'], ['#expense-form button[type="submit"]', 'action.saveExpense'], ['#expense-cancel', 'action.cancelEdit'], ['#expense-list', 'expenses.recent'],
+        ['#monthly-title', 'monthly.title'], ['[data-section="monthly"] .section-heading p', 'monthly.subtitle'], ['#monthly-form .panel-title span', 'monthly.entry'], ['label[for="summary-month"]', 'field.month'], ['label[for="summary-income"]', 'field.income'], ['label[for="summary-fixed"]', 'field.fixed'], ['label[for="summary-flexible"]', 'field.flexible'], ['#summary-preview', 'monthly.autoBalance'], ['#monthly-form button[type="submit"]', 'action.saveMonthly'], ['#monthly-cancel', 'action.cancelEdit'], ['#average-savings', 'monthly.average'], ['#monthly-list', 'monthly.records'],
+        ['#freedom-title', 'freedom.title'], ['[data-section="freedom"] .section-heading p', 'freedom.subtitle'], ['#freedom-form .panel-title span', 'freedom.settings'], ['label[for="target-amount"]', 'field.targetAmount'], ['label[for="target-date"]', 'field.targetDate'], ['label[for="current-saved"]', 'field.currentSaved'], ['label[for="basic-cost"]', 'field.basicCost'], ['label[for="start-month"]', 'field.startMonth'], ['label[for="freedom-reason"]', 'field.freedomReason'], ['#freedom-form > .subtle', 'freedom.hint'], ['#freedom-progress-value', 'freedom.completion'], ['#freedom-formulas', 'freedom.forecast'], ['#safety-months', 'freedom.safety'], ['#freedom-chart', 'freedom.chartTitle'], ['#freedom-chart', 'freedom.chartHint'],
+        ['#insights-title', 'insights.title'], ['[data-section="insights"] .section-heading p', 'insights.subtitle'], ['#unpaid-insight', 'insights.unpaid'], ['#unpaid-insight-note', 'insights.unpaidHint'], ['#commute-insight', 'insights.commuteOvertime'], ['#commute-insight + .subtle', 'insights.commuteHint'], ['#expense-days-insight', 'insights.expenseDays'], ['#expense-days-insight + .subtle', 'insights.expenseDaysHint'], ['#savings-ranking', 'insights.ranking'], ['#scenario-form .panel-title span', 'insights.scenarios'], ['label[for="commute-slider"]', 'field.commuteReduction'], ['label[for="overtime-slider"]', 'field.overtimeReduction'], ['label[for="salary-slider"]', 'field.salaryIncrease'], ['#scenario-form > .subtle', 'insights.scenarioHint'], ['#scenario-conclusion', 'insights.conclusion'],
+        ['#mobile-nav [data-target="dashboard"] span', 'nav.mobile.dashboard'], ['#mobile-nav [data-target="hourly"] span', 'nav.mobile.hourly'], ['#mobile-nav [data-target="expenses"] span', 'nav.mobile.expenses'], ['#mobile-nav [data-target="monthly"] span', 'nav.mobile.monthly'], ['#mobile-nav [data-target="freedom"] span', 'nav.mobile.freedom'], ['#mobile-nav [data-target="insights"] span', 'nav.mobile.insights']
+      ];
+      textMap.forEach(([selector, key]) => {
+        const node = $(selector);
+        if (!node) return;
+        if (['#nominal-hourly ~ .kpi-label', '#real-hourly ~ .kpi-label'].includes(selector)) return;
+        if (['#hourly-formulas', '#expense-list', '#today-expense', '#month-expense', '#month-expense-hours', '#summary-preview', '#average-savings', '#monthly-list', '#freedom-progress-value', '#freedom-formulas', '#safety-months', '#freedom-chart', '#unpaid-insight', '#commute-insight', '#expense-days-insight', '#savings-ranking', '#scenario-conclusion'].includes(selector)) return;
+        node.textContent = t(key);
+      });
+      $('#page-title').textContent = t('page.dashboard');
+      $('#nominal-hourly').previousElementSibling.textContent = t('hourly.nominal');
+      $('#real-hourly').previousElementSibling.textContent = t('hourly.real');
+      $('#today-expense').previousElementSibling.textContent = t('expenses.today');
+      $('#month-expense').previousElementSibling.textContent = t('expenses.month');
+      $('#month-expense-hours').previousElementSibling.textContent = t('expenses.monthHours');
+      $('#hourly-formulas').previousElementSibling.textContent = t('hourly.calculation');
+      $('#expense-list').previousElementSibling.textContent = t('expenses.recent');
+      $('#summary-preview').previousElementSibling.textContent = t('monthly.autoBalance');
+      $('#average-savings').previousElementSibling.textContent = t('monthly.average');
+      $('#monthly-list').previousElementSibling.textContent = t('monthly.records');
+      $('#freedom-progress-value').previousElementSibling.textContent = t('freedom.completion');
+      $('#freedom-formulas').previousElementSibling.textContent = t('freedom.forecast');
+      $('#safety-months').previousElementSibling.textContent = t('freedom.safety');
+      const chartPanel = $('#freedom-chart').closest('.panel');
+      chartPanel.querySelector('h3').textContent = t('freedom.chartTitle');
+      chartPanel.querySelector('p').textContent = t('freedom.chartHint');
+      const legend = chartPanel.querySelectorAll('.chart-legend span');
+      legend[0].lastChild.textContent = t('freedom.chartSavings');
+      legend[1].lastChild.textContent = t('freedom.chartTarget');
+      $('#unpaid-insight').previousElementSibling.textContent = t('insights.unpaid');
+      $('#unpaid-insight-note').textContent = t('insights.unpaidHint');
+      $('#commute-insight').previousElementSibling.textContent = t('insights.commuteOvertime');
+      $('#expense-days-insight').previousElementSibling.textContent = t('insights.expenseDays');
+      $('#savings-ranking').previousElementSibling.textContent = t('insights.ranking');
+      $('#scenario-conclusion').previousElementSibling.textContent = t('insights.conclusion');
+      $('#quick-note').placeholder = t('placeholder.quickNote');
+      $('#expense-note').placeholder = t('placeholder.expenseNote');
+      $('.sidebar').setAttribute('aria-label', t('aria.mainNav'));
+      $('.mobile-tools').setAttribute('aria-label', t('aria.mobileTools'));
+      $('#mobile-nav').setAttribute('aria-label', t('aria.mobileNav'));
+      $('.hero-illustration').setAttribute('aria-label', t('aria.hero'));
+      $('#freedom-chart').setAttribute('aria-label', t('aria.chart'));
+      $$('select[name="category"] option').forEach((option) => { option.textContent = t(`category.${option.value}`); });
+      document.title = t('app.documentTitle', { page: t('page.dashboard') });
+    }
+
+    function localDateString(date = new Date()) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function monthString(offset = 0) {
+      const date = new Date();
+      date.setDate(1);
+      date.setMonth(date.getMonth() + offset);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function dateOffset(days) {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return localDateString(date);
+    }
+
+    function emptyProfile() {
+      return { monthlySalary: 0, payMonths: 12, monthlyWorkCost: 0, dailyOfficeHours: 8, oneWayCommuteMinutes: 0, weeklyOvertimeHours: 0, isSample: false };
+    }
+
+    function emptyFreedom() {
+      return { targetAmount: 0, targetDate: '', reason: '', currentSaved: 0, basicMonthlyCost: 0, startMonth: '', isSample: false };
+    }
+
+    function createSampleState() {
+      const summaryValues = [
+        [13800, 5600, 3500], [14100, 5600, 3200], [13200, 5600, 4100],
+        [14600, 5600, 3000], [13800, 5600, 4600], [15200, 5600, 3300]
+      ];
+      return {
+        profile: { monthlySalary: 13800, payMonths: 13, monthlyWorkCost: 850, dailyOfficeHours: 9, oneWayCommuteMinutes: 48, weeklyOvertimeHours: 6, isSample: true },
+        expenses: [
+          { id: 'sample-expense-1', date: dateOffset(0), amount: 32, category: '吃饭', note: '午餐加一杯咖啡', createdAt: new Date().toISOString(), isSample: true },
+          { id: 'sample-expense-2', date: dateOffset(-1), amount: 18.5, category: '交通', note: '下班晚了打车接驳', createdAt: new Date(Date.now() - 86400000).toISOString(), isSample: true },
+          { id: 'sample-expense-3', date: dateOffset(-4), amount: 129, category: '购物', note: '一本想读很久的书', createdAt: new Date(Date.now() - 4 * 86400000).toISOString(), isSample: true }
+        ],
+        monthlySummaries: summaryValues.map((values, index) => ({
+          month: monthString(index - 6), income: values[0], fixed: values[1], flexible: values[2],
+          updatedAt: new Date().toISOString(), isSample: true
+        })),
+        freedom: { targetAmount: 120000, targetDate: monthString(18), reason: '攒出半年缓冲期，给下一次选择留出底气', currentSaved: 36800, basicMonthlyCost: 5600, startMonth: monthString(-6), isSample: true },
+        settings: { theme: 'light', sampleState: 'active', version: 1 }
+      };
+    }
+
+    function normalizeStored(value) {
+      return sanitizeImport({ appId: 'worker-ledger', version: 1, state: value });
+    }
+
+    function showStorageAlert(message) {
+      const alert = $('#storage-alert');
+      alert.textContent = message;
+      alert.hidden = !message;
+    }
+
+    function loadState() {
+      let raw;
+      try {
+        raw = localStorage.getItem(STORAGE_KEY);
+      } catch (error) {
+        storageAvailable = false;
+        showStorageAlert(t('storage.unavailable', { reason: error.message }));
+        return createSampleState();
+      }
+      if (!raw) return createSampleState();
+      try {
+        return normalizeStored(JSON.parse(raw));
+      } catch (error) {
+        storageAvailable = true;
+        showStorageAlert(t('storage.corrupt', { reason: error.message }));
+        return createSampleState();
+      }
+    }
+
+    function saveState() {
+      if (!storageAvailable) return false;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        showStorageAlert('');
+        return true;
+      } catch (error) {
+        storageAvailable = false;
+        showStorageAlert(t('storage.saveFailed', { reason: error.message }));
+        return false;
+      }
+    }
+
+    function updateState(change) {
+      change(state);
+      const persisted = saveState();
+      renderAll();
+      return persisted;
+    }
+
+    /* 表单草稿本地缓存：提交成功了才清，写入失败就留着，下次打开还在这 */
+    const DRAFT_PREFIX = STORAGE_KEY + '_draft_';
+    function saveDraft(name, data) {
+      try { localStorage.setItem(DRAFT_PREFIX + name, JSON.stringify(data)); } catch (error) { storageAvailable = false; }
+    }
+    function readDraft(name) {
+      try {
+        const raw = localStorage.getItem(DRAFT_PREFIX + name);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) { return null; }
+    }
+    function dropDraft(name) {
+      try { localStorage.removeItem(DRAFT_PREFIX + name); } catch (error) { /* 本地不可用时静默降级 */ }
+    }
+    function draftValues(form, names) {
+      const out = {};
+      names.forEach((key) => { const el = form.querySelector(`[name="${key}"]`); if (el) out[key] = el.value; });
+      return out;
+    }
+    function restoreDraft(form, name, names) {
+      const data = readDraft(name);
+      if (!data) return;
+      names.forEach((key) => { const el = form.querySelector(`[name="${key}"]`); if (el && data[key] !== undefined) el.value = data[key]; });
+    }
+    function bindDraftCache(selector, name, names) {
+      const form = $(selector);
+      if (!form) return;
+      let timer;
+      const persist = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => saveDraft(name, draftValues(form, names)), 300);
+      };
+      form.addEventListener('input', persist);
+      form.addEventListener('change', persist);
+    }
+    /* 写入云端期间禁用提交按钮，避免连点造成重复记录 */
+    function lockSubmit(form, keepText) {
+      const btn = form.querySelector('[type="submit"]');
+      if (!btn) return () => {};
+      const original = btn.textContent;
+      let done = false;
+      btn.disabled = true;
+      if (!keepText) btn.textContent = t('common.saving');
+      const timer = setTimeout(() => unlock(), 10000);
+      function unlock() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+      return unlock;
+    }
+
+    function numberFrom(form, name) {
+      const value = new FormData(form).get(name);
+      const number = Number(value);
+      return Number.isFinite(number) && number >= 0 ? number : 0;
+    }
+
+    function uid(prefix) {
+      const suffix = self.crypto && typeof self.crypto.randomUUID === 'function'
+        ? self.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      return `${prefix}-${suffix}`;
+    }
+
+    function localizedNumber(value, maximumFractionDigits = 2) {
+      return Number(value).toLocaleString(LOCALE, { minimumFractionDigits: 0, maximumFractionDigits });
+    }
+
+    function money(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return t('common.pending');
+      const sign = number < 0 ? '-' : '';
+      return `${sign}¥${localizedNumber(Math.abs(number), 2)}`;
+    }
+
+    function percent(value) {
+      return new Intl.NumberFormat(LOCALE, { style: 'percent', maximumFractionDigits: 1 }).format(Number(value || 0));
+    }
+
+    function pluralUnit(value, singular, plural = `${singular}s`) {
+      return Number(value) === 1 ? singular : plural;
+    }
+
+    function hoursCount(value) {
+      const number = Number(value);
+      const display = localizedNumber(number, 2);
+      return t('unit.hours', { value: display, unit: pluralUnit(number, 'hour') });
+    }
+
+    function monthsCount(value) {
+      const number = Number(value);
+      const display = localizedNumber(number, 2);
+      return t('unit.months', { value: display, unit: pluralUnit(number, 'month') });
+    }
+
+    function workdaysCount(value) {
+      const number = Number(value);
+      const display = localizedNumber(number, 1);
+      return t('unit.workdays', { value: display, unit: pluralUnit(number, 'workday') });
+    }
+
+    function hoursText(hours) {
+      if (!Number.isFinite(hours) || hours < 0) return t('common.pending');
+      const totalMinutes = Math.round(hours * 60);
+      const wholeHours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const hourText = t('unit.hours', { value: localizedNumber(wholeHours, 0), unit: pluralUnit(wholeHours, 'hour') });
+      const minuteText = t('unit.minutes', { value: localizedNumber(minutes, 0), unit: pluralUnit(minutes, 'minute') });
+      return `${hourText} ${minuteText}`;
+    }
+
+    function formatDate(value) {
+      if (!validDate(value)) return String(value || '');
+      const [year, month, day] = value.split('-').map(Number);
+      return new Intl.DateTimeFormat(LOCALE, { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(year, month - 1, day));
+    }
+
+    function formatMonth(value) {
+      if (!validMonth(value)) return String(value || '');
+      const [year, month] = value.split('-').map(Number);
+      return new Intl.DateTimeFormat(LOCALE, { year: 'numeric', month: 'short' }).format(new Date(year, month - 1, 1));
+    }
+
+    function categoryText(category) {
+      return t(`category.${category}`);
+    }
+
+    function displayExpenseNote(item) {
+      if (!item || !item.isSample) return item && item.note || '';
+      const sampleKeys = { 'sample-expense-1': 'sample.expense1', 'sample-expense-2': 'sample.expense2', 'sample-expense-3': 'sample.expense3' };
+      return sampleKeys[item.id] ? t(sampleKeys[item.id]) : item.note;
+    }
+
+    function displayFreedomReason(freedom = state && state.freedom) {
+      return freedom && freedom.isSample ? t('sample.reason') : freedom && freedom.reason || '';
+    }
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function iconNode(name, className = 'app-icon') {
+      const svg = svgNode('svg', { class: className, 'aria-hidden': 'true', viewBox: '0 0 24 24' });
+      const use = svgNode('use', { href: `#icon-${name}` });
+      svg.append(use);
+      return svg;
+    }
+
+    function categoryIconNode(category) {
+      const holder = el('span', 'category-icon');
+      holder.dataset.category = category;
+      holder.append(iconNode(categoryIcons[category] || 'dot'));
+      return holder;
+    }
+
+    function emptyState(message) {
+      const empty = el('div', 'empty-state');
+      empty.append(iconNode('pig'), el('span', '', message));
+      return empty;
+    }
+
+    function showToast(message) {
+      const toast = $('#save-toast');
+      toast.textContent = message;
+      toast.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 2200);
+    }
+
+    function fitVisibleKpiValues() {
+      $$('.kpi-value').forEach((node) => {
+        node.style.fontSize = '';
+        node.classList.remove('kpi-overflow');
+        node.title = node.textContent;
+        if (!node.clientWidth || node.offsetParent === null) return;
+        let size = Number.parseFloat(getComputedStyle(node).fontSize);
+        while (node.scrollWidth > node.clientWidth && size > 18) {
+          size -= 1;
+          node.style.fontSize = `${size}px`;
+        }
+        node.classList.toggle('kpi-overflow', node.scrollWidth > node.clientWidth);
+      });
+    }
+
+    function formulaRow(label, value) {
+      const row = el('div', 'formula-row');
+      row.append(el('dt', '', label), el('dd', '', value));
+      return row;
+    }
+
+    function setProgress(node, ratio) {
+      const safe = Math.max(0, Math.min(1, Number(ratio) || 0));
+      node.style.transform = `scaleX(${safe})`;
+    }
+
+    function currentHourly() {
+      return calculateHourlyProfile(state.profile);
+    }
+
+    function currentAverage() {
+      return averageRecentCompleteMonths(state.monthlySummaries, monthString(0));
+    }
+
+    function activateSection(name) {
+      if (!pageNames[name]) return;
+      $$('.page-section').forEach((section) => section.classList.toggle('active', section.dataset.section === name));
+      $$('[data-target]').forEach((button) => button.classList.toggle('active', button.dataset.target === name));
+      $('#page-title').textContent = t(pageNames[name]);
+      document.title = t('app.documentTitle', { page: t(pageNames[name]) });
+      window.scrollTo({ top: 0, behavior: 'auto' });
+      requestAnimationFrame(fitVisibleKpiValues);
+    }
+
+    function renderReminder() {
+      const profile = currentHourly();
+      const currentSummary = state.monthlySummaries.some((item) => item.month === monthString(0));
+      let message;
+      if (profile.realHourly === null) message = t('reminder.setup');
+      else if (!currentSummary) message = t('reminder.monthly');
+      else message = t('reminder.ready', { rate: money(profile.realHourly) });
+      $('#top-reminder').textContent = message;
+    }
+
+    function renderDashboardRecent() {
+      const list = $('#dashboard-recent-list');
+      list.replaceChildren();
+      const records = getRecentExpenses(state.expenses);
+      if (!records.length) {
+        list.append(emptyState(t('dashboard.emptyRecent')));
+        return;
+      }
+      records.forEach((item) => {
+        const card = el('article', 'recent-note');
+        const copy = el('div', 'recent-copy');
+        copy.append(
+          el('div', 'record-title', displayExpenseNote(item) || categoryText(item.category)),
+          el('div', 'record-meta', `${categoryText(item.category)} · ${formatDate(item.date)}`)
+        );
+        const side = el('div', 'recent-side');
+        side.append(
+          el('div', 'record-amount expense-color', money(item.amount)),
+          el('div', 'record-meta', expenseEquivalent(item.amount) || t('expenses.pendingEquivalent'))
+        );
+        card.append(categoryIconNode(item.category), copy, side);
+        list.append(card);
+      });
+    }
+
+    function renderDashboard() {
+      const hourly = currentHourly();
+      const today = localDateString();
+      const month = monthString(0);
+      const todayTotal = state.expenses.filter((item) => item.date === today).reduce((sum, item) => sum + item.amount, 0);
+      const monthTotal = state.expenses.filter((item) => item.date.startsWith(month)).reduce((sum, item) => sum + item.amount, 0);
+      const freedom = calculateFreedomForecast({ currentSaved: state.freedom.currentSaved, targetAmount: state.freedom.targetAmount, averageMonthlySavings: currentAverage().average });
+      $('#dashboard-real-hourly').textContent = hourly.realHourly === null ? t('common.pending') : t('dashboard.hourlyRate', { rate: money(hourly.realHourly) });
+      $('#dashboard-hourly-note').textContent = hourly.gapDirection === 'lower'
+        ? t('dashboard.gapLower', { ratio: percent(hourly.gapRatio) })
+        : hourly.gapDirection === 'higher' ? t('dashboard.gapHigher', { ratio: percent(hourly.gapRatio) }) : t('dashboard.gapPending');
+      $('#dashboard-month-expense').textContent = money(monthTotal);
+      $('#dashboard-today-expense').textContent = t('dashboard.todayExpense', { amount: money(todayTotal) });
+      $('#dashboard-freedom').textContent = state.freedom.targetAmount > 0 ? percent(freedom.progressRatio) : percent(0);
+      setProgress($('#dashboard-progress'), freedom.progressRatio);
+      $('#dashboard-freedom-note').textContent = state.freedom.targetAmount > 0
+        ? t('dashboard.savedRemaining', { saved: money(state.freedom.currentSaved), remaining: money(freedom.remainingAmount) })
+        : t('dashboard.targetPrompt');
+      $('#dashboard-reason').textContent = displayFreedomReason() || t('dashboard.reasonPrompt');
+      renderDashboardRecent();
+    }
+
+    function fillProfileForm() {
+      const form = $('#profile-form');
+      Object.entries(state.profile).forEach(([key, value]) => {
+        const control = form.elements.namedItem(key);
+        if (control) control.value = value;
+      });
+    }
+
+    function renderHourly() {
+      const result = currentHourly();
+      $('#nominal-hourly').textContent = result.nominalHourly === null ? t('common.pending') : t('unit.hourRate', { amount: money(result.nominalHourly) });
+      $('#real-hourly').textContent = result.realHourly === null ? t('common.pending') : t('unit.hourRate', { amount: money(result.realHourly) });
+      const directionKey = result.gapDirection === 'lower' ? 'hourly.gapLower' : result.gapDirection === 'higher' ? 'hourly.gapHigher' : result.gapDirection === 'equal' ? 'hourly.gapEqual' : 'hourly.gapInvalid';
+      $('#hourly-gap').textContent = result.gapRatio === null ? t(directionKey) : `${t(directionKey)} ${percent(result.gapRatio)}`;
+      const list = $('#hourly-formulas');
+      list.replaceChildren(
+        formulaRow(t('hourly.nominal'), `${money(state.profile.monthlySalary)} ÷ 21.75 ÷ 8 = ${result.nominalHourly === null ? t('common.pending') : money(result.nominalHourly)}`),
+        formulaRow(t('hourly.formula.annualIncome'), `${money(state.profile.monthlySalary)} × ${localizedNumber(state.profile.payMonths)} = ${money(result.annualIncome)}`),
+        formulaRow(t('hourly.formula.annualCost'), `${money(state.profile.monthlyWorkCost)} × 12 = ${money(result.annualWorkCost)}`),
+        formulaRow(t('hourly.formula.monthOffice'), `${localizedNumber(state.profile.dailyOfficeHours)} × 21.75 = ${hoursCount(result.monthlyOfficeHours)}`),
+        formulaRow(t('hourly.formula.monthCommute'), `${localizedNumber(state.profile.oneWayCommuteMinutes)} × 2 × 21.75 ÷ 60 = ${hoursCount(result.monthlyCommuteHours)}`),
+        formulaRow(t('hourly.formula.monthOvertime'), `${localizedNumber(state.profile.weeklyOvertimeHours)} × 52 ÷ 12 = ${hoursCount(result.monthlyOvertimeHours)}`),
+        formulaRow(t('hourly.formula.annualHours'), t('hourly.formula.monthlyHoursSum', { hours: hoursCount(result.annualInvestedHours) })),
+        formulaRow(t('hourly.formula.real'), result.realHourly === null ? t('hourly.formula.invalid') : `(${money(result.annualIncome)} - ${money(result.annualWorkCost)}) ÷ ${localizedNumber(result.annualInvestedHours)} = ${money(result.realHourly)}`)
+      );
+    }
+
+    function expenseEquivalent(amount) {
+      const hourly = currentHourly().realHourly;
+      return hourly && hourly > 0 ? hoursText(amount / hourly) : null;
+    }
+
+    function renderExpenses() {
+      const today = localDateString();
+      const month = monthString(0);
+      const todayTotal = state.expenses.filter((item) => item.date === today).reduce((sum, item) => sum + item.amount, 0);
+      const monthTotal = state.expenses.filter((item) => item.date.startsWith(month)).reduce((sum, item) => sum + item.amount, 0);
+      $('#today-expense').textContent = money(todayTotal);
+      $('#month-expense').textContent = money(monthTotal);
+      $('#month-expense-hours').textContent = expenseEquivalent(monthTotal) || t('expenses.setHourly');
+      const list = $('#expense-list');
+      list.replaceChildren();
+      const records = getRecentExpenses(state.expenses, state.expenses.length);
+      if (!records.length) {
+        list.append(emptyState(t('expenses.empty')));
+        return;
+      }
+      records.slice(0, expenseRenderLimit).forEach((item) => {
+        const card = el('div', 'record-card expense-record');
+        const copy = el('div');
+        copy.append(el('div', 'record-title', displayExpenseNote(item) || categoryText(item.category)));
+        copy.append(el('div', 'record-meta', `${categoryText(item.category)} · ${formatDate(item.date)} · ${expenseEquivalent(item.amount) || t('expenses.metaPending')}`));
+        const side = el('div');
+        side.append(el('div', 'record-amount expense-color', money(item.amount)));
+        const actions = el('div', 'record-actions');
+        const edit = el('button', '', t('action.edit')); edit.type = 'button'; edit.dataset.expenseEdit = item.id;
+        const remove = el('button', 'danger', t('action.delete')); remove.type = 'button'; remove.dataset.expenseDelete = item.id;
+        actions.append(edit, remove); side.append(actions); card.append(categoryIconNode(item.category), copy, side); list.append(card);
+      });
+      if (records.length > expenseRenderLimit) {
+        const more = el('button', 'secondary', t('action.loadMore', { count: Math.min(30, records.length - expenseRenderLimit) }));
+        more.type = 'button';
+        more.dataset.expenseLoadMore = 'true';
+        list.append(more);
+      }
+    }
+
+    function updateMonthlyPreview() {
+      const form = $('#monthly-form');
+      const summary = { income: numberFrom(form, 'income'), fixed: numberFrom(form, 'fixed'), flexible: numberFrom(form, 'flexible') };
+      const balance = calculateMonthlyBalance(summary);
+      $('#summary-preview').textContent = money(balance);
+      $('#summary-preview').classList.toggle('expense-color', balance < 0);
+      $('#summary-preview').classList.toggle('positive', balance >= 0);
+      $('#summary-formula').textContent = `${money(summary.income)} - ${money(summary.fixed)} - ${money(summary.flexible)} = ${money(balance)}`;
+    }
+
+    function renderMonthly() {
+      const average = currentAverage();
+      $('#average-savings').textContent = average.average === null ? t('common.missing') : money(average.average);
+      $('#average-savings').classList.toggle('expense-color', average.average !== null && average.average < 0);
+      $('#average-savings-note').textContent = average.count
+        ? t('monthly.averageNote', { months: average.months.map(formatMonth).join(LANG === 'en' ? ', ' : '、'), count: localizedNumber(average.count, 0) })
+        : t('monthly.averageEmpty');
+      const list = $('#monthly-list');
+      list.replaceChildren();
+      const records = [...state.monthlySummaries].sort((a, b) => b.month.localeCompare(a.month));
+      if (!records.length) {
+        list.append(emptyState(t('monthly.empty')));
+        return;
+      }
+      records.forEach((item) => {
+        const balance = calculateMonthlyBalance(item);
+        const card = el('div', 'record-card');
+        const copy = el('div');
+        copy.append(el('div', 'record-title', formatMonth(item.month)));
+        copy.append(el('div', 'record-meta', t('monthly.meta', { income: money(item.income), fixed: money(item.fixed), flexible: money(item.flexible) })));
+        const side = el('div');
+        side.append(el('div', `record-amount ${balance >= 0 ? 'positive' : 'expense-color'}`, money(balance)));
+        const actions = el('div', 'record-actions');
+        const edit = el('button', '', t('action.edit')); edit.type = 'button'; edit.dataset.monthlyEdit = item.month;
+        const remove = el('button', 'danger', t('action.delete')); remove.type = 'button'; remove.dataset.monthlyDelete = item.month;
+        actions.append(edit, remove); side.append(actions); card.append(copy, side); list.append(card);
+      });
+    }
+
+    function fillFreedomForm() {
+      const form = $('#freedom-form');
+      Object.entries(state.freedom).forEach(([key, value]) => {
+        const control = form.elements.namedItem(key);
+        if (control) control.value = key === 'reason' ? displayFreedomReason(state.freedom) : value;
+      });
+    }
+
+    function monthDifference(from, to) {
+      if (!/^\d{4}-\d{2}$/.test(from) || !/^\d{4}-\d{2}$/.test(to)) return null;
+      const [fy, fm] = from.split('-').map(Number);
+      const [ty, tm] = to.split('-').map(Number);
+      return (ty - fy) * 12 + tm - fm;
+    }
+
+    function svgNode(tag, attributes = {}) {
+      const node = document.createElementNS(SVG_NS, tag);
+      Object.entries(attributes).forEach(([key, value]) => node.setAttribute(key, String(value)));
+      return node;
+    }
+
+    function drawFreedomChart() {
+      const svg = $('#freedom-chart');
+      svg.replaceChildren();
+      const model = buildFreedomChartModel({
+        summaries: state.monthlySummaries,
+        currentSaved: state.freedom.currentSaved,
+        startMonth: state.freedom.startMonth,
+        targetDate: state.freedom.targetDate,
+        targetAmount: state.freedom.targetAmount
+      });
+      if (!model) {
+        const text = svgNode('text', { x: 380, y: 150, 'text-anchor': 'middle', fill: 'currentColor' });
+        text.textContent = t('freedom.chartEmpty'); svg.append(text); return;
+      }
+      const allPoints = [...model.savingsPoints, ...model.targetPoints];
+      const allValues = [...allPoints.map((point) => point.value), 0];
+      const minValue = Math.min(...allValues);
+      const maxValue = Math.max(...allValues);
+      const range = Math.max(1, maxValue - minValue);
+      const left = 54, right = 736, top = 26, bottom = 250;
+      const totalMonths = Math.max(1, monthDifference(model.domainStartMonth, model.domainEndMonth) || 0);
+      const x = (month) => {
+        const offset = Math.max(0, Math.min(totalMonths, monthDifference(model.domainStartMonth, month) || 0));
+        return left + (right - left) * (offset / totalMonths);
+      };
+      const y = (value) => bottom - (bottom - top) * ((value - minValue) / range);
+      [0, 0.5, 1].forEach((ratio) => {
+        const yy = top + (bottom - top) * ratio;
+        svg.append(svgNode('line', { x1: left, x2: right, y1: yy, y2: yy, stroke: 'var(--line)', 'stroke-width': 1 }));
+      });
+      const savingsPath = svgNode('path', { 'data-chart-series': 'savings', d: model.savingsPoints.map((point, index) => `${index ? 'L' : 'M'} ${x(point.month)} ${y(point.value)}`).join(' '), fill: 'none', stroke: 'var(--positive)', 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+      const targetPath = svgNode('path', { 'data-chart-series': 'target', d: model.targetPoints.map((point, index) => `${index ? 'L' : 'M'} ${x(point.month)} ${y(point.value)}`).join(' '), fill: 'none', stroke: 'var(--brand)', 'stroke-width': 3, 'stroke-dasharray': '8 7' });
+      svg.append(targetPath, savingsPath);
+      model.savingsPoints.forEach((point) => svg.append(svgNode('circle', { cx: x(point.month), cy: y(point.value), r: 5, fill: 'var(--surface)', stroke: 'var(--positive)', 'stroke-width': 3 })));
+      [model.domainStartMonth, model.domainEndMonth].forEach((month, index) => {
+        const text = svgNode('text', { x: x(month), y: 282, 'text-anchor': index ? 'end' : 'start', fill: 'var(--muted)', 'font-size': 12 });
+        text.textContent = formatMonth(month); svg.append(text);
+      });
+    }
+
+    function renderFreedom() {
+      const average = currentAverage();
+      const forecast = calculateFreedomForecast({ currentSaved: state.freedom.currentSaved, targetAmount: state.freedom.targetAmount, averageMonthlySavings: average.average });
+      const safety = calculateSafetyBuffer(state.freedom.currentSaved, state.freedom.basicMonthlyCost);
+      const ratio = forecast.progressRatio || 0;
+      $('#freedom-progress-value').textContent = state.freedom.targetAmount > 0 ? percent(ratio) : percent(0);
+      setProgress($('#freedom-progress'), ratio);
+      const hasTarget = state.freedom.targetAmount > 0;
+      const excess = hasTarget ? Math.max(0, state.freedom.currentSaved - state.freedom.targetAmount) : 0;
+      $('#freedom-progress-note').textContent = !hasTarget ? t('freedom.noTarget') : excess > 0 ? t('freedom.excess', { amount: money(excess) }) : t('dashboard.savedRemaining', { saved: money(state.freedom.currentSaved), remaining: money(forecast.remainingAmount) });
+      const current = monthString(0);
+      const targetDiff = monthDifference(current, state.freedom.targetDate);
+      const targetPeriods = targetDiff === null ? null : targetDiff + 1;
+      const required = targetPeriods && targetPeriods > 0 ? forecast.remainingAmount / targetPeriods : null;
+      const formulas = $('#freedom-formulas');
+      formulas.replaceChildren(
+        formulaRow(t('freedom.averageSpeed'), average.average === null ? t('common.noData') : money(average.average)),
+        formulaRow(t('freedom.remainingMonths'), forecast.achieved ? t('freedom.achieved') : forecast.remainingMonths === null ? t('freedom.speedInvalid') : monthsCount(forecast.remainingMonths)),
+        formulaRow(t('freedom.estimatedDate'), forecast.achieved ? t('freedom.achieved') : forecast.estimatedDate ? formatDate(forecast.estimatedDate) : t('freedom.waitPositive')),
+        formulaRow(t('freedom.requiredSavings'), targetDiff !== null && targetDiff < 0 ? t('freedom.targetPast') : required === null ? t('freedom.setTargetDate') : `${money(forecast.remainingAmount)} ÷ ${localizedNumber(targetPeriods, 0)} = ${money(required)}`)
+      );
+      $('#safety-months').textContent = safety.months === null ? t('common.pending') : monthsCount(safety.months);
+      const levels = $('#safety-levels'); levels.replaceChildren();
+      safety.levels.forEach((level) => {
+        const months = monthsCount(level.months);
+        levels.append(el('div', `safety-item${level.reached ? ' reached' : ''}`, t(level.reached ? 'freedom.safetyReached' : 'freedom.safetyLevel', { months })));
+      });
+      const best = [...safety.levels].reverse().find((level) => level.reached);
+      $('#safety-note').textContent = best ? t('freedom.safetyNote', { months: monthsCount(best.months) }) : t('freedom.safetyPrompt');
+      drawFreedomChart();
+    }
+
+    function renderInsights() {
+      const hourly = currentHourly();
+      const monthTotal = state.expenses.filter((item) => item.date.startsWith(monthString(0))).reduce((sum, item) => sum + item.amount, 0);
+      const commuteHours = hourly.monthlyCommuteHours || 0;
+      const overtimeHours = hourly.monthlyOvertimeHours || 0;
+      $('#unpaid-insight').textContent = hoursCount(Math.round((commuteHours + overtimeHours) * 10) / 10);
+      $('#unpaid-insight-note').textContent = t('insights.unpaidDetail', { commute: hoursCount(commuteHours), overtime: hoursCount(overtimeHours) });
+      $('#commute-insight').textContent = t('insights.commuteValue', { commute: hoursCount(commuteHours), overtime: hoursCount(overtimeHours) });
+      $('#expense-days-insight').textContent = hourly.realHourly ? workdaysCount(monthTotal / hourly.realHourly / 8) : t('expenses.setHourly');
+      const ranking = $('#savings-ranking'); ranking.replaceChildren();
+      const ranked = state.monthlySummaries.map((item) => ({ month: item.month, balance: calculateMonthlyBalance(item) })).sort((a, b) => b.balance - a.balance);
+      if (!ranked.length) ranking.append(emptyState(t('insights.rankingEmpty')));
+      ranked.forEach((item, index) => {
+        const card = el('div', 'record-card');
+        card.append(el('div', 'record-title', `${localizedNumber(index + 1, 0)}. ${formatMonth(item.month)}${index === 0 ? ` ${t('common.bestMonth')}` : ''}`), el('div', `record-amount ${item.balance >= 0 ? 'positive' : 'expense-color'}`, money(item.balance)));
+        ranking.append(card);
+      });
+      renderScenarios();
+    }
+
+    function renderScenarios() {
+      const form = $('#scenario-form');
+      const commuteReductionPercent = numberFrom(form, 'commuteReductionPercent');
+      const overtimeReductionHours = numberFrom(form, 'overtimeReductionHours');
+      const salaryIncreasePercent = numberFrom(form, 'salaryIncreasePercent');
+      $('#commute-output').textContent = percent(commuteReductionPercent / 100);
+      $('#overtime-output').textContent = hoursCount(overtimeReductionHours);
+      $('#salary-output').textContent = percent(salaryIncreasePercent / 100);
+      const hourly = currentHourly();
+      const average = currentAverage();
+      const forecast = calculateFreedomForecast({ currentSaved: state.freedom.currentSaved, targetAmount: state.freedom.targetAmount, averageMonthlySavings: average.average });
+      const result = simulateScenarios({ profile: state.profile, realHourly: hourly.realHourly, remainingAmount: forecast.remainingAmount, averageMonthlySavings: average.average, commuteReductionPercent, overtimeReductionHours, salaryIncreasePercent });
+      const names = { commute: t('scenario.commute'), overtime: t('scenario.overtime'), salary: t('scenario.salary') };
+      const descriptions = { commute: t('scenario.commuteDesc'), overtime: t('scenario.overtimeDesc'), salary: t('scenario.salaryDesc') };
+      const container = $('#scenario-results'); container.replaceChildren();
+      result.scenarios.forEach((scenario) => {
+        const card = el('article', `panel scenario-card${scenario.id === result.freedomFastestId ? ' fastest' : ''}`);
+        const heading = el('h3', '', names[scenario.id]);
+        card.append(heading);
+        if (scenario.id === result.cashFastestId) card.append(el('span', 'tag', t('scenario.cashFastest')));
+        if (scenario.id === result.freedomFastestId) card.append(el('span', 'tag', t('scenario.freedomFastest')));
+        card.append(
+          formulaRow(t('scenario.cashGain'), money(scenario.monthlyCashGain)),
+          formulaRow(t('scenario.timeSaved'), hoursText(scenario.monthlyTimeSaved)),
+          formulaRow(t('scenario.freedomGain'), money(scenario.freedomEquivalentGain)),
+          formulaRow(t('scenario.targetMonths'), scenario.freedomProjectedMonths === null ? t('common.noForecast') : monthsCount(scenario.freedomProjectedMonths)),
+          el('p', 'subtle', descriptions[scenario.id])
+        );
+        container.append(card);
+      });
+      const cashName = result.cashFastestId ? names[result.cashFastestId] : t('scenario.noCash');
+      const freedomName = result.freedomFastestId ? names[result.freedomFastestId] : t('scenario.noPredictable');
+      $('#scenario-conclusion').textContent = t('scenario.conclusion', { cash: cashName, freedom: freedomName });
+    }
+
+    function renderTheme() {
+      document.documentElement.dataset.theme = state.settings.theme;
+      const label = state.settings.theme === 'dark' ? t('theme.toLight') : t('theme.toDark');
+      $('#theme-label').textContent = label;
+      $('#theme-button').setAttribute('aria-label', label);
+    }
+
+    /* 同步状态指示器：已同步 / 同步中 / 失败可重试 / 本地模式 */
+    function renderSyncStatus() {
+      const pill = document.getElementById('sync-pill');
+      if (!pill) return;
+      const labels = { syncing: t('sync.syncing'), ok: t('sync.ok'), error: t('sync.error'), offline: t('sync.offline') };
+      pill.setAttribute('data-state', SYNC.phase || 'syncing');
+      const text = document.getElementById('sync-pill-text');
+      if (text) text.textContent = labels[SYNC.phase] || labels.syncing;
+      const failed = SYNC.phase === 'error' || SYNC.phase === 'offline';
+      const bar = document.getElementById('sync-bar');
+      if (bar) bar.hidden = !failed;
+      const barText = document.getElementById('sync-bar-text');
+      if (barText) barText.textContent = SYNC.message || t('sync.readFailed');
+      const retry = document.getElementById('sync-retry');
+      if (retry) retry.textContent = t('sync.retry');
+      const useLocal = document.getElementById('sync-use-local');
+      if (useLocal) useLocal.textContent = t('sync.useLocal');
+    }
+
+    /* 给元素打上「文本来自线上数据表」的标记 */
+    function markBind(el, databaseId) {
+      if (!el) return;
+      el.setAttribute('data-sp-bindable', 'database');
+      el.setAttribute('data-sp-database-id', databaseId);
+    }
+
+    /* 标注哪些文字来自线上数据表（资料库数据绑定标记） */
+    function markDatabaseBindings() {
+      markBind($('#dashboard-real-hourly'), DB_SETTINGS);
+      markBind($('#dashboard-hourly-note'), DB_SETTINGS);
+      markBind($('#dashboard-freedom'), DB_SETTINGS);
+      markBind($('#dashboard-freedom-note'), DB_SETTINGS);
+      markBind($('#freedom-progress-value'), DB_SETTINGS);
+      markBind($('#safety-months'), DB_SETTINGS);
+      markBind($('#dashboard-month-expense'), DB_EXPENSE);
+      markBind($('#dashboard-today-expense'), DB_EXPENSE);
+      markBind($('#dashboard-recent-list'), DB_EXPENSE);
+      markBind($('#today-expense'), DB_EXPENSE);
+      markBind($('#month-expense'), DB_EXPENSE);
+      markBind($('#month-expense-hours'), DB_EXPENSE);
+      markBind($('#expense-list'), DB_EXPENSE);
+      markBind($('#monthly-list'), DB_SUMMARY);
+      markBind($('#average-savings'), DB_SUMMARY);
+      markBind($('#savings-ranking'), DB_SUMMARY);
+    }
+
+    function renderAll() {
+      renderTheme();
+      renderReminder();
+      renderDashboard();
+      renderHourly();
+      renderExpenses();
+      renderMonthly();
+      renderFreedom();
+      renderInsights();
+      markDatabaseBindings();
+      renderSyncStatus();
+      requestAnimationFrame(fitVisibleKpiValues);
+    }
+
+    function resetExpenseForm() {
+      $('#expense-form').reset();
+      $('#expense-date').value = localDateString();
+      $('#expense-editing-id').value = '';
+      $('#expense-cancel').hidden = true;
+    }
+
+    function resetMonthlyForm() {
+      $('#monthly-form').reset();
+      $('#summary-month').value = monthString(0);
+      $('#monthly-editing-month').value = '';
+      $('#monthly-cancel').hidden = true;
+      updateMonthlyPreview();
+    }
+
+    function saveExpenseFrom(form, quick = false) {
+      const data = new FormData(form);
+      const amount = Number(data.get('amount'));
+      if (!Number.isFinite(amount) || amount <= 0) return;
+      const editingId = quick ? '' : $('#expense-editing-id').value;
+      const existing = state.expenses.find((item) => item.id === editingId);
+      const item = {
+        id: existing ? existing.id : uid('expense'),
+        remoteId: existing ? (existing.remoteId || '') : '',
+        date: quick ? localDateString() : String(data.get('date')),
+        amount,
+        category: String(data.get('category') || '其他').slice(0, 30),
+        note: String(data.get('note') || '').slice(0, 300),
+        createdAt: existing ? existing.createdAt : new Date().toISOString(),
+        isSample: false
+      };
+      const persisted = updateState((draft) => {
+        const index = draft.expenses.findIndex((record) => record.id === item.id);
+        if (index >= 0) draft.expenses[index] = item; else draft.expenses.push(item);
+        draft.settings.sampleState = 'custom';
+      });
+      const equivalent = expenseEquivalent(amount);
+      const message = !persisted
+        ? t('expenses.currentOnly')
+        : equivalent ? t('expenses.savedEquivalent', { amount: money(amount), time: equivalent }) : t('expenses.savedPending');
+      if (quick) { form.reset(); $('#quick-result').textContent = message; }
+      else { resetExpenseForm(); $('#expense-result').textContent = message; }
+      showToast(!persisted ? t('toast.saveFailed') : quick ? t('toast.quickSaved') : t('toast.expenseSaved'));
+      const unlock = lockSubmit(form, quick);
+      pushExpense(item, !!existing, function (err) {
+        unlock();
+        if (err) $('#expense-result').textContent = t('sync.writeFailed');
+        else dropDraft('expense');
+      });
+    }
+
+    function clearSamples() {
+      if (!window.confirm(t('confirm.clearSamples'))) return;
+      const theme = state.settings.theme;
+      updateState((draft) => {
+        draft.expenses = draft.expenses.filter((item) => !item.isSample);
+        draft.monthlySummaries = draft.monthlySummaries.filter((item) => !item.isSample);
+        if (draft.profile.isSample) draft.profile = emptyProfile();
+        if (draft.freedom.isSample) draft.freedom = emptyFreedom();
+        draft.settings = { theme, sampleState: 'cleared', version: 1 };
+      });
+      fillProfileForm(); fillFreedomForm();
+      schedulePushSettings();
+    }
+
+    $$('[data-target]').forEach((button) => button.addEventListener('click', () => activateSection(button.dataset.target)));
+    $('#theme-button').addEventListener('click', () => { updateState((draft) => { draft.settings.theme = draft.settings.theme === 'dark' ? 'light' : 'dark'; }); schedulePushSettings(); });
+    let settingsPushTimer;
+    function schedulePushSettings() {
+      clearTimeout(settingsPushTimer);
+      settingsPushTimer = setTimeout(() => { pushSettings(); }, 400);
+    }
+    $('#profile-form').addEventListener('input', (event) => {
+      const form = event.currentTarget;
+      updateState((draft) => {
+        draft.profile = {
+          monthlySalary: numberFrom(form, 'monthlySalary'), payMonths: numberFrom(form, 'payMonths'), monthlyWorkCost: numberFrom(form, 'monthlyWorkCost'),
+          dailyOfficeHours: numberFrom(form, 'dailyOfficeHours'), oneWayCommuteMinutes: numberFrom(form, 'oneWayCommuteMinutes'), weeklyOvertimeHours: numberFrom(form, 'weeklyOvertimeHours'), isSample: false
+        };
+        draft.settings.sampleState = 'custom';
+      });
+      schedulePushSettings();
+    });
+    $('#dashboard-expense-form').addEventListener('submit', (event) => { event.preventDefault(); saveExpenseFrom(event.currentTarget, true); });
+    $('#expense-form').addEventListener('submit', (event) => { event.preventDefault(); saveExpenseFrom(event.currentTarget); });
+    $('#expense-cancel').addEventListener('click', () => { dropDraft('expense'); resetExpenseForm(); });
+    $('#expense-list').addEventListener('click', (event) => {
+      if (event.target.dataset.expenseLoadMore) {
+        expenseRenderLimit += 30;
+        renderExpenses();
+        return;
+      }
+      const editId = event.target.dataset.expenseEdit;
+      const deleteId = event.target.dataset.expenseDelete;
+      if (editId) {
+        const item = state.expenses.find((record) => record.id === editId); if (!item) return;
+        $('#expense-editing-id').value = item.id; $('#expense-date').value = item.date; $('#expense-amount').value = item.amount; $('#expense-category').value = item.category; $('#expense-note').value = displayExpenseNote(item); $('#expense-cancel').hidden = false;
+        $('#expense-form').scrollIntoView({ behavior: 'auto', block: 'center' });
+      }
+      if (deleteId && window.confirm(t('confirm.deleteExpense'))) {
+        const target = state.expenses.find((record) => record.id === deleteId);
+        updateState((draft) => { draft.expenses = draft.expenses.filter((record) => record.id !== deleteId); });
+        if (target) removeExpense(target);
+      }
+    });
+    $('#monthly-form').addEventListener('input', updateMonthlyPreview);
+    $('#monthly-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const data = new FormData(form);
+      const month = String(data.get('month'));
+      const originalMonth = $('#monthly-editing-month').value;
+      const conflict = state.monthlySummaries.some((record) => record.month === month && record.month !== originalMonth);
+      if (conflict) {
+        showStorageAlert(t('monthly.conflict'));
+        return;
+      }
+      const existing = originalMonth ? state.monthlySummaries.find((record) => record.month === originalMonth) : null;
+      const item = { month, income: numberFrom(form, 'income'), fixed: numberFrom(form, 'fixed'), flexible: numberFrom(form, 'flexible'), remoteId: existing ? (existing.remoteId || '') : '', updatedAt: new Date().toISOString(), isSample: false };
+      updateState((draft) => {
+        const index = originalMonth ? draft.monthlySummaries.findIndex((record) => record.month === originalMonth) : -1;
+        if (index >= 0) draft.monthlySummaries[index] = item; else draft.monthlySummaries.push(item);
+        draft.settings.sampleState = 'custom';
+      });
+      resetMonthlyForm();
+      const unlock = lockSubmit(form, false);
+      pushSummary(item, !!existing, function (err) {
+        unlock();
+        if (err) showStorageAlert(t('sync.writeFailed'));
+        else dropDraft('monthly');
+      });
+    });
+    $('#monthly-cancel').addEventListener('click', () => { dropDraft('monthly'); resetMonthlyForm(); });
+    $('#monthly-list').addEventListener('click', (event) => {
+      const editMonth = event.target.dataset.monthlyEdit; const deleteMonth = event.target.dataset.monthlyDelete;
+      if (editMonth) { const item = state.monthlySummaries.find((record) => record.month === editMonth); if (!item) return; $('#monthly-editing-month').value = item.month; $('#summary-month').value = item.month; $('#summary-income').value = item.income; $('#summary-fixed').value = item.fixed; $('#summary-flexible').value = item.flexible; $('#monthly-cancel').hidden = false; updateMonthlyPreview(); $('#monthly-form').scrollIntoView({ behavior: 'auto', block: 'center' }); }
+      if (deleteMonth && window.confirm(t('confirm.deleteMonthly'))) {
+        const target = state.monthlySummaries.find((record) => record.month === deleteMonth);
+        updateState((draft) => { draft.monthlySummaries = draft.monthlySummaries.filter((record) => record.month !== deleteMonth); });
+        if (target) removeSummary(target);
+      }
+    });
+    $('#freedom-form').addEventListener('input', (event) => {
+      const form = event.currentTarget; const data = new FormData(form);
+      updateState((draft) => { draft.freedom = { targetAmount: numberFrom(form, 'targetAmount'), targetDate: String(data.get('targetDate') || ''), reason: String(data.get('reason') || '').slice(0, 300), currentSaved: numberFrom(form, 'currentSaved'), basicMonthlyCost: numberFrom(form, 'basicMonthlyCost'), startMonth: String(data.get('startMonth') || ''), isSample: false }; draft.settings.sampleState = 'custom'; });
+      schedulePushSettings();
+    });
+    $('#scenario-form').addEventListener('input', renderScenarios);
+    $('#clear-sample-button').addEventListener('click', clearSamples);
+    $('#mobile-clear-sample-button').addEventListener('click', clearSamples);
+    let fitFrame;
+    window.addEventListener('resize', () => {
+      cancelAnimationFrame(fitFrame);
+      fitFrame = requestAnimationFrame(fitVisibleKpiValues);
+    });
+
+    applyStaticI18n();
+    state = loadState();
+    $('#today-label').textContent = new Intl.DateTimeFormat(LOCALE, { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }).format(new Date());
+    fillProfileForm(); fillFreedomForm(); resetExpenseForm(); resetMonthlyForm();
+    bindDraftCache('#expense-form', 'expense', ['date', 'amount', 'category', 'note']);
+    bindDraftCache('#monthly-form', 'monthly', ['month', 'income', 'fixed', 'flexible']);
+    restoreDraft($('#expense-form'), 'expense', ['date', 'amount', 'category', 'note']);
+    restoreDraft($('#monthly-form'), 'monthly', ['month', 'income', 'fixed', 'flexible']);
+    renderAll();                        // ① 先把界面渲染出来，不白屏
+    renderSyncStatus();
+    $('#sync-retry').addEventListener('click', retrySync);
+    $('#sync-use-local').addEventListener('click', useLocalData);
+    pullAllRemote(refreshCallback);     // ② 再拉线上数据，失败有提示可重试
+    if (ONLINE && typeof db.onUpdated === 'function') {
+      let updatedTimer;
+      db.onUpdated(function (payload) {
+        const ids = (payload && payload.databaseIds) || [];
+        if (!ids.length) return;
+        if (Date.now() - SYNC.lastWrite < 1500) return;   // 自己刚写过的，不用再拉
+        clearTimeout(updatedTimer);
+        updatedTimer = setTimeout(() => { pullAllRemote(refreshCallback); }, 400);
+      });
+    }
+  </script>
+</body>
+</html>

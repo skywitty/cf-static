@@ -24,6 +24,7 @@ export const BASE_DOMAINS = ["skywitty.win"];
 
 export const PROJECTS = {
   life: "栖 · 生活工作台",
+  ledger: "打工人小账本",
 };
 
 export const HOST_ALIASES = {
