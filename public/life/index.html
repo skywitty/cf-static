@@ -474,6 +474,8 @@
 .sync-banner{margin:0 0 14px;padding:10px 14px;border:1px solid rgba(166,106,66,.34);border-radius:14px;background:rgba(166,106,66,.09);color:#7a4b2e;font-size:13px;line-height:1.55}
 .sync-banner[hidden]{display:none}
 .sync-banner>svg{flex:0 0 auto;color:#a56a42}
+.legacy-banner{border-color:rgba(77,48,69,.26);background:rgba(77,48,69,.055);color:#4d3045}
+.legacy-banner>svg{color:#7c5573}
 .sync-banner-text{flex:1 1 220px;min-width:0}
 .sync-banner-actions{display:flex;gap:8px;flex:0 0 auto;margin-left:auto}
 .sync-banner .btn{min-height:34px;padding:0 12px;font-size:12px;border-radius:10px;background:rgba(255,252,247,.78)}
@@ -533,6 +535,14 @@
         <span data-page-node-id="RhivEu2N8Upig8oEUyvA64" class="sync-banner-actions">
           <button data-page-node-id="mz1tcEF4FmOyhcuZU8fsvE" class="btn ghost" id="syncRetryBtn" type="button"><span data-page-node-id="29AjwFDOqRJZBdA3o0lR3r"><!--pnid:86bse6T2POadqsZz4D9uTu-->重试同步</span></button>
           <button data-page-node-id="50O0UwGxqWz3Yl2W1F1Los" class="btn ghost" id="syncDismissBtn" type="button"><span data-page-node-id="7gquPvmv5fW74sLqEp92uP"><!--pnid:qIHRgZ01kS6D2kkR6UPYPG-->知道了</span></button>
+        </span>
+      </div>
+      <div aria-live="polite" class="sync-banner legacy-banner" hidden id="legacyBanner">
+        <svg aria-hidden="true"><use href="#i-upload"/></svg>
+        <span class="sync-banner-text" id="legacyBannerText"></span>
+        <span class="sync-banner-actions">
+          <button class="btn ghost" id="legacyImportBtn" type="button"><span>一键导入</span></button>
+          <button class="btn ghost" id="legacyDismissBtn" type="button"><span>不用了</span></button>
         </span>
       </div>
       <header data-page-node-id="bmbt9SBX6soG4wi34YoYaL" class="topbar">
@@ -1480,6 +1490,9 @@
     if(importInput) importInput.addEventListener('change',()=>{importDataFile(importInput.files&&importInput.files[0]);});
     if(retryBtn) retryBtn.addEventListener('click',retrySync);
     if(dismissBtn) dismissBtn.addEventListener('click',hideSyncBanner);
+    var legacyImportBtn=document.getElementById('legacyImportBtn'),legacyDismissBtn=document.getElementById('legacyDismissBtn');
+    if(legacyImportBtn) legacyImportBtn.addEventListener('click',importLegacyData);
+    if(legacyDismissBtn) legacyDismissBtn.addEventListener('click',()=>{hideLegacyBanner();markLegacyHandled();toast('已忽略；之后可在「时光档案」里用「导入数据」再导入备份');});
   }
 
   /* ================= 线上同步提示 + 重试 ================= */
@@ -1548,11 +1561,24 @@
   }
 
   function detectImportFormat(raw){
+    if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(error){throw new Error('备份内容不是有效的 JSON');}}
+    if(raw&&typeof raw==='object'&&!Array.isArray(raw)){
+      if(raw.state&&typeof raw.state==='object'&&!Array.isArray(raw.state))raw=raw.state;
+      else if(raw.data&&typeof raw.data==='object'&&Array.isArray(raw.data.records))raw=raw.data;
+    }
     if(!raw||typeof raw!=='object')throw new Error('备份格式不正确');
-    if(raw.state&&Array.isArray(raw.state.records))return {candidate:raw.state};
     if(Array.isArray(raw.records))return {candidate:raw};
-    if(Array.isArray(raw.finance)||Array.isArray(raw.schedule)||Array.isArray(raw.shopping)||Array.isArray(raw.fitness))return {candidate:convertLegacyState(raw)};
-    throw new Error('无法识别的数据格式，请换一份备份重试');
+    if(Array.isArray(raw)){
+      if(raw.some(function(r){return r&&r.type&&TYPE_META[r.type]&&r.data;}))return {candidate:{records:raw}};
+      if(raw.some(function(r){return r&&r.date&&r.amount!=null;}))return {candidate:convertLegacyState({finance:raw})};
+      if(raw.some(function(r){return r&&r.title&&(r.status!=null||r.kind);}))return {candidate:convertLegacyState({media:raw})};
+      if(raw.some(function(r){return r&&r.name&&(r.qty!=null||r.bought!=null||r.urgent!=null);}))return {candidate:convertLegacyState({shopping:raw})};
+      if(raw.some(function(r){return r&&r.title&&r.date;}))return {candidate:convertLegacyState({schedule:raw})};
+      if(raw.some(function(r){return r&&r.date&&r.weight!=null;}))return {candidate:convertLegacyState({fitness:raw})};
+      throw new Error('这份备份是纯数组，但里面没有能识别的记录字段');
+    }
+    if(Array.isArray(raw.finance)||Array.isArray(raw.schedule)||Array.isArray(raw.shopping)||Array.isArray(raw.fitness)||Array.isArray(raw.habits)||Array.isArray(raw.media))return {candidate:convertLegacyState(raw)};
+    throw new Error('无法识别的数据格式（这份文件里的字段是：'+Object.keys(raw).slice(0,8).join('、')+'）');
   }
 
   /* 合并导入：同一条不重复，返回新增数据与待同步的打卡项 */
@@ -1625,16 +1651,23 @@
     var reader=new FileReader();
     reader.onerror=function(){toast('文件读取失败，请换一个文件重试');};
     reader.onload=function(){
-      var merged;
+      var snapshot,merged;
       try{
-        var parsed=detectImportFormat(JSON.parse(String(reader.result)));
+        var parsed=detectImportFormat(String(reader.result));
+        snapshot=JSON.stringify(state);
         merged=mergeImported(normalizeState(parsed.candidate));
       }catch(error){toast(error.message||'导入失败，请检查备份文件');return;}
       var s=merged.summary;
       if(!s.records&&!s.media&&!s.habits&&!s.checks){toast('没有发现需要导入的新数据');return;}
-      if(!confirm('将导入 '+s.records+' 条收支/日程/健康记录、'+s.media+' 条书影音、'+s.habits+' 个新习惯（共 '+s.checks+' 条打卡）。是否继续？'))return;
+      var localNote=(!ONLINE||LOCAL_ONLY)?'\n\n注意：当前地址没有连上线上数据表，导入只会保存到这台设备的浏览器里。':'';
+      if(!confirm('将导入 '+s.records+' 条收支/日程/健康记录、'+s.media+' 条书影音、'+s.habits+' 个新习惯（共 '+s.checks+' 条打卡）。是否继续？'+localNote)){
+        try{state=JSON.parse(snapshot);}catch(error){}
+        renderAll();
+        toast('已取消，数据没有改动');
+        return;
+      }
       saveState();renderAll();
-      if(!ONLINE||LOCAL_ONLY){toast('已导入到本机，待连上线上数据表后再同步');return;}
+      if(!ONLINE||LOCAL_ONLY){toast('已导入到本机：'+s.records+' 条记录 · '+s.media+' 条书影音 · '+s.habits+' 个习惯（这个地址未连线上数据表，换设备不会带过去）');return;}
       pushMergedToRemote(merged);
       toast('已导入，正在同步到线上数据表…');
       var wait=1200+Math.ceil(merged.habitPushes.length/15)*220;
@@ -1649,7 +1682,54 @@
     reader.readAsText(file);
   }
 
-  function init(){const now=new Date(),weekdays=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];document.getElementById('todayLabel').textContent=LANG==='en'?new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',weekday:'long'}).format(now):`${now.getMonth()+1} 月 ${now.getDate()} 日 · ${weekdays[now.getDay()]}`;setDateDefaults();updateMoneyCategories();restoreDrafts();bindForms();bindEvents();renderAll();switchView(document.getElementById(`view-${location.hash.slice(1)}`)?location.hash.slice(1):'dashboard');if(!dataCorrupted)saveState();pullAllRemote(function(ok){ if(ok){ saveState(); renderAll(); } });}
+  /* ================= 旧版「栖 · 生活工作台」数据一键迁移 =================
+     老版把数据存在 localStorage 的 wb_life_data 里，新版换成了 richangji-state-v1，
+     所以在同一台设备上升级后旧数据不会自动出现：这里自动检测并给一个一键导入的入口。 */
+  var LEGACY_KEY='wb_life_data',LEGACY_FLAG='richangji-legacy-migrated';
+  function legacySnapshot(){
+    var raw=null;
+    try{raw=localStorage.getItem(LEGACY_KEY);}catch(error){return null;}
+    if(!raw)return null;
+    var parsed;
+    try{parsed=detectImportFormat(raw);}catch(error){return null;}
+    var candidate=parsed.candidate;
+    var records=(candidate.records||[]).length,media=(candidate.mediaItems||[]).length,habits=(candidate.habits||[]).length;
+    var checks=(candidate.habits||[]).reduce(function(sum,h){return sum+Object.keys(h.entries||{}).length;},0);
+    if(!records&&!media&&!habits)return null;
+    return {candidate:candidate,records:records,media:media,habits:habits,checks:checks};
+  }
+  function legacyHandled(){try{return localStorage.getItem(LEGACY_FLAG)==='1';}catch(error){return false;}}
+  function markLegacyHandled(){try{localStorage.setItem(LEGACY_FLAG,'1');}catch(error){}}
+  function hideLegacyBanner(){var banner=document.getElementById('legacyBanner');if(banner)banner.hidden=true;}
+  function showLegacyBanner(){
+    if(legacyHandled())return;
+    var banner=document.getElementById('legacyBanner');
+    if(!banner)return;
+    var info=legacySnapshot();
+    if(!info){hideLegacyBanner();return;}
+    var text=document.getElementById('legacyBannerText');
+    if(text)text.textContent='检测到旧版「栖 · 生活工作台」留在本机的数据：'+info.records+' 条记录、'+info.media+' 条书影音、'+info.habits+' 个习惯（'+info.checks+' 条打卡）。可以一键搬进日常集。';
+    banner.hidden=false;
+  }
+  function importLegacyData(){
+    var info=legacySnapshot();
+    if(!info){hideLegacyBanner();markLegacyHandled();toast('没有检测到旧版数据');return;}
+    var merged;
+    try{merged=mergeImported(normalizeState(info.candidate));}
+    catch(error){toast(error.message||'旧数据导入失败');return;}
+    var s=merged.summary;
+    saveState();renderAll();hideLegacyBanner();markLegacyHandled();
+    if(!ONLINE||LOCAL_ONLY){toast('旧数据已搬进来：'+s.records+' 条记录 · '+s.media+' 条书影音 · '+s.habits+' 个习惯（保存在本机）');return;}
+    pushMergedToRemote(merged);
+    toast('旧数据已搬进来，正在写入线上数据表…');
+    var wait=1200+Math.ceil(merged.habitPushes.length/15)*220;
+    setTimeout(function(){
+      if(LOCAL_ONLY){toast('部分内容未能写入线上，已保留在本机，可点顶部「重试同步」');return;}
+      pullAllRemote(function(changed,failed){saveState();renderAll();if(!failed&&!LOCAL_ONLY)toast('旧数据已同步到线上数据表');});
+    },wait>12000?12000:wait);
+  }
+
+  function init(){const now=new Date(),weekdays=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];document.getElementById('todayLabel').textContent=LANG==='en'?new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',weekday:'long'}).format(now):`${now.getMonth()+1} 月 ${now.getDate()} 日 · ${weekdays[now.getDay()]}`;setDateDefaults();updateMoneyCategories();restoreDrafts();bindForms();bindEvents();renderAll();switchView(document.getElementById(`view-${location.hash.slice(1)}`)?location.hash.slice(1):'dashboard');if(!dataCorrupted)saveState();showLegacyBanner();pullAllRemote(function(ok){ if(ok){ saveState(); renderAll(); } });}
   /* ============ 添加到手机桌面 / 安装为应用 ============
      能力来自通用模块（真源 shared/pwa-install.js，由 tools/sync-pwa.mjs 内联）。 */
   if(window.PWAInstall){
