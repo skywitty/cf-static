@@ -45,6 +45,12 @@ jobs:
         with:
           node-version: "22"
 
+      # 通用 PWA 模块的真源在 shared/pwa-install.js，各项目里的是内联副本。
+      # 改了真源却忘记同步，线上就会跑着旧逻辑——这里直接拦下。
+      # 修复：本地执行 npm run sync:pwa 后重新提交。
+      - name: 校验通用 PWA 模块已同步
+        run: node tools/sync-pwa.mjs --check
+
       # 没配 Secret 时给出可读的提示并跳过部署，避免每次 push 都亮红叉
       - name: 预检 Secrets
         id: precheck

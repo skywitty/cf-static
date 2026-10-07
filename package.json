@@ -2,10 +2,12 @@
   "name": "cf-static",
   "version": "1.0.0",
   "private": true,
-  "description": "life/ 静态站点，托管于 Cloudflare Workers Static Assets",
+  "description": "多项目静态站点，按通配子域名分发，托管于 Cloudflare Workers Static Assets",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "sync:pwa": "node tools/sync-pwa.mjs",
+    "check:pwa": "node tools/sync-pwa.mjs --check"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

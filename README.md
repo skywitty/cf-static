@@ -20,8 +20,15 @@
 cf-static/
 ├─ public/                  ← 静态资源根，每个文件夹 = 一个项目
 │  ├─ .assetsignore           排除 public 内的杂项文件（如 .DS_Store）
-│  └─ life/
-│     └─ index.html           栖 · 生活工作台
+│  ├─ life/
+│  │  └─ index.html           栖 · 生活工作台
+│  └─ ledger/
+│     └─ index.html           打工人小账本
+├─ shared/
+│  ├─ README.md               通用 PWA 模块的接入说明
+│  └─ pwa-install.js          通用「安装为应用」模块（单一真源）
+├─ tools/
+│  └─ sync-pwa.mjs            把上面的模块内联进各项目 HTML
 ├─ src/
 │  ├─ index.js             路由 Worker：按 Host 分发
 │  └─ projects.js          配置：主域名 + 项目显示名 + 例外映射
@@ -171,6 +178,28 @@ export const HOST_ALIASES = {
 };
 ```
 
+### 让项目支持「安装为应用」（PWA）
+
+`shared/pwa-install.js` 是通用模块，各项目只提供配置：manifest、theme-color、
+favicon、图标、安装按钮与 iOS 手动指引全都由它生成，**不需要每个项目各写一遍**。
+
+接入只要四步 —— 在 `<head>` 放一对 `<!-- PWA:INLINE:START -->` / `<!-- PWA:INLINE:END -->`
+标记、给按钮加 `pwa-install-button` 类名、在脚本末尾调一次 `PWAInstall.init({...})`、
+然后执行 `npm run sync:pwa` 把模块内联进去。**详细配置项与踩坑说明见
+[`shared/README.md`](shared/README.md)。**
+
+```bash
+npm run sync:pwa     # 真源 → 各项目（改完真源必须跑）
+npm run check:pwa    # 只校验是否同步；部署工作流也会跑这一步
+```
+
+> ⚠️ 项目里内联的那份是**生成物**，别直接改，下次同步会被覆盖。
+>
+> 另有一个坑值得单独记一笔：manifest 里 `start_url` / `id` / `scope` **必须是绝对地址**。
+> 用 `data:` URI 承载 manifest 时相对地址解析必然失败，浏览器会判 `start-url-not-valid`，
+> `beforeinstallprompt` 永不触发 —— 看起来「按钮点了没反应」，其实原生安装链路压根没通。
+> 模块已自动用 `location.origin + location.pathname` 算好。
+
 ---
 
 ## 三、本地开发
@@ -258,7 +287,8 @@ curl -H "Host: skywitty.win"      http://localhost:8787/
 | 二级子域名报证书错误 | 免费证书只覆盖一级，需要付费 ACM，或改用一级子域名 |
 | 本地 dev 反复重启 | 静态根被设成了仓库根目录，改回 `./public` |
 | 本地 dev 的 Host 头无效 | 配置里出现了 `routes`，移除后重启 |
-| PWA 无法安装 | 必须通过 HTTPS 访问；`workers.dev` 与自定义域名均已自带 |
+| PWA 无法安装（按钮点了没反应） | 三条排查线：① 必须 HTTPS 或 `127.0.0.1`（`file://` 不算 secure context）；② manifest 的 `start_url` 必须是**绝对地址**，否则浏览器判 `start-url-not-valid` 且 `beforeinstallprompt` 不触发（见第二节的踩坑说明）；③ 用 `Page.getInstallabilityErrors` 可以直接问浏览器到底缺什么，返回 `[]` 才算可安装 |
+| 部署时报「通用 PWA 模块已同步」失败 | 改了 `shared/pwa-install.js` 但没同步。本地跑 `npm run sync:pwa` 后重新提交 |
 
 ---
 
