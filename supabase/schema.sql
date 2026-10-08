@@ -9,7 +9,7 @@
 --    这样「本地记录」与「云端行」天然一一对应，不需要额外维护映射表。
 -- 2. 「天然唯一」的数据用确定性 id，跨设备重复提交时 upsert 自动收敛：
 --      月度总结 → <uid>:summary-<YYYY-MM>，个人设置 → <uid>:settings
---      习惯打卡 → <uid>:habit-<习惯>-<日期>
+--      习惯打卡 → <uid>:habit-<习惯>-<日期>，习惯定义 → <uid>:habitdef-<习惯键>
 --    主键是全局唯一的，所以必须带上 uid 前缀，否则两个人的同月记录会撞主键。
 --    （随机 id 的流水类数据用 crypto.randomUUID，天然不会撞。）
 -- 3. 每张表都带 space 列，默认值是 auth.uid()::text —— 即「当前登录用户」。
@@ -114,6 +114,25 @@ create table if not exists public.life_habits (
 create index if not exists life_habits_date_idx  on public.life_habits (date desc);
 create index if not exists life_habits_space_idx on public.life_habits (space);
 
+-- 习惯定义：自定义习惯本身（名称/类型/目标/单位/配色）＋内置习惯的隐藏状态
+-- 打卡记录仍在 life_habits；这张表只描述「有哪些习惯」，所以自定义习惯才能跨设备。
+-- id 用 <uid>:habitdef-<习惯键>，与打卡一样是确定性主键，重复提交靠 upsert 收敛。
+-- hidden = true 表示这个习惯被删掉了（内置习惯删不掉，只能标记隐藏）。
+create table if not exists public.life_habit_defs (
+  id          text primary key,
+  space       text        not null default auth.uid()::text,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  habit_key   text        not null default '',
+  name        text        not null default '',
+  type        text        not null default 'check',   -- check | counter | number
+  target      numeric     not null default 1,
+  unit        text        not null default '次',
+  tone        text        not null default 'sage',
+  hidden      boolean     not null default false
+);
+create index if not exists life_habit_defs_space_idx on public.life_habit_defs (space);
+
 -- 日程 / 待办
 create table if not exists public.life_plans (
   id          text primary key,
@@ -185,6 +204,7 @@ alter table public.ledger_summaries enable row level security;
 alter table public.ledger_settings  enable row level security;
 alter table public.life_money       enable row level security;
 alter table public.life_habits      enable row level security;
+alter table public.life_habit_defs  enable row level security;
 alter table public.life_plans       enable row level security;
 alter table public.life_fitness     enable row level security;
 alter table public.life_shopping    enable row level security;
@@ -199,7 +219,7 @@ declare
   t text;
   tables text[] := array[
     'ledger_expenses','ledger_summaries','ledger_settings',
-    'life_money','life_habits','life_plans','life_fitness','life_shopping','life_media'
+    'life_money','life_habits','life_habit_defs','life_plans','life_fitness','life_shopping','life_media'
   ];
 begin
   foreach t in array tables loop
@@ -241,6 +261,7 @@ end $$;
 --   update public.life_shopping    set space = uid                     where space = 'default';
 --   update public.life_media       set space = uid                     where space = 'default';
 --   update public.life_habits      set id = uid || ':' || id, space = uid where space = 'default';
+--   update public.life_habit_defs  set id = uid || ':' || id, space = uid where space = 'default';
 -- end $$;
 --
 -- ---------------------------------------------------------------------------
@@ -256,7 +277,7 @@ declare
   t text;
   tables text[] := array[
     'ledger_expenses','ledger_summaries','ledger_settings',
-    'life_money','life_habits','life_plans','life_fitness','life_shopping','life_media'
+    'life_money','life_habits','life_habit_defs','life_plans','life_fitness','life_shopping','life_media'
   ];
 begin
   if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
@@ -277,11 +298,11 @@ end $$;
 --
 -- 只清数据、保留表结构：
 --   truncate public.ledger_expenses, public.ledger_summaries, public.ledger_settings,
---            public.life_money, public.life_habits, public.life_plans,
+--            public.life_money, public.life_habits, public.life_habit_defs, public.life_plans,
 --            public.life_fitness, public.life_shopping, public.life_media;
 --
 -- 连表一起删：
 --   drop table if exists public.ledger_expenses, public.ledger_summaries, public.ledger_settings,
---                        public.life_money, public.life_habits, public.life_plans,
---                        public.life_fitness, public.life_shopping, public.life_media;
+--                        public.life_money, public.life_habits, public.life_habit_defs,
+--                        public.life_plans, public.life_fitness, public.life_shopping, public.life_media;
 -- ---------------------------------------------------------------------------

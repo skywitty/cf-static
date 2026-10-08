@@ -954,38 +954,10 @@
       *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
 
-    /* ================= 云端同步状态（当前未启用，见 REMOTE_ENABLED） ================= */
+    /* ================= 顶栏工具区 ================= */
     .topbar-tools { display: flex; align-items: center; gap: 10px; flex: none; }
-    .sync-pill {
-      display: inline-flex; align-items: center; gap: 7px;
-      padding: 7px 12px; border-radius: 999px;
-      border: 1px solid var(--line-strong); background: var(--surface-raised);
-      color: var(--ink); font-size: 13px; font-weight: 600; white-space: nowrap; min-height: 38px;
-    }
-    /* [hidden] 的 UA 样式优先级最低，会被上面的 display:inline-flex 盖掉，必须显式声明 */
-    .sync-pill[hidden] { display: none; }
-    .sync-pill .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--positive); flex: none; }
-    .sync-pill[data-state="syncing"] .sync-dot { background: var(--sun); animation: syncPulse 1.1s ease-in-out infinite; }
-    .sync-pill[data-state="error"] { border-color: var(--danger); color: var(--danger); background: var(--danger-pale); }
-    .sync-pill[data-state="error"] .sync-dot { background: var(--danger); }
-    .sync-pill[data-state="offline"] .sync-dot { background: var(--line-strong); }
-    @keyframes syncPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
-    .sync-bar {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-      max-width: 1180px; margin: 0 auto 14px; padding: 12px 16px; border-radius: 16px;
-      border: 1px solid var(--danger); background: var(--danger-pale); color: var(--danger);
-      font-size: 14px; font-weight: 600; box-shadow: var(--shadow-soft);
-    }
-    .sync-bar[hidden] { display: none; }
-    .sync-bar-actions { display: flex; gap: 8px; flex: none; }
-    .sync-bar button { min-height: 44px; border-color: var(--danger); color: var(--danger); background: var(--surface-raised); }
     @media (max-width: 767px) {
       .topbar-tools { gap: 8px; }
-      .sync-pill { padding: 6px 10px; font-size: 12px; min-height: 36px; }
-    }
-    @media (max-width: 430px) {
-      #sync-pill-text { display: none; }
-      .sync-pill { padding: 6px 9px; }
     }
   </style>
 </head>
@@ -1041,18 +1013,10 @@
           <p data-page-node-id="iiktoCkrcwnJdHlQEcrUuE" id="today-label"></p>
         </div>
         <div data-page-node-id="ERceSy6R5Ji8n2Iqg4ltit" class="topbar-tools">
-          <div data-page-node-id="SYNCPILL01" aria-live="polite" class="sync-pill" data-state="syncing" hidden id="sync-pill" role="status"><span data-page-node-id="amWAiNQ5x6jLRaRLXVDPDx" class="sync-dot"></span><span data-page-node-id="B6dsCEAtri1mfP8VJlK4hX" id="sync-pill-text"><!--pnid:WPfidQXRhyZantr0i8TnRt-->同步中</span></div>
           <button data-page-node-id="S9Mqwn7wiQ6sY9VsAlITeX" class="theme-button" id="theme-button" type="button"><svg data-page-node-id="tblbsRgljN1ofgJoG1HwJU" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="48pJknWH5C1UUzogQZBqLB" href="#icon-moon"></use></svg><span data-page-node-id="068bttJUw53XED6mNGnEak" id="theme-label"><!--pnid:hKNYlnCqIXwNzMR1wcfXEI-->切换深色</span></button>
         </div>
       </header>
       <div data-page-node-id="qHii4GEUel2fmtVdbJ1fDO" class="storage-alert" hidden id="storage-alert" role="alert"></div>
-      <div data-page-node-id="hyDoaxkpCZ2F2aUTbZ8LoK" class="sync-bar" hidden id="sync-bar" role="alert">
-        <span data-page-node-id="snwOFpOXRLlR7zPVsBca5Z" id="sync-bar-text"></span>
-        <span data-page-node-id="qKODZproWmN4IAUY76xLZe" class="sync-bar-actions">
-          <button data-page-node-id="9UBaUQ2RPKyv3jcDHJRprO" id="sync-retry" type="button"><!--pnid:kXzCHxE2IsQ2F8ZDn8ZcQw-->重试同步</button>
-          <button data-page-node-id="whu3OFWTKFBuRGAiD6AI42" id="sync-use-local" type="button"><!--pnid:7db1wVL4oZnx3refFv1fAq-->先用本地数据</button>
-        </span>
-      </div>
       <div data-page-node-id="4fylFziBRMyqvhXyOWI81H" aria-live="polite" class="top-reminder" id="top-reminder" role="status"></div>
       <div data-page-node-id="ITVL9isuLM6X2HtmgFqvUg" aria-label="手机数据工具" class="mobile-tools">
         <button data-page-node-id="6kJIkDh0iEgZmPe38VQx3R" class="ghost" id="mobile-clear-sample-button" type="button"><svg data-page-node-id="Bmn4bnCSGAw2RuX3XAfPkW" aria-hidden="true" class="app-icon" viewBox="0 0 24 24"><use data-page-node-id="7DJVOvyZ9ne5BSufl0C11i" href="#icon-trash"></use></svg><span data-page-node-id="t4AxUmG6ZXu7ttdTllZs1K"><!--pnid:BR9NkdjIMHkQO8otT8K36z-->清示例</span></button>
@@ -1253,428 +1217,12 @@
   <div data-page-node-id="puU7HZdXXGU1CDyiWqS3jS" aria-live="polite" class="toast" id="save-toast" role="status"></div>
 
   <script data-page-node-id="Jvb1bS3kl7AH1xgD3PbHdR" data-pnid-children="PsHsAktusr95VAsDmYBZwa">
-/* ================= Database SDK Integration =================
- * 本工作台最初由 WorkBuddy「资料库」能力搭建，配套三张在线数据表：
- *   流水记录 —— 每一笔支出（金额 / 分类 / 备注 / 日期 / 换算工时）
- *   月度总结 —— 每月收入、固定与弹性支出、结余
- *   个人设置 —— 时薪参数与自由基金目标
- *
- * 在线数据当前未启用：REMOTE_ENABLED = false。
- * 页面只读写本机数据，不发起任何远端请求、不轮询、不显示同步与数据源切换提示。
- * 三张表 ID 与完整同步链路都保留在下面，日后把开关改回 true 即可恢复。
- * =========================================================== */
-var REMOTE_ENABLED = false;                   // 资料库在线数据开关：暂时关闭，只用本机数据
-var DB_EXPENSE = 'jHRNZYnX6X6FmDfu2YJNbQ';    // 流水记录
-var DB_SUMMARY = 'HiroGR3TCqiE5YJUrYxJYM';    // 月度总结
-var DB_SETTINGS = 'jlCZDYK7mRcnZOoPhzN2UN';   // 个人设置
-var db = null;
-var ONLINE = false;
-if (REMOTE_ENABLED) {
-  try { if (window.__SMART_PAGE__ && window.__SMART_PAGE__.database) { db = window.__SMART_PAGE__.database; ONLINE = true; } } catch (e) {}
-}
-
-/* 同步状态：syncing 同步中 / ok 已同步 / error 失败可重试 / offline 本地模式 */
-var SYNC = { phase: 'syncing', message: '', settingsId: '', settingsProbed: false, retry: null, localOnly: false, lastWrite: 0 };
-
-/* 本地模式下写入本机就算完成，不能反过来报「同步失败」吓用户 */
-function localOnlyPass(onDone) { if (onDone) onDone(null); }
-
-function setSync(phase, message) {
-  SYNC.phase = phase;
-  SYNC.message = message || '';
-  if (typeof renderSyncStatus === 'function') renderSyncStatus();
-}
-
-function queueRetry(fn) { SYNC.retry = fn || null; }
-
-/* ---------- SDK 调用分发（databaseId 全部硬编码在页面里） ---------- */
-function sdkQuery(databaseId, startCursor) {
-  switch (databaseId) {
-    case DB_SUMMARY: return db.query({ databaseId: 'HiroGR3TCqiE5YJUrYxJYM', pageSize: 200, startCursor: startCursor });
-    case DB_SETTINGS: return db.query({ databaseId: 'jlCZDYK7mRcnZOoPhzN2UN', pageSize: 200, startCursor: startCursor });
-    default: return db.query({ databaseId: 'jHRNZYnX6X6FmDfu2YJNbQ', pageSize: 200, startCursor: startCursor });
-  }
-}
-function sdkAdd(databaseId, properties) {
-  switch (databaseId) {
-    case DB_SUMMARY: return db.addRecord({ databaseId: 'HiroGR3TCqiE5YJUrYxJYM', properties: properties });
-    case DB_SETTINGS: return db.addRecord({ databaseId: 'jlCZDYK7mRcnZOoPhzN2UN', properties: properties });
-    default: return db.addRecord({ databaseId: 'jHRNZYnX6X6FmDfu2YJNbQ', properties: properties });
-  }
-}
-function sdkUpdate(databaseId, recordId, properties) {
-  switch (databaseId) {
-    case DB_SUMMARY: return db.updateRecord({ databaseId: 'HiroGR3TCqiE5YJUrYxJYM', recordId: recordId, properties: properties });
-    case DB_SETTINGS: return db.updateRecord({ databaseId: 'jlCZDYK7mRcnZOoPhzN2UN', recordId: recordId, properties: properties });
-    default: return db.updateRecord({ databaseId: 'jHRNZYnX6X6FmDfu2YJNbQ', recordId: recordId, properties: properties });
-  }
-}
-function sdkDelete(databaseId, recordId) {
-  switch (databaseId) {
-    case DB_SUMMARY: return db.deleteRecord({ databaseId: 'HiroGR3TCqiE5YJUrYxJYM', recordId: recordId });
-    case DB_SETTINGS: return db.deleteRecord({ databaseId: 'jlCZDYK7mRcnZOoPhzN2UN', recordId: recordId });
-    default: return db.deleteRecord({ databaseId: 'jHRNZYnX6X6FmDfu2YJNbQ', recordId: recordId });
-  }
-}
-
-/* ---------- 底层读写（全部走线上，带错误回调） ---------- */
-function dbQueryAll(databaseId, cb) {
-  if (!ONLINE || SYNC.localOnly) { cb(new Error('not-online'), null); return; }
-  var all = [], cursor, guard = 0;
-  function step() {
-    if (guard++ > 100) { cb(null, all); return; }
-    sdkQuery(databaseId, cursor)
-      .then(function (result) {
-        var rows = (result && result.results) || [];
-        all = all.concat(rows);                                     // 只从 result.results 取数据
-        var next = result && result.nextCursor;
-        if (result && result.hasMore && next && next !== cursor && rows.length) { cursor = next; step(); }
-        else cb(null, all);
-      })
-      .catch(function (err) { cb(err, null); });
-  }
-  step();
-}
-
-function dbAdd(databaseId, props, cb) {
-  if (!ONLINE || SYNC.localOnly) { cb(new Error('not-online'), null); return; }
-  SYNC.lastWrite = Date.now();
-  try {
-    sdkAdd(databaseId, props)
-      .then(function (r) { cb(null, r || {}); })
-      .catch(function (err) { cb(err, null); });
-  } catch (e) { cb(e, null); }
-}
-
-function dbUpdate(databaseId, recordId, props, cb) {
-  if (!ONLINE || SYNC.localOnly) { cb(new Error('not-online'), null); return; }
-  SYNC.lastWrite = Date.now();
-  try {
-    sdkUpdate(databaseId, recordId, props)
-      .then(function (r) { cb(null, r || {}); })
-      .catch(function (err) { cb(err, null); });
-  } catch (e) { cb(e, null); }
-}
-
-function dbRemove(databaseId, recordId, cb) {
-  if (!ONLINE || SYNC.localOnly) { cb(new Error('not-online'), null); return; }
-  SYNC.lastWrite = Date.now();
-  try {
-    sdkDelete(databaseId, recordId)
-      .then(function () { cb(null, true); })
-      .catch(function (err) { cb(err, null); });
-  } catch (e) { cb(e, null); }
-}
-
-function recordIdOf(r) {
-  if (!r) return '';
-  if (typeof r === 'string') return r;
-  if (r.id) return String(r.id);
-  if (r.recordId) return String(r.recordId);
-  if (r._id) return String(r._id);
-  if (r.record && (r.record.id || r.record._id)) return String(r.record.id || r.record._id);
-  if (r.result && (r.result.id || r.result._id)) return String(r.result.id || r.result._id);
-  return '';
-}
-
-/* ---------- 字段映射 ---------- */
-function numOr(value, fallback) {
-  var n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
-}
-function strOr(value) { return value === null || value === undefined ? '' : String(value); }
-
-function expenseSignature(item) { return [item.date, item.category, Number(item.amount) || 0, item.note || ''].join('|'); }
-function summarySignature(item) { return [item.month, Number(item.income) || 0, Number(item.fixed) || 0, Number(item.flexible) || 0].join('|'); }
-
-function toExpenseItem(row) {
-  var iso = row['日期'] ? String(row['日期']) : '';
-  return {
-    id: 'expense-' + (row._id || iso || Date.now()),
-    remoteId: row._id ? String(row._id) : '',
-    date: iso ? iso.slice(0, 10) : localDateString(),
-    amount: numOr(row['金额'], 0),
-    category: strOr(row['分类']) || '其他',
-    note: strOr(row['备注']),
-    createdAt: iso || new Date().toISOString(),
-    isSample: false
-  };
-}
-
-function expenseProperties(item, hourly) {
-  var hours = hourly > 0 ? (Number(item.amount) || 0) / hourly : 0;
-  var props = {};
-  props['备注'] = { text: item.note || '' };
-  props['分类'] = { text: item.category || '' };
-  props['金额'] = { currency: Number(item.amount) || 0 };
-  props['日期'] = { date: item.date };
-  props['换算工时'] = { number: Math.round(hours * 100) / 100 };
-  return props;
-}
-
-function toSummaryItem(row) {
-  return {
-    month: strOr(row['月份']),
-    remoteId: row._id ? String(row._id) : '',
-    income: numOr(row['收入'], 0),
-    fixed: numOr(row['固定支出'], 0),
-    flexible: numOr(row['弹性支出'], 0),
-    updatedAt: new Date().toISOString(),
-    isSample: false
-  };
-}
-
-function summaryProperties(item) {
-  var props = {};
-  props['月份'] = { text: item.month || '' };
-  props['收入'] = { currency: Number(item.income) || 0 };
-  props['固定支出'] = { currency: Number(item.fixed) || 0 };
-  props['弹性支出'] = { currency: Number(item.flexible) || 0 };
-  props['结余'] = { currency: calculateMonthlyBalance(item) || 0 };
-  return props;
-}
-
-function settingsProperties() {
-  var p = (state && state.profile) || {};
-  var f = (state && state.freedom) || {};
-  var props = {};
-  props['名称'] = { text: '我的账本设置' };
-  props['到手月薪'] = { currency: Number(p.monthlySalary) || 0 };
-  props['一年发薪月数'] = { number: Number(p.payMonths) || 0 };
-  props['每月为工作花的钱'] = { currency: Number(p.monthlyWorkCost) || 0 };
-  props['每天常规在公司小时'] = { number: Number(p.dailyOfficeHours) || 0 };
-  props['单程通勤分钟'] = { number: Number(p.oneWayCommuteMinutes) || 0 };
-  props['每周额外加班小时'] = { number: Number(p.weeklyOvertimeHours) || 0 };
-  props['自由基金目标金额'] = { currency: Number(f.targetAmount) || 0 };
-  props['自由基金目标月份'] = { text: f.targetDate || '' };
-  props['自由基金已攒'] = { currency: Number(f.currentSaved) || 0 };
-  props['每月基本开销'] = { currency: Number(f.basicMonthlyCost) || 0 };
-  props['估算起始月'] = { text: f.startMonth || '' };
-  props['自由宣言'] = { text: f.reason || '' };
-  props['主题'] = { text: (state && state.settings && state.settings.theme) === 'dark' ? 'dark' : 'light' };
-  return props;
-}
-
-function applySettingsRow(row) {
-  if (!row) return;
-  var payMonths = numOr(row['一年发薪月数'], 0);
-  var officeHours = numOr(row['每天常规在公司小时'], 0);
-  state.profile = {
-    monthlySalary: numOr(row['到手月薪'], 0),
-    payMonths: payMonths > 0 ? payMonths : 12,
-    monthlyWorkCost: numOr(row['每月为工作花的钱'], 0),
-    dailyOfficeHours: officeHours > 0 ? officeHours : 8,
-    oneWayCommuteMinutes: numOr(row['单程通勤分钟'], 0),
-    weeklyOvertimeHours: numOr(row['每周额外加班小时'], 0),
-    isSample: false
-  };
-  state.freedom = {
-    targetAmount: numOr(row['自由基金目标金额'], 0),
-    targetDate: strOr(row['自由基金目标月份']),
-    reason: strOr(row['自由宣言']),
-    currentSaved: numOr(row['自由基金已攒'], 0),
-    basicMonthlyCost: numOr(row['每月基本开销'], 0),
-    startMonth: strOr(row['估算起始月']),
-    isSample: false
-  };
-  var theme = strOr(row['主题']);
-  if (theme === 'dark' || theme === 'light') state.settings.theme = theme;
-  SYNC.settingsId = row._id ? String(row._id) : '';
-}
-
-/* ---------- 远端数据合并（云端为准，本地待同步项保留） ---------- */
-function applyRemoteExpenses(rows) {
-  var remote = (rows || []).map(toExpenseItem);
-  if (!remote.length) {
-    state.expenses = state.expenses.filter(function (item) { return item.isSample || !item.remoteId; });
-    return;
-  }
-  var sigCount = {};
-  remote.forEach(function (item) { var k = expenseSignature(item); sigCount[k] = (sigCount[k] || 0) + 1; });
-  var keep = [];
-  state.expenses.forEach(function (item) {
-    if (item.isSample || item.remoteId) return;
-    var k = expenseSignature(item);
-    if (sigCount[k] > 0) { sigCount[k] -= 1; return; }   // 已被云端收录，改用远端记录
-    keep.push(item);
-  });
-  state.expenses = remote.concat(keep);
-}
-
-function applyRemoteSummaries(rows) {
-  var remote = (rows || []).map(toSummaryItem);
-  if (!remote.length) {
-    state.monthlySummaries = state.monthlySummaries.filter(function (item) { return item.isSample || !item.remoteId; });
-    return;
-  }
-  var sigCount = {};
-  remote.forEach(function (item) { var k = summarySignature(item); sigCount[k] = (sigCount[k] || 0) + 1; });
-  var keep = [];
-  state.monthlySummaries.forEach(function (item) {
-    if (item.isSample || item.remoteId) return;
-    var k = summarySignature(item);
-    if (sigCount[k] > 0) { sigCount[k] -= 1; return; }
-    keep.push(item);
-  });
-  state.monthlySummaries = remote.concat(keep);
-}
-
-/* ---------- 拉取全部线上数据 ---------- */
-function pullAllRemote(cb) {
-  if (!REMOTE_ENABLED) { if (cb) cb(false); return; }   // 在线数据未启用：静默跳过，不弹任何提示
-  if (!ONLINE || SYNC.localOnly) {
-    setSync('offline', t('sync.offlineHint'));
-    if (cb) cb(false);
-    return;
-  }
-  setSync('syncing', '');
-  var remaining = 3, failed = 0;
-  function done() {
-    remaining -= 1;
-    if (remaining > 0) return;
-    if (failed) {
-      setSync('error', t('sync.readFailed'));
-      queueRetry(function () { pullAllRemote(refreshCallback); });
-    } else {
-      setSync('ok', '');
-      SYNC.retry = null;
-    }
-    if (cb) cb(!failed);
-  }
-  dbQueryAll(DB_EXPENSE, function (err, rows) { if (err) failed += 1; else applyRemoteExpenses(rows); done(); });
-  dbQueryAll(DB_SUMMARY, function (err, rows) { if (err) failed += 1; else applyRemoteSummaries(rows); done(); });
-  dbQueryAll(DB_SETTINGS, function (err, rows) {
-    if (err) { failed += 1; }
-    else if (rows && rows.length) { applySettingsRow(rows[0]); }
-    else if (!SYNC.settingsProbed) { SYNC.settingsProbed = true; pushSettings(); }  // 首次使用：把当前设置落成线上第一行
-    done();
-  });
-}
-
-function refreshCallback(ok) {
-  if (!ok) return;
-  saveState();
-  renderAll();
-  refillSettingsForms();   // 线上设置拉回来后，把表单也同步成最新值
-}
-
-/* 回填时避开正在输入的输入框，避免打断用户 */
-function refillSettingsForms() {
-  const active = document.activeElement;
-  const profileForm = document.getElementById('profile-form');
-  const freedomForm = document.getElementById('freedom-form');
-  if (profileForm && !profileForm.contains(active)) fillProfileForm();
-  if (freedomForm && !freedomForm.contains(active)) fillFreedomForm();
-}
-
-function refreshRemote() { pullAllRemote(refreshCallback); }
-
-/* ---------- 写回线上 ---------- */
-function pushSettings(onDone) {
-  if (!ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }   // 本地模式：本机已存好，不算失败
-  var props = settingsProperties();
-  function ok() { setSync('ok', ''); if (onDone) onDone(null); }
-  function fail(err) {
-    setSync('error', t('sync.writeFailed'));
-    queueRetry(function () { pushSettings(); });
-    if (onDone) onDone(err);
-  }
-  if (SYNC.settingsId) {
-    dbUpdate(DB_SETTINGS, SYNC.settingsId, props, function (err) { if (err) fail(err); else ok(); });
-  } else {
-    dbAdd(DB_SETTINGS, props, function (err, r) {
-      if (err) { fail(err); return; }
-      var rid = recordIdOf(r);
-      if (rid) { SYNC.settingsId = rid; ok(); return; }
-      // 未返回记录 ID 时，回读一次拿到它
-      dbQueryAll(DB_SETTINGS, function (qerr, rows) {
-        if (!qerr && rows && rows.length) SYNC.settingsId = rows[0]._id ? String(rows[0]._id) : '';
-        ok();
-      });
-    });
-  }
-}
-
-function pushExpense(item, isEdit, onDone) {
-  if (!ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }   // 本地模式：本机已存好，不算失败
-  var hourly = 0;
-  try { hourly = currentHourly().realHourly || 0; } catch (e) { hourly = 0; }
-  var props = expenseProperties(item, hourly);
-  function handle(err, r) {
-    if (err) {
-      setSync('error', t('sync.writeFailed'));
-      queueRetry(function () { pushExpense(item, isEdit, null); });
-      if (onDone) onDone(err);
-      return;
-    }
-    if (!isEdit) { var rid = recordIdOf(r); if (rid) item.remoteId = rid; }
-    refreshRemote();
-    if (onDone) onDone(null);
-  }
-  if (isEdit && item.remoteId) dbUpdate(DB_EXPENSE, item.remoteId, props, handle);
-  else dbAdd(DB_EXPENSE, props, handle);
-}
-
-function pushSummary(item, isEdit, onDone) {
-  if (!ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }   // 本地模式：本机已存好，不算失败
-  var props = summaryProperties(item);
-  function handle(err, r) {
-    if (err) {
-      setSync('error', t('sync.writeFailed'));
-      queueRetry(function () { pushSummary(item, isEdit, null); });
-      if (onDone) onDone(err);
-      return;
-    }
-    if (!isEdit) { var rid = recordIdOf(r); if (rid) item.remoteId = rid; }
-    refreshRemote();
-    if (onDone) onDone(null);
-  }
-  if (isEdit && item.remoteId) dbUpdate(DB_SUMMARY, item.remoteId, props, handle);
-  else dbAdd(DB_SUMMARY, props, handle);
-}
-
-function removeExpense(item, onDone) {
-  if (!ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }   // 本地模式：没有远端副本要删
-  if (!item || !item.remoteId) { localOnlyPass(onDone); return; }
-  dbRemove(DB_EXPENSE, item.remoteId, function (err) {
-    if (err) {
-      setSync('error', t('sync.writeFailed'));
-      queueRetry(function () { removeExpense(item, null); });
-      if (onDone) onDone(err);
-      return;
-    }
-    refreshRemote();
-    if (onDone) onDone(null);
-  });
-}
-
-function removeSummary(item, onDone) {
-  if (!ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }   // 本地模式：没有远端副本要删
-  if (!item || !item.remoteId) { localOnlyPass(onDone); return; }
-  dbRemove(DB_SUMMARY, item.remoteId, function (err) {
-    if (err) {
-      setSync('error', t('sync.writeFailed'));
-      queueRetry(function () { removeSummary(item, null); });
-      if (onDone) onDone(err);
-      return;
-    }
-    refreshRemote();
-    if (onDone) onDone(null);
-  });
-}
-
-function retrySync() {
-  if (SYNC.localOnly) { SYNC.localOnly = false; SYNC.settingsProbed = false; }
-  var fn = SYNC.retry;
-  SYNC.retry = null;
-  if (fn) { fn(); } else { pullAllRemote(refreshCallback); }
-}
-
-function useLocalData() {
-  SYNC.localOnly = true;
-  SYNC.retry = null;
-  setSync('offline', t('sync.localMode'));
-}
+/* ================= 本机存储 =================
+ * 这一版是「纯本机版」：数据只读写 localStorage，不登录、不连云、不显示同步提示。
+ * 要跨设备、按账号存云端，用同目录下的 online.html（持久化层换成 Supabase）。
+ * 早先这里还留着一整套休眠的「资料库 SDK」同步层（REMOTE_ENABLED = false），
+ * 与 online.html 是两套后端、两份合并逻辑，改了一边另一边不会跟着变 —— 已整体移除。
+ * ============================================ */
 
 
 const I18N = {
@@ -1710,13 +1258,7 @@ const I18N = {
     'import.tooLarge': '导入失败：文件超过 2 MB。', 'import.failed': '导入失败，现有数据未被覆盖。原因：{reason}', 'import.storageUnavailable': '本地存储不可用，无法安全导入', 'confirm.clearSamples': '只会清除仍带示例标记的数据，编辑过和新建的数据都会保留。继续吗？', 'confirm.deleteExpense': '删除这笔支出吗？', 'confirm.deleteMonthly': '删除这个月度总结吗？', 'monthly.conflict': '这个月份已经有一份总结。请先删除原记录，或继续编辑已有月份。',
     'error.required': '{field}不能为空', 'error.tooLong': '{field}过长', 'error.nonNegative': '{field}必须是非负有限数', 'error.expensesArray': '支出记录必须是数组', 'error.expensesLarge': '支出记录数量过大', 'error.expenseDuplicate': '支出记录存在重复 ID', 'error.expenseDate': '支出日期非法', 'error.createdAt': '创建时间非法', 'error.summariesArray': '月度总结必须是数组', 'error.summariesLarge': '月度总结数量过大', 'error.summaryMonth': '总结月份非法', 'error.summaryDuplicate': '月度总结存在重复月份', 'error.targetMonth': '目标月份非法', 'error.startMonth': '起始月份非法', 'error.importFormat': '导入包格式无效', 'error.importUnreadable': '导入包无法读取', 'error.importLarge': '导入文件过大', 'error.appId': '应用标识不匹配', 'error.importVersion': '导入版本无效', 'error.importFuture': '导入版本高于当前版本', 'error.importState': '导入状态无效',
     'field.expenseId': '支出 ID', 'field.createdAt': '创建时间', 'field.expenseAmount': '支出金额', 'field.expenseCategory': '支出分类', 'field.expenseNote': '支出备注', 'field.monthIncome': '月收入', 'field.freedomTarget': '自由基金目标', 'field.freedomCurrent': '当前已攒', 'field.freedomBasic': '基本月开销', 'field.freedomReasonShort': '自由理由', 'field.salaryMonths': '发薪月数', 'field.workCost': '工作成本', 'field.officeTime': '在场时间', 'field.commuteTime': '通勤时间', 'field.overtimeTime': '加班时间',
-    'export.filename': '打工人小账本-{date}.json',
-    'sync.syncing': '同步中', 'sync.ok': '已同步', 'sync.error': '同步失败', 'sync.offline': '本地模式',
-    'sync.readFailed': '云端数据没读上，现在显示的是本机缓存。点「重试同步」再拉一次。',
-    'sync.writeFailed': '这次修改没写到云端，已先存在本机。点「重试同步」可以重发。',
-    'sync.offlineHint': '资料库暂时连不上，已切到本地模式，数据只在这台设备上。',
-    'sync.localMode': '已切到本地模式，修改只保存在本机。',
-    'sync.retry': '重试同步', 'sync.useLocal': '先用本地数据', 'sync.retryDone': '已重新同步。', 'common.saving': '保存中…'
+    'export.filename': '打工人小账本-{date}.json'
   },
   en: {
     'app.name': 'Worker Ledger', 'app.tagline': 'Make every yuan and hour count', 'app.documentTitle': '{page} | Worker Ledger',
@@ -1750,13 +1292,7 @@ const I18N = {
     'import.tooLarge': 'Import failed: the file exceeds 2 MB.', 'import.failed': 'Import failed. Existing data was not overwritten. Reason: {reason}', 'import.storageUnavailable': 'Local storage is unavailable; data cannot be imported safely', 'confirm.clearSamples': 'Only data still marked as sample will be removed. Edited and newly created data will remain. Continue?', 'confirm.deleteExpense': 'Delete this expense?', 'confirm.deleteMonthly': 'Delete this monthly review?', 'monthly.conflict': 'A review already exists for this month. Delete the original or continue editing the existing month.',
     'error.required': '{field} is required', 'error.tooLong': '{field} is too long', 'error.nonNegative': '{field} must be a non-negative finite number', 'error.expensesArray': 'Expense records must be an array', 'error.expensesLarge': 'There are too many expense records', 'error.expenseDuplicate': 'Expense records contain duplicate IDs', 'error.expenseDate': 'Expense date is invalid', 'error.createdAt': 'Creation time is invalid', 'error.summariesArray': 'Monthly reviews must be an array', 'error.summariesLarge': 'There are too many monthly reviews', 'error.summaryMonth': 'Review month is invalid', 'error.summaryDuplicate': 'Monthly reviews contain duplicate months', 'error.targetMonth': 'Target month is invalid', 'error.startMonth': 'Start month is invalid', 'error.importFormat': 'Import package format is invalid', 'error.importUnreadable': 'Import package cannot be read', 'error.importLarge': 'Import file is too large', 'error.appId': 'Application ID does not match', 'error.importVersion': 'Import version is invalid', 'error.importFuture': 'Import version is newer than this app', 'error.importState': 'Imported state is invalid',
     'field.expenseId': 'Expense ID', 'field.createdAt': 'Creation Time', 'field.expenseAmount': 'Expense Amount', 'field.expenseCategory': 'Expense Category', 'field.expenseNote': 'Expense Note', 'field.monthIncome': 'Monthly Income', 'field.freedomTarget': 'Freedom Fund Target', 'field.freedomCurrent': 'Current Savings', 'field.freedomBasic': 'Basic Monthly Costs', 'field.freedomReasonShort': 'Freedom Reason', 'field.salaryMonths': 'Pay Months', 'field.workCost': 'Work Costs', 'field.officeTime': 'Office Time', 'field.commuteTime': 'Commute Time', 'field.overtimeTime': 'Overtime',
-    'export.filename': 'worker-ledger-{date}.json',
-    'sync.syncing': 'Syncing', 'sync.ok': 'Synced', 'sync.error': 'Sync failed', 'sync.offline': 'Local mode',
-    'sync.readFailed': 'Cloud data could not be loaded, so cached local data is shown. Tap "Retry sync" to try again.',
-    'sync.writeFailed': 'This change did not reach the cloud and is stored on this device. Tap "Retry sync" to resend it.',
-    'sync.offlineHint': 'The library is unreachable, so local mode is on and data stays on this device.',
-    'sync.localMode': 'Local mode is on. Changes are stored on this device only.',
-    'sync.retry': 'Retry sync', 'sync.useLocal': 'Use local data', 'sync.retryDone': 'Synced again.', 'common.saving': 'Saving…'
+    'export.filename': 'worker-ledger-{date}.json'
   }
 };
 const LANG = new URL(location.href).searchParams.get('lang') === 'en' ? 'en' : 'zh';
@@ -2383,25 +1919,6 @@ function sanitizeImport(payload) {
       form.addEventListener('input', persist);
       form.addEventListener('change', persist);
     }
-    /* 写入云端期间禁用提交按钮，避免连点造成重复记录 */
-    function lockSubmit(form, keepText) {
-      const btn = form.querySelector('[type="submit"]');
-      if (!btn) return () => {};
-      const original = btn.textContent;
-      let done = false;
-      btn.disabled = true;
-      if (!keepText) btn.textContent = t('common.saving');
-      const timer = setTimeout(() => unlock(), 10000);
-      function unlock() {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        btn.disabled = false;
-        btn.textContent = original;
-      }
-      return unlock;
-    }
-
     function numberFrom(form, name) {
       const value = new FormData(form).get(name);
       const number = Number(value);
@@ -2885,59 +2402,6 @@ function sanitizeImport(payload) {
       $('#theme-button').setAttribute('aria-label', label);
     }
 
-    /* 同步状态指示器：已同步 / 同步中 / 失败可重试 / 本地模式
-       在线数据未启用时，状态胶囊与提示条整体不出现 */
-    function renderSyncStatus() {
-      const pill = document.getElementById('sync-pill');
-      const barEl = document.getElementById('sync-bar');
-      if (!REMOTE_ENABLED) {
-        if (pill) pill.hidden = true;
-        if (barEl) barEl.hidden = true;
-        return;
-      }
-      if (!pill) return;
-      const labels = { syncing: t('sync.syncing'), ok: t('sync.ok'), error: t('sync.error'), offline: t('sync.offline') };
-      pill.setAttribute('data-state', SYNC.phase || 'syncing');
-      const text = document.getElementById('sync-pill-text');
-      if (text) text.textContent = labels[SYNC.phase] || labels.syncing;
-      const failed = SYNC.phase === 'error' || SYNC.phase === 'offline';
-      const bar = document.getElementById('sync-bar');
-      if (bar) bar.hidden = !failed;
-      const barText = document.getElementById('sync-bar-text');
-      if (barText) barText.textContent = SYNC.message || t('sync.readFailed');
-      const retry = document.getElementById('sync-retry');
-      if (retry) retry.textContent = t('sync.retry');
-      const useLocal = document.getElementById('sync-use-local');
-      if (useLocal) useLocal.textContent = t('sync.useLocal');
-    }
-
-    /* 给元素打上「文本来自线上数据表」的标记 */
-    function markBind(el, databaseId) {
-      if (!el) return;
-      el.setAttribute('data-sp-bindable', 'database');
-      el.setAttribute('data-sp-database-id', databaseId);
-    }
-
-    /* 标注哪些文字来自线上数据表（资料库数据绑定标记） */
-    function markDatabaseBindings() {
-      markBind($('#dashboard-real-hourly'), DB_SETTINGS);
-      markBind($('#dashboard-hourly-note'), DB_SETTINGS);
-      markBind($('#dashboard-freedom'), DB_SETTINGS);
-      markBind($('#dashboard-freedom-note'), DB_SETTINGS);
-      markBind($('#freedom-progress-value'), DB_SETTINGS);
-      markBind($('#safety-months'), DB_SETTINGS);
-      markBind($('#dashboard-month-expense'), DB_EXPENSE);
-      markBind($('#dashboard-today-expense'), DB_EXPENSE);
-      markBind($('#dashboard-recent-list'), DB_EXPENSE);
-      markBind($('#today-expense'), DB_EXPENSE);
-      markBind($('#month-expense'), DB_EXPENSE);
-      markBind($('#month-expense-hours'), DB_EXPENSE);
-      markBind($('#expense-list'), DB_EXPENSE);
-      markBind($('#monthly-list'), DB_SUMMARY);
-      markBind($('#average-savings'), DB_SUMMARY);
-      markBind($('#savings-ranking'), DB_SUMMARY);
-    }
-
     function renderAll() {
       renderTheme();
       renderReminder();
@@ -2947,8 +2411,6 @@ function sanitizeImport(payload) {
       renderMonthly();
       renderFreedom();
       renderInsights();
-      markDatabaseBindings();
-      renderSyncStatus();
       requestAnimationFrame(fitVisibleKpiValues);
     }
 
@@ -2975,7 +2437,6 @@ function sanitizeImport(payload) {
       const existing = state.expenses.find((item) => item.id === editingId);
       const item = {
         id: existing ? existing.id : uid('expense'),
-        remoteId: existing ? (existing.remoteId || '') : '',
         date: quick ? localDateString() : String(data.get('date')),
         amount,
         category: String(data.get('category') || '其他').slice(0, 30),
@@ -2995,12 +2456,7 @@ function sanitizeImport(payload) {
       if (quick) { form.reset(); $('#quick-result').textContent = message; }
       else { resetExpenseForm(); $('#expense-result').textContent = message; }
       showToast(!persisted ? t('toast.saveFailed') : quick ? t('toast.quickSaved') : t('toast.expenseSaved'));
-      const unlock = lockSubmit(form, quick);
-      pushExpense(item, !!existing, function (err) {
-        unlock();
-        if (err) $('#expense-result').textContent = t('sync.writeFailed');
-        else dropDraft('expense');
-      });
+      dropDraft('expense');
     }
 
     function clearSamples() {
@@ -3014,16 +2470,10 @@ function sanitizeImport(payload) {
         draft.settings = { theme, sampleState: 'cleared', version: 1 };
       });
       fillProfileForm(); fillFreedomForm();
-      schedulePushSettings();
     }
 
     $$('[data-target]').forEach((button) => button.addEventListener('click', () => activateSection(button.dataset.target)));
-    $('#theme-button').addEventListener('click', () => { updateState((draft) => { draft.settings.theme = draft.settings.theme === 'dark' ? 'light' : 'dark'; }); schedulePushSettings(); });
-    let settingsPushTimer;
-    function schedulePushSettings() {
-      clearTimeout(settingsPushTimer);
-      settingsPushTimer = setTimeout(() => { pushSettings(); }, 400);
-    }
+    $('#theme-button').addEventListener('click', () => { updateState((draft) => { draft.settings.theme = draft.settings.theme === 'dark' ? 'light' : 'dark'; }); });
     $('#profile-form').addEventListener('input', (event) => {
       const form = event.currentTarget;
       updateState((draft) => {
@@ -3033,7 +2483,6 @@ function sanitizeImport(payload) {
         };
         draft.settings.sampleState = 'custom';
       });
-      schedulePushSettings();
     });
     $('#dashboard-expense-form').addEventListener('submit', (event) => { event.preventDefault(); saveExpenseFrom(event.currentTarget, true); });
     $('#expense-form').addEventListener('submit', (event) => { event.preventDefault(); saveExpenseFrom(event.currentTarget); });
@@ -3052,9 +2501,7 @@ function sanitizeImport(payload) {
         $('#expense-form').scrollIntoView({ behavior: 'auto', block: 'center' });
       }
       if (deleteId && window.confirm(t('confirm.deleteExpense'))) {
-        const target = state.expenses.find((record) => record.id === deleteId);
         updateState((draft) => { draft.expenses = draft.expenses.filter((record) => record.id !== deleteId); });
-        if (target) removeExpense(target);
       }
     });
     $('#monthly-form').addEventListener('input', updateMonthlyPreview);
@@ -3070,34 +2517,26 @@ function sanitizeImport(payload) {
         return;
       }
       const existing = originalMonth ? state.monthlySummaries.find((record) => record.month === originalMonth) : null;
-      const item = { month, income: numberFrom(form, 'income'), fixed: numberFrom(form, 'fixed'), flexible: numberFrom(form, 'flexible'), remoteId: existing ? (existing.remoteId || '') : '', updatedAt: new Date().toISOString(), isSample: false };
+      const item = { month, income: numberFrom(form, 'income'), fixed: numberFrom(form, 'fixed'), flexible: numberFrom(form, 'flexible'), updatedAt: new Date().toISOString(), isSample: false };
       updateState((draft) => {
         const index = originalMonth ? draft.monthlySummaries.findIndex((record) => record.month === originalMonth) : -1;
         if (index >= 0) draft.monthlySummaries[index] = item; else draft.monthlySummaries.push(item);
         draft.settings.sampleState = 'custom';
       });
       resetMonthlyForm();
-      const unlock = lockSubmit(form, false);
-      pushSummary(item, !!existing, function (err) {
-        unlock();
-        if (err) showStorageAlert(t('sync.writeFailed'));
-        else dropDraft('monthly');
-      });
+      dropDraft('monthly');
     });
     $('#monthly-cancel').addEventListener('click', () => { dropDraft('monthly'); resetMonthlyForm(); });
     $('#monthly-list').addEventListener('click', (event) => {
       const editMonth = event.target.dataset.monthlyEdit; const deleteMonth = event.target.dataset.monthlyDelete;
       if (editMonth) { const item = state.monthlySummaries.find((record) => record.month === editMonth); if (!item) return; $('#monthly-editing-month').value = item.month; $('#summary-month').value = item.month; $('#summary-income').value = item.income; $('#summary-fixed').value = item.fixed; $('#summary-flexible').value = item.flexible; $('#monthly-cancel').hidden = false; updateMonthlyPreview(); $('#monthly-form').scrollIntoView({ behavior: 'auto', block: 'center' }); }
       if (deleteMonth && window.confirm(t('confirm.deleteMonthly'))) {
-        const target = state.monthlySummaries.find((record) => record.month === deleteMonth);
         updateState((draft) => { draft.monthlySummaries = draft.monthlySummaries.filter((record) => record.month !== deleteMonth); });
-        if (target) removeSummary(target);
       }
     });
     $('#freedom-form').addEventListener('input', (event) => {
       const form = event.currentTarget; const data = new FormData(form);
       updateState((draft) => { draft.freedom = { targetAmount: numberFrom(form, 'targetAmount'), targetDate: String(data.get('targetDate') || ''), reason: String(data.get('reason') || '').slice(0, 300), currentSaved: numberFrom(form, 'currentSaved'), basicMonthlyCost: numberFrom(form, 'basicMonthlyCost'), startMonth: String(data.get('startMonth') || ''), isSample: false }; draft.settings.sampleState = 'custom'; });
-      schedulePushSettings();
     });
     $('#scenario-form').addEventListener('input', renderScenarios);
     $('#clear-sample-button').addEventListener('click', clearSamples);
@@ -3132,21 +2571,7 @@ function sanitizeImport(payload) {
     bindDraftCache('#monthly-form', 'monthly', ['month', 'income', 'fixed', 'flexible']);
     restoreDraft($('#expense-form'), 'expense', ['date', 'amount', 'category', 'note']);
     restoreDraft($('#monthly-form'), 'monthly', ['month', 'income', 'fixed', 'flexible']);
-    renderAll();                        // ① 先把界面渲染出来，不白屏
-    renderSyncStatus();                 // 在线数据未启用时，这里会把同步提示整体收起
-    $('#sync-retry').addEventListener('click', retrySync);
-    $('#sync-use-local').addEventListener('click', useLocalData);
-    if (REMOTE_ENABLED) pullAllRemote(refreshCallback);   // ② 启用在线数据时才去拉远端
-    if (ONLINE && typeof db.onUpdated === 'function') {
-      let updatedTimer;
-      db.onUpdated(function (payload) {
-        const ids = (payload && payload.databaseIds) || [];
-        if (!ids.length) return;
-        if (Date.now() - SYNC.lastWrite < 1500) return;   // 自己刚写过的，不用再拉
-        clearTimeout(updatedTimer);
-        updatedTimer = setTimeout(() => { pullAllRemote(refreshCallback); }, 400);
-      });
-    }
+    renderAll();                        // 先把界面渲染出来，不白屏
   </script>
 </body>
 </html>

@@ -1823,6 +1823,7 @@
 
   var DB_MONEY = 'life_money';
   var DB_HABIT = 'life_habits';
+  var DB_HABIT_DEFS = 'life_habit_defs';
   var DB_PLAN = 'life_plans';
   var DB_FITNESS = 'life_fitness';
   var DB_SHOPPING = 'life_shopping';
@@ -1843,7 +1844,7 @@
     url: SUPABASE_CONFIG.url,
     anonKey: SUPABASE_CONFIG.anonKey,
     requireAuth: true,          // 未登录一律拒绝读写，避免静默落到默认空间
-    tables: [DB_MONEY, DB_HABIT, DB_PLAN, DB_FITNESS, DB_SHOPPING, DB_MEDIA]
+    tables: [DB_MONEY, DB_HABIT, DB_HABIT_DEFS, DB_PLAN, DB_FITNESS, DB_SHOPPING, DB_MEDIA]
   });
   CONFIGURED = SupabaseSync.isConfigured();
 
@@ -1911,7 +1912,10 @@
       var media = (candidate.mediaItems || []).filter(function (m) { return !m.sample; });
       var habits = (candidate.habits || []).filter(function (h) { return !h.sample; });
       var checks = habits.reduce(function (sum, h) { return sum + Object.keys(h.entries || {}).length; }, 0);
-      if (records.length || media.length || checks) return { records: records, media: media, habits: habits, checks: checks };
+      var hidden = (candidate.settings && Array.isArray(candidate.settings.hiddenHabitKeys)) ? candidate.settings.hiddenHabitKeys : [];
+      if (records.length || media.length || checks || hidden.length) {
+        return { records: records, media: media, habits: habits, checks: checks, hiddenHabitKeys: hidden };
+      }
     }
     return null;
   }
@@ -1985,12 +1989,13 @@
   /* 执行合并：复用导入链路，再把新增内容写回线上数据表 */
   function runLocalMerge(info, onDone) {
     if (!ONLINE || LOCAL_ONLY) { onDone(true, 0); return; }
-    var merged = mergeImported({ records: info.records, mediaItems: info.media, habits: info.habits });
+    var merged = mergeImported({ records: info.records, mediaItems: info.media, habits: info.habits,
+      settings: { hiddenHabitKeys: info.hiddenHabitKeys || [] } });
     var s = merged.summary;
     var added = s.records + s.media + s.habits + s.checks;
     saveState();
     renderAll();
-    if (!added && !s.habits) { onDone(false, 0); return; }
+    if (!added && !s.hidden) { onDone(false, 0); return; }
     pushMergedToRemote(merged);
     // 打卡按每批 15 条节流推送，等待时间跟批数走（上限 12 秒，与导入那条链路一致）
     var wait = 1200 + Math.ceil(merged.habitPushes.length / 15) * 220;
@@ -2107,7 +2112,7 @@
       try {
         if (realtimeChannel && typeof client.removeChannel === 'function') client.removeChannel(realtimeChannel);
         realtimeChannel = client.channel('life-sync-' + String(SUPABASE_SPACE).slice(0, 8));
-        [DB_MONEY, DB_HABIT, DB_PLAN, DB_FITNESS, DB_SHOPPING, DB_MEDIA].forEach(function (table) {
+        [DB_MONEY, DB_HABIT, DB_HABIT_DEFS, DB_PLAN, DB_FITNESS, DB_SHOPPING, DB_MEDIA].forEach(function (table) {
           realtimeChannel.on('postgres_changes', {
             event: '*', schema: 'public', table: table, filter: 'space=eq.' + SUPABASE_SPACE
           }, function () {
@@ -2154,6 +2159,27 @@
   // 习惯打卡的主键是「习惯 × 日期」，重复打卡自动覆盖而不是堆行；
   // 带上账号前缀，否则不同用户的同一天同一习惯会撞主键
   function habitRowId(habit, date) { return scopedId('habit-' + (habit.key || habit.id || habit.name || 'x') + '-' + date); }
+
+  /* 习惯定义一行 = 一个习惯（与打卡的「习惯 × 日期」分开）。
+     自定义习惯靠这张表跨设备；内置习惯本身由代码定义，这张表只用来记录它有没有被删掉。 */
+  function habitDefRowId(key) { return scopedId('habitdef-' + (key || 'x')); }
+  function isBuiltInHabitKey(key) { return HABIT_DEFS.some(function (def) { return def.key === key; }); }
+  var HABIT_TYPES = ['check', 'counter', 'number'];
+  function habitDefOf(h) {
+    return { key: h.key || h.id || h.name || '', name: h.name || '', type: h.type || 'check',
+      target: Number(h.target) || 1, unit: h.unit || '次', tone: h.tone || 'sage', hidden: Boolean(h.hidden) };
+  }
+  function habitDefFromRow(r) {
+    return { key: r.habit_key || '', name: r.name || '', type: HABIT_TYPES.indexOf(r.type) >= 0 ? r.type : 'check',
+      target: Number(r.target) || 1, unit: r.unit || '次', tone: r.tone || 'sage', hidden: Boolean(r.hidden) };
+  }
+  function habitDefSignature(dir) {
+    return [dir.name || '', dir.type || '', Number(dir.target) || 0, dir.unit || '', dir.tone || '', dir.hidden ? 1 : 0].join('|');
+  }
+  function builtInHabitName(key) {
+    var def = HABIT_DEFS.find(function (item) { return item.key === key; });
+    return def ? def.name : '';
+  }
 
   /* ---------- 底层读写：沿用原来的回调风格，方便页面其余代码零改动 ---------- */
   function dbFetchAll(table, cb) {
@@ -2353,6 +2379,93 @@
     return upload;
   }
 
+  /* 习惯定义的合并：规则与记录一致，只是键是「习惯」而不是「习惯 × 日期」。
+     删除也是用一行 hidden=true 表达的（见 pushHabitDef），所以「线上没有这一行」
+     永远只意味着「还没同步过」，不会和「别的设备删掉了」混淆 —— 习惯因此不会被误删。
+       ① 线上有、本机改过   → 以本地为准并补传
+       ② 线上有、本机没改过 → 以线上为准（只覆盖定义，打卡记录保留）
+       ③ 线上是 hidden      → 本地跟着删掉 / 隐藏
+       ④ 线上没有这一行     → 补传（删除从不删行，所以「没有」只可能是没同步过） */
+  function mergeHabitDefs(rows, pending) {
+    if (!rows) return [];                                  // 读取失败：本地原样保留，不动
+    var byKey = {};
+    rows.forEach(function (r) { if (r && r.habit_key) byKey[r.habit_key] = r; });
+
+    var hidden = (state.settings.hiddenHabitKeys || []).slice();
+    var localByKey = {};
+    state.habits.forEach(function (h) { if (h.key) localByKey[h.key] = h; });
+
+    /* ---------- 线上 -> 本地 ---------- */
+    Object.keys(byKey).forEach(function (key) {
+      var r = byKey[key];
+      var waiting = Boolean(pending[r.id || habitDefRowId(key)]);
+      var idx = hidden.indexOf(key);
+
+      if (r.hidden) {
+        if (waiting) return;                               // ① 本机刚改过 → 以本地为准
+        if (idx < 0) hidden.push(key);                     // ③ 别的设备删掉了
+        delete localByKey[key];
+        state.habits = state.habits.filter(function (h) { return h.key !== key; });
+        return;
+      }
+
+      // 线上说这一项还在，而本机把它当「已删/已隐藏」
+      if (idx >= 0) {
+        if (waiting) return;                               // ① 本机刚删的 → 以本地为准，稍后把 hidden 行推上去
+        hidden.splice(idx, 1);                             // ② 本机的删除作废，下面按「本地没有」把它补回来
+      }
+
+      var local = localByKey[key];
+      if (!local) {
+        // ② 本地没有这个习惯 → 从线上补回来。内置习惯的定义仍取自代码，线上只提供「它没被删」
+        var def = habitDefFromRow(r);
+        if (isBuiltInHabitKey(key)) {
+          var builtin = HABIT_DEFS.find(function (item) { return item.key === key; });
+          state.habits.push(Object.assign({}, builtin, { id: 'habit-' + key, entries: {}, sample: false }));
+        } else {
+          state.habits.push({ id: 'habit-' + key, key: key, name: def.name || '习惯', type: def.type,
+            target: def.target, unit: def.unit, tone: def.tone, entries: {}, sample: false });
+        }
+        return;
+      }
+      if (waiting) return;                                 // ① 本机刚改过 → 以本地为准
+      if (!isBuiltInHabitKey(key)) {                       // ② 定义以线上为准（内置习惯的定义来自代码）
+        var remoteDef = habitDefFromRow(r);
+        local.name = remoteDef.name || local.name;
+        local.type = remoteDef.type;
+        local.target = remoteDef.target;
+        local.unit = remoteDef.unit;
+        local.tone = remoteDef.tone;
+      }
+    });
+
+    /* ---------- 本地 -> 线上 ---------- */
+    // 内置习惯跟着代码走：拿它们比 name/unit 没意义，线上只要 hidden 对上了就算一致。
+    function defMatches(key, dir, r) {
+      var remote = habitDefFromRow(r);
+      if (isBuiltInHabitKey(key)) return Boolean(remote.hidden) === Boolean(dir.hidden);
+      return habitDefSignature(remote) === habitDefSignature(dir);
+    }
+    var upload = [];
+    function wantUpload(key, dir) {
+      var r = byKey[key];
+      if (r && defMatches(key, dir, r)) return;            // 线上已经一致
+      upload.push({ key: key, def: dir });
+    }
+    state.habits.forEach(function (h) { if (h.key) wantUpload(h.key, habitDefOf(h)); });
+    hidden.forEach(function (key) {
+      /* 自定义习惯躲进 hidden 时本地已经没有它的字段了，凭空名字去推既没意义、还会把线上的名字覆盖成空串。
+         线上那一行只要还在（只是 hidden=true），就沿用线上那份作为比对基准。 */
+      var r = byKey[key];
+      var dir = r ? Object.assign(habitDefFromRow(r), { hidden: true })
+                  : { key: key, name: builtInHabitName(key) || '', type: 'check', target: 1, unit: '次', tone: 'sage', hidden: true };
+      wantUpload(key, dir);
+    });
+
+    state.settings.hiddenHabitKeys = hidden;
+    return upload;
+  }
+
   function mergeMedia(rows, pending) {
     if (!rows) return [];
     var TYPES = ['电影', '剧', '书', '番'], STATUSES = ['想看', '在看', '看完', '弃了'];
@@ -2403,8 +2516,8 @@
     var pendingList = readPending();
     var waiting = {};
     pendingList.forEach(function (id) { waiting[id] = true; });
-    var uploadRecords = [], uploadMedia = [], uploadHabits = [];
-    var expects = 6, done = 0, changed = false, failed = 0;
+    var uploadRecords = [], uploadMedia = [], uploadHabits = [], uploadDefs = [];
+    var expects = 7, done = 0, changed = false, failed = 0;
     function oneDone(ok, c) {
       done++;
       if (c) changed = true;
@@ -2416,7 +2529,7 @@
         return;
       }
       // 合并完成 → 把「本地新增」补传到线上；推完这一次同步才算真的收敛
-      pushLocalNew(uploadRecords, uploadMedia, uploadHabits, function (pushFailed) {
+      pushLocalNew(uploadRecords, uploadMedia, uploadHabits, uploadDefs, function (pushFailed) {
         if (pushFailed) {
           showSyncBanner('有内容没能写到线上数据表，已先保留在这台设备上。检查网络后点「重试同步」即可补传。');
           if (cb) cb(changed, failed + 1);
@@ -2428,6 +2541,7 @@
     }
     dbFetchAll(DB_MONEY, function (rows) { if (rows) { uploadRecords = uploadRecords.concat(mergeMoney(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
     dbFetchAll(DB_HABIT, function (rows) { if (rows) { uploadHabits = uploadHabits.concat(mergeHabit(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
+    dbFetchAll(DB_HABIT_DEFS, function (rows) { if (rows) { uploadDefs = uploadDefs.concat(mergeHabitDefs(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
     dbFetchAll(DB_PLAN, function (rows) { if (rows) { uploadRecords = uploadRecords.concat(mergePlan(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
     dbFetchAll(DB_FITNESS, function (rows) { if (rows) { uploadRecords = uploadRecords.concat(mergeFitness(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
     dbFetchAll(DB_SHOPPING, function (rows) { if (rows) { uploadRecords = uploadRecords.concat(mergeShopping(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
@@ -2437,8 +2551,8 @@
   /* 把「本地新增」补传到线上。批量 upsert：主键已存在时是覆盖而不是报错，
      所以「另一台设备刚好也写过同一行」不会让整批失败。
      推成功后清掉待同步标记；推失败的留在集合里，下次打开还会再试。 */
-  function pushLocalNew(records, media, habits, onDone) {
-    if (!records.length && !media.length && !habits.length) { onDone(false); return; }
+  function pushLocalNew(records, media, habits, defs, onDone) {
+    if (!records.length && !media.length && !habits.length && !defs.length) { onDone(false); return; }
     markWritten();
     var jobs = [];
     var groups = { money: [], planner: [], fitness: [], home: [] };
@@ -2474,6 +2588,15 @@
       }));
     }
 
+    if (defs.length) {
+      var defRows = defs.map(function (item) { return habitDefRow(item.key, item.def); });
+      jobs.push(SupabaseSync.upsertMany(DB_HABIT_DEFS, defRows).then(function (res) {
+        if (res.error) return res;
+        settlePending(defs.map(function (item) { return habitDefRowId(item.key); }));
+        return res;
+      }));
+    }
+
     Promise.all(jobs).then(function (results) {
       if (results.some(function (res) { return res && res.error; })) { onDone(true); return; }
       // 这一轮没能补传的待同步 id（线上已有 / 已被去重 / 本地也已删掉）不必再跟踪
@@ -2481,6 +2604,7 @@
       records.forEach(function (rec) { stillNeeded[rec.id] = true; });
       media.forEach(function (item) { stillNeeded[item.id] = true; });
       habits.forEach(function (item) { stillNeeded[item.id] = true; });
+      defs.forEach(function (item) { stillNeeded[habitDefRowId(item.key)] = true; });
       settlePending(readPending().filter(function (id) { return !stillNeeded[id]; }));
       onDone(false);
     });
@@ -2543,6 +2667,17 @@
       value: Number(h.entries[date] || 0), unit: h.unit || ''
     };
   }
+  function habitDefRow(key, def) {
+    def = def || {};
+    return {
+      id: habitDefRowId(key), space: SUPABASE_SPACE,
+      habit_key: key || '', name: def.name || '',
+      type: HABIT_TYPES.indexOf(def.type) >= 0 ? def.type : 'check',
+      target: Number(def.target) || 1, unit: def.unit || '次',
+      tone: def.tone || 'sage',
+      hidden: Boolean(def.hidden)
+    };
+  }
 
   /* 每次推送都先挂上待同步标记：这一次没写成功（断网 / 本地模式），
      下次打开页面 pullAllRemote 会自动补传，数据不会只留在这台设备上。 */
@@ -2557,6 +2692,17 @@
     markPending(row.id);
     if (!ONLINE || LOCAL_ONLY) return;
     dbUpsert(DB_HABIT, row, function (rid) { if (rid) settlePending(row.id); });
+  }
+
+  /* 习惯定义（自定义习惯本身 / 内置习惯的隐藏状态）。
+     新建与删除都走这里：删除不是「删掉这一行」，而是写成 hidden=true ——
+     否则「线上没有这一行」会同时意味着「从没同步过」和「别的设备删了」，分不清。 */
+  function pushHabitDef(key, def) {
+    if (!key) return;
+    var row = habitDefRow(key, def);
+    markPending(row.id);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpsert(DB_HABIT_DEFS, row, function (rid) { if (rid) settlePending(row.id); });
   }
 
   function pushPlan(rec) {
@@ -3115,7 +3261,7 @@
     document.getElementById('mediaCoverInput').addEventListener('change',async e=>{const[file]=e.target.files;if(!file)return;if(file.size>12*1024*1024){toast('封面图片请控制在 12MB 以内');e.target.value='';return;}try{pendingMediaCover=await compressCover(file);const preview=document.getElementById('mediaCoverPreview');preview.style.backgroundImage=`url(${pendingMediaCover})`;preview.closest('.cover-upload').classList.add('has-cover');toast('封面已压缩，可以保存了');}catch(error){toast(error.message);resetMediaCover();}});
     document.getElementById('mediaForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));var newItem={id:uid(),name:data.name.trim(),type:data.type,status:data.status,rating:Number(data.rating||0),review:data.review.trim(),date:data.date,cover:pendingMediaCover,sample:false};state.mediaItems.push(newItem);pushMedia(newItem);state.settings.recordsSinceExport=Number(state.settings.recordsSinceExport||0)+1;const saved=saveState(true);renderAll();if(saved){clearDraft(e.currentTarget);resetMediaCover();toast('已加入书影音清单');}});
     document.getElementById('habitTypeSelect').addEventListener('change',e=>{const form=document.getElementById('habitSettingsForm'),isCheck=e.target.value==='check';form.elements.target.value=isCheck?'1':form.elements.target.value;form.elements.unit.value=isCheck?'次':form.elements.unit.value;document.getElementById('habitTargetFields').classList.toggle('is-check',isCheck);});
-    document.getElementById('habitSettingsForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget)),isCheck=data.type==='check';state.habits.push({id:uid(),key:`custom-${uid()}`,name:data.name.trim(),type:data.type,target:isCheck?1:Math.max(.1,Number(data.target||1)),unit:isCheck?'次':data.unit.trim()||'次',tone:data.tone,entries:{},sample:false});const saved=saveState();renderAll();renderHabitManageList();if(saved){e.currentTarget.reset();document.getElementById('habitTypeSelect').dispatchEvent(new Event('change'));toast('新习惯已加入');}});
+    document.getElementById('habitSettingsForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget)),isCheck=data.type==='check';const habit={id:uid(),key:`custom-${uid()}`,name:data.name.trim(),type:data.type,target:isCheck?1:Math.max(.1,Number(data.target||1)),unit:isCheck?'次':data.unit.trim()||'次',tone:data.tone,entries:{},sample:false};state.habits.push(habit);pushHabitDef(habit.key,habitDefOf(habit));const saved=saveState();renderAll();renderHabitManageList();if(saved){e.currentTarget.reset();document.getElementById('habitTypeSelect').dispatchEvent(new Event('change'));toast('新习惯已加入');}});
     document.getElementById('planSettingsForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));state.settings.weeklyPlan.push({id:uid(),group:data.group,title:data.title.trim(),note:data.note.trim()||'按自己的节奏完成',done:false});const saved=saveState();renderFitness();renderPlanManageList();if(saved){e.currentTarget.reset();toast('新计划已加入');}});
     document.getElementById('fitnessProfileForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));state.settings.fitnessProfile={...state.settings.fitnessProfile,height:Number(data.height),target:Number(data.target),age:Number(data.age),sex:data.sex,activity:Number(data.activity)};const saved=saveState();renderFitness();closeFitnessProfile();if(saved)toast('目标设置已更新');});
   }
@@ -3139,7 +3285,7 @@
       if(type==='delete')deleteRecord(id);if(type==='toggle-task')toggleTask(id);
       if(type==='habit-plus')updateHabit(id,'plus');if(type==='habit-minus')updateHabit(id,'minus');if(type==='habit-toggle')updateHabit(id,'toggle');if(type==='habit-quick')updateHabit(id,'quick');
       if(type==='toggle-plan'){const item=state.settings.weeklyPlan.find(x=>x.id===id);if(item){item.done=!item.done;const saved=saveState();renderFitness();if(saved&&item.done)celebrate();}}
-      if(type==='delete-habit-custom'){const habit=state.habits.find(h=>h.id===id);if(habit&&confirm(LANG==='en'?`Delete the habit “${habit.name}” and all of its history?`:`确定删除习惯“${habit.name}”吗？历史打卡也会一起删除。`)){state.habits=state.habits.filter(h=>h.id!==id);if(HABIT_DEFS.some(def=>def.key===habit.key)){state.settings.hiddenHabitKeys=[...new Set([...(state.settings.hiddenHabitKeys||[]),habit.key])];}const saved=saveState();renderAll();renderHabitManageList();if(saved)toast('习惯已删除');}}
+      if(type==='delete-habit-custom'){const habit=state.habits.find(h=>h.id===id);if(habit&&confirm(LANG==='en'?`Delete the habit “${habit.name}” and all of its history?`:`确定删除习惯“${habit.name}”吗？历史打卡也会一起删除。`)){state.habits=state.habits.filter(h=>h.id!==id);const isBuiltIn=isBuiltInHabitKey(habit.key);if(isBuiltIn){state.settings.hiddenHabitKeys=[...new Set([...(state.settings.hiddenHabitKeys||[]),habit.key])];}pushHabitDef(habit.key,Object.assign(habitDefOf(habit),{name:isBuiltIn?builtInHabitName(habit.key):habit.name,hidden:true}));const saved=saveState();renderAll();renderHabitManageList();if(saved)toast('习惯已删除');}}
       if(type==='delete-plan'){const item=state.settings.weeklyPlan.find(x=>x.id===id);if(item&&confirm(LANG==='en'?`Delete the plan “${item.title}”?`:`确定删除计划“${item.title}”吗？`)){state.settings.weeklyPlan=state.settings.weeklyPlan.filter(x=>x.id!==id);const saved=saveState();renderFitness();renderPlanManageList();if(saved)toast('计划已删除');}}
       if(type==='toggle-shopping'){const item=state.records.find(r=>r.id===id&&r.type==='home');if(item){item.data.bought=!item.data.bought;item.data.boughtDate=item.data.bought?isoDate():null;updateRemoteShopping(item);const saved=saveState();renderAll();if(saved&&item.data.bought){celebrate();toast('买到了，已移入完成');}}}
       if(type==='delete-media'){const item=state.mediaItems.find(media=>media.id===id);if(item&&confirm(LANG==='en'?`Remove “${item.name}” from the list?`:`确定从清单中删除“${item.name}”吗？`)){deleteRemoteMedia(item.remoteId||item.id);state.mediaItems=state.mediaItems.filter(media=>media.id!==id);const saved=saveState();renderMedia();if(saved)toast('已从书影音清单移除');}}
@@ -3254,9 +3400,9 @@
     throw new Error('无法识别的数据格式（这份文件里的字段是：'+Object.keys(raw).slice(0,8).join('、')+'）');
   }
 
-  /* 合并导入：同一条不重复，返回新增数据与待同步的打卡项 */
+  /* 合并导入：同一条不重复，返回新增数据与待同步的打卡项 / 习惯定义 */
   function mergeImported(candidate){
-    var summary={records:0,media:0,habits:0,checks:0},habitPushes=[],seenNames=new Set(),seenChecks=new Set();
+    var summary={records:0,media:0,habits:0,checks:0,hidden:0},habitPushes=[],habitDefs=[],seenNames=new Set(),seenChecks=new Set();
     var signature=function(r){return [r.type,r.date,r.data&&r.data.title,r.data&&r.data.name,r.data&&r.data.amount,r.data&&r.data.weight].join('|');};
     var seen=new Set(state.records.map(signature)),newRecords=[];
     (candidate.records||[]).forEach(function(r){
@@ -3285,8 +3431,10 @@
       var target=state.habits.find(function(exist){return exist.name===h.name;});
       if(!target){
         target=Object.assign({},h,{id:h.id||uid(),entries:Object.assign({},h.entries||{}),sample:false});
+        target.key=target.key||('custom-'+uid());
         state.habits.push(target);
         summary.habits++;
+        habitDefs.push({key:target.key,def:habitDefOf(target)});   // 新习惯的定义也要入库，否则换设备看不到
       }
       Object.keys(h.entries||{}).forEach(function(date){
         var value=Number(h.entries[date])||0;
@@ -3298,8 +3446,21 @@
         habitPushes.push([target,date]);
       });
     });
+    /* 本机把内置习惯删掉了（记在 hiddenHabitKeys 里）—— 这个状态也要带上去，
+       否则换台设备它又冒出来了。用并集，不撤销本机已有的隐藏。 */
+    var incomingHidden=(candidate.settings&&Array.isArray(candidate.settings.hiddenHabitKeys))?candidate.settings.hiddenHabitKeys:[];
+    var knownHidden=new Set(state.settings.hiddenHabitKeys||[]);
+    incomingHidden.forEach(function(key){
+      if(!key||knownHidden.has(key))return;
+      knownHidden.add(key);
+      state.settings.hiddenHabitKeys=[...knownHidden];
+      state.habits=state.habits.filter(function(h){return h.key!==key;});
+      habitDefs.push({key:key,def:{key:key,name:builtInHabitName(key)||'',type:'check',target:1,unit:'次',tone:'sage',hidden:true}});
+      summary.hidden++;
+    });
+
     summary.checks=habitPushes.length;
-    return {summary:summary,records:newRecords,media:newMedia,habitPushes:habitPushes};
+    return {summary:summary,records:newRecords,media:newMedia,habitPushes:habitPushes,habitDefs:habitDefs};
   }
 
   /* 新增数据写回线上数据表（打卡项分批节流，避免一次打太多请求） */
@@ -3312,6 +3473,7 @@
       else if(rec.type==='home')pushShopping(rec);
     });
     merged.media.forEach(function(item){pushMedia(item);});
+    (merged.habitDefs||[]).forEach(function(item){pushHabitDef(item.key,item.def);});
     var pending=merged.habitPushes.slice();
     (function step(){
       pending.splice(0,15).forEach(function(pair){pushHabit(pair[0],pair[1]);});
@@ -3331,9 +3493,9 @@
         merged=mergeImported(normalizeState(parsed.candidate));
       }catch(error){toast(error.message||'导入失败，请检查备份文件');return;}
       var s=merged.summary;
-      if(!s.records&&!s.media&&!s.habits&&!s.checks){toast('没有发现需要导入的新数据');return;}
+      if(!s.records&&!s.media&&!s.habits&&!s.checks&&!s.hidden){toast('没有发现需要导入的新数据');return;}
       var localNote=(!ONLINE||LOCAL_ONLY)?'\n\n注意：当前地址没有连上线上数据表，导入只会保存到这台设备的浏览器里。':'';
-      if(!confirm('将导入 '+s.records+' 条收支/日程/健康记录、'+s.media+' 条书影音、'+s.habits+' 个新习惯（共 '+s.checks+' 条打卡）。是否继续？'+localNote)){
+      if(!confirm('将导入 '+s.records+' 条收支/日程/健康记录、'+s.media+' 条书影音、'+s.habits+' 个新习惯（共 '+s.checks+' 条打卡'+(s.hidden?'、'+s.hidden+' 个已删除的习惯':'')+'）。是否继续？'+localNote)){
         try{state=JSON.parse(snapshot);}catch(error){}
         renderAll();
         toast('已取消，数据没有改动');

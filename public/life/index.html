@@ -474,10 +474,7 @@
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 .lang-switch{position:fixed;right:18px;bottom:18px;z-index:90;display:flex;align-items:center;gap:5px;padding:5px 7px;border:1px solid rgba(85,69,55,.14);border-radius:999px;background:rgba(255,253,250,.94);box-shadow:0 8px 24px rgba(53,41,31,.12);backdrop-filter:blur(12px)}.lang-switch button{min-width:34px;height:28px;padding:0 8px;border:0;border-radius:999px;background:transparent;color:var(--muted);font-size:11px;font-weight:700}.lang-switch button.active{background:var(--plum);color:#fff}.lang-switch span{color:#b2a89d;font-size:10px}.lang-switch button:focus-visible{outline:2px solid var(--terra);outline-offset:2px}@media(max-width:860px){.lang-switch{right:14px;bottom:calc(82px + env(safe-area-inset-bottom))}}
 
-.sync-banner,.data-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.sync-banner{margin:0 0 14px;padding:10px 14px;border:1px solid rgba(166,106,66,.34);border-radius:14px;background:rgba(166,106,66,.09);color:#7a4b2e;font-size:13px;line-height:1.55}
-.sync-banner[hidden]{display:none}
-.sync-banner>svg{flex:0 0 auto;color:#a56a42}
+.data-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .legacy-slot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 14px;padding:11px 14px;border:1px solid rgba(77,48,69,.24);border-radius:14px;background:rgba(77,48,69,.055);color:#4d3045;font-size:12.5px;line-height:1.55}
 .legacy-slot[hidden]{display:none}
 .legacy-slot>svg{flex:0 0 auto;width:17px;height:17px;color:#7c5573}
@@ -485,12 +482,8 @@
 .legacy-slot-actions{display:flex;gap:8px;flex:0 0 auto;margin-left:auto}
 .legacy-slot .btn{min-height:34px;padding:0 12px;font-size:12px;border-radius:10px;background:rgba(255,252,247,.78)}
 @media(max-width:560px){.legacy-slot{padding:11px 12px}.legacy-slot-actions{width:100%;margin-left:0}.legacy-slot-actions .btn{flex:1 1 auto;min-height:42px}}
-.sync-banner-text{flex:1 1 220px;min-width:0}
-.sync-banner-actions{display:flex;gap:8px;flex:0 0 auto;margin-left:auto}
-.sync-banner .btn{min-height:34px;padding:0 12px;font-size:12px;border-radius:10px;background:rgba(255,252,247,.78)}
 .data-toolbar{margin:0 0 18px}
 .data-toolbar .data-hint{flex:1 1 240px;min-width:0;color:#8b8175;font-size:12px;line-height:1.55}
-@media(max-width:860px){.sync-banner{padding:10px 12px}.sync-banner .btn{min-height:42px}.sync-banner-actions{width:100%;margin-left:0}.sync-banner-actions .btn{flex:1 1 auto}}
   </style>
   <title data-page-node-id="N9uQg0dpiKTsyB4FFPFrxl" data-pnid-children="1t2kuYHDk4UITU5HQoJQo7">日常集 · 生活工作台</title>
 </head>
@@ -538,14 +531,6 @@
     </aside>
 
     <main data-page-node-id="aOJx8DLd5jB9uuE61EcDjr" class="main-content">
-      <div data-page-node-id="vPz9avdqu4genJYWLc2GOz" aria-live="polite" class="sync-banner" hidden id="syncBanner">
-        <svg data-page-node-id="DhEex6W0UAkMCA1Of1JVs4" aria-hidden="true"><use data-page-node-id="ZSW14Rh18984MIopBV65mI" href="#i-alert"/></svg>
-        <span data-page-node-id="WdUWZrPsmtfj4ywL9B0HE4" class="sync-banner-text" id="syncBannerText"></span>
-        <span data-page-node-id="RhivEu2N8Upig8oEUyvA64" class="sync-banner-actions">
-          <button data-page-node-id="mz1tcEF4FmOyhcuZU8fsvE" class="btn ghost" id="syncRetryBtn" type="button"><span data-page-node-id="29AjwFDOqRJZBdA3o0lR3r"><!--pnid:86bse6T2POadqsZz4D9uTu-->重试同步</span></button>
-          <button data-page-node-id="50O0UwGxqWz3Yl2W1F1Los" class="btn ghost" id="syncDismissBtn" type="button"><span data-page-node-id="7gquPvmv5fW74sLqEp92uP"><!--pnid:qIHRgZ01kS6D2kkR6UPYPG-->知道了</span></button>
-        </span>
-      </div>
       <header data-page-node-id="bmbt9SBX6soG4wi34YoYaL" class="topbar">
         <div data-page-node-id="3keL7GQXUP1x8h2qpGEyYl"><p data-page-node-id="VYKjiceTPLTBmL1fPsu3OT" class="eyebrow" id="todayLabel"></p><h1 data-page-node-id="pQemMdxWhkZWl98nFWSq73" id="viewTitle"><!--pnid:ysl3CSbSfS7uvL20SSlku7-->今天，慢慢来</h1></div>
         <div data-page-node-id="M068rhTYbNS8r7TUXRx8kH" class="top-actions">
@@ -740,259 +725,12 @@
 (() => {
   'use strict';
 
-  /* ================= Database SDK Integration ================= */
-  var DB_MONEY = 'W9wWdiKblE6TOuXeLyTazl';
-  var DB_HABIT = '20QjCEQnRI3dI9wZZn6fEC';
-  var DB_PLAN = 'M26rvpIvIgqOGeQYaTNfUd';
-  var DB_FITNESS = 'LyMqBhPXHS2ntORRuIavNy';
-  var DB_SHOPPING = 'lXJULWox1qve1lL0KJcQWv';
-  var DB_MEDIA = 'sw64AXa5COjY3cawaUEVyp';
-  var ONLINE = false, LOCAL_ONLY = false;
-  try { if (window.__SMART_PAGE__ && window.__SMART_PAGE__.database) { var db = window.__SMART_PAGE__.database; ONLINE = true; } } catch(e) {}
-
-  function goLocalOnly(reason){ LOCAL_ONLY = true; console.warn("[database] " + reason); showSyncBanner("写入线上数据表失败（" + reason + "），已改为先保存在本机，数据不会丢。检查网络后点「重试同步」可继续在线保存。"); }
-
-  function dbFetchAll(databaseId, cb){
-    if (!ONLINE || LOCAL_ONLY) { if(cb) cb(null); return; }
-    var all = [], cursor = null;
-    function fetchPage(){
-      db.query({ databaseId: databaseId, pageSize: 100, startCursor: cursor }).then(function(result){
-        all = all.concat(result.results || []);
-        if (result.hasMore && result.nextCursor) { cursor = result.nextCursor; fetchPage(); }
-        else { if(cb) cb(all); }
-      }).catch(function(err){ if(cb) cb(null); });
-    }
-    fetchPage();
-  }
-
-  function dbAdd(databaseId, props, cb){
-    if (!ONLINE || LOCAL_ONLY) { if(cb) cb(null); return; }
-    try {
-      db.addRecord({ databaseId: databaseId, properties: props }).then(function(result){
-        if(cb) cb(result.id || null);
-      }).catch(function(err){ goLocalOnly("写入失败"); if(cb) cb(null); });
-    } catch(e){ goLocalOnly("写入异常"); if(cb) cb(null); }
-  }
-
-  function dbUpdate(databaseId, recordId, props){
-    if (!ONLINE || LOCAL_ONLY) return;
-    try {
-      db.updateRecord({ databaseId: databaseId, recordId: recordId, properties: props }).catch(function(err){ goLocalOnly("更新失败"); });
-    } catch(e){ goLocalOnly("更新异常"); }
-  }
-
-  function dbDelete(databaseId, recordId){
-    if (!ONLINE || LOCAL_ONLY) return;
-    try {
-      db.deleteRecord({ databaseId: databaseId, recordId: recordId }).catch(function(err){ goLocalOnly("删除失败"); });
-    } catch(e){ goLocalOnly("删除异常"); }
-  }
-
-  function pullAllRemote(cb){
-    if (!ONLINE || LOCAL_ONLY) { if(cb) cb(false); return; }
-    var pending = 6, done = 0, changed = false, failed = 0;
-    function oneDone(ok, c){
-      done++;
-      if(c) changed = true;
-      if(!ok) failed++;
-      if(done>=pending){
-        if(failed>0) showSyncBanner("有 " + failed + " 张线上数据表读取失败，页面已先用本机缓存展示，不会白屏。检查网络后点「重试同步」即可重新拉取。");
-        else hideSyncBanner();
-        if(cb) cb(changed, failed);
-      }
-    }
-    dbFetchAll(DB_MONEY, function(rows){ if(rows){ mergeMoney(rows); oneDone(true,true); } else oneDone(false,false); });
-    dbFetchAll(DB_HABIT, function(rows){ if(rows){ mergeHabit(rows); oneDone(true,true); } else oneDone(false,false); });
-    dbFetchAll(DB_PLAN, function(rows){ if(rows){ mergePlan(rows); oneDone(true,true); } else oneDone(false,false); });
-    dbFetchAll(DB_FITNESS, function(rows){ if(rows){ mergeFitness(rows); oneDone(true,true); } else oneDone(false,false); });
-    dbFetchAll(DB_SHOPPING, function(rows){ if(rows){ mergeShopping(rows); oneDone(true,true); } else oneDone(false,false); });
-    dbFetchAll(DB_MEDIA, function(rows){ if(rows){ mergeMedia(rows); oneDone(true,true); } else oneDone(false,false); });
-  }
-
-  function mergeMoney(rows){
-    if(!rows) return;
-    var remoteRecords = rows.map(function(r){
-      var d = r["日期"] ? String(r["日期"]).slice(0,10) : isoDate();
-      var cat = r["分类"] || "其他";
-      var amt = Number(r["金额"]) || 0;
-      var note = r["备注"] || "";
-      var isIncome = note.indexOf("收入：") === 0;
-      return {id:r.record_id||uid(),type:'money',date:d,createdAt:Date.now(),sample:false,remoteId:r.record_id,data:{flow:isIncome?'income':'expense',amount:amt,category:cat,note:isIncome?note.slice(3):note}};
-    });
-    state.records = state.records.filter(function(r){return r.type!=='money';}).concat(remoteRecords);
-  }
-
-  function mergeHabit(rows){
-    if(!rows) return;
-    var remoteEntries = {};
-    rows.forEach(function(r){
-      var d = r["日期"] ? String(r["日期"]).slice(0,10) : isoDate();
-      var hname = r["习惯"] || "";
-      var val = Number(r["数值"]) || 0;
-      if(!remoteEntries[hname]) remoteEntries[hname] = {};
-      remoteEntries[hname][d] = val;
-    });
-    state.habits.forEach(function(h){
-      var remote = remoteEntries[h.name];
-      if(remote){
-        h.entries = Object.assign({}, remote);
-        h.sample = false;
-      }
-    });
-  }
-
-  function mergePlan(rows){
-    if(!rows) return;
-    var remoteRecords = rows.map(function(r){
-      var d = r["日期"] ? String(r["日期"]).slice(0,10) : isoDate();
-      var title = r["内容"] || "";
-      var list = r["类型"] || "生活";
-      var status = r["状态"] || "待完成";
-      return {id:r.record_id||uid(),type:'planner',date:d,createdAt:Date.now(),sample:false,remoteId:r.record_id,data:{title:title,list:list,done:(status==='已完成'),time:'',note:''}};
-    });
-    state.records = state.records.filter(function(r){return r.type!=='planner';}).concat(remoteRecords);
-  }
-
-  function mergeFitness(rows){
-    if(!rows) return;
-    var remoteRecords = rows.map(function(r){
-      var d = r["日期"] ? String(r["日期"]).slice(0,10) : isoDate();
-      return {id:r.record_id||uid(),type:'fitness',date:d,createdAt:Date.now(),sample:false,remoteId:r.record_id,data:{weight:Number(r["体重"])||0,bodyFat:r["体脂率"]?Number(r["体脂率"]):null,calories:0,duration:0,note:r["备注"]||""}};
-    });
-    state.records = state.records.filter(function(r){return r.type!=='fitness';}).concat(remoteRecords);
-  }
-
-  function mergeShopping(rows){
-    if(!rows) return;
-    var remoteRecords = rows.map(function(r){
-      return {id:r.record_id||uid(),type:'home',date:isoDate(),createdAt:Date.now(),sample:false,remoteId:r.record_id,data:{name:r["物品名称"]||"",quantity:String(r["数量"]||""),category:"日用品",price:Number(r["预估价格"])||0,priority:"normal",note:r["备注"]||"",bought:(r["是否已买"]==="已买")}};
-    });
-    state.records = state.records.filter(function(r){return r.type!=='home';}).concat(remoteRecords);
-  }
-
-  function mergeMedia(rows){
-    if(!rows) return;
-    var typeMap = {'书籍':'书','电影':'电影','电视剧':'剧','动漫':'番'};
-    var statusMap = {'想看':'想看','在看':'在看','看过':'看完'};
-    state.mediaItems = rows.map(function(r){
-      var type = typeMap[r["类型"]] || '电影';
-      var status = statusMap[r["状态"]] || '想看';
-      return {id:r.record_id||uid(),name:r["标题"]||"",type:type,status:status,rating:Number(r["评分"])||0,review:r["短评"]||"",date:isoDate(),cover:"",sample:false,remoteId:r.record_id};
-    });
-  }
-
-  function pushMoney(rec){
-    if (!ONLINE || LOCAL_ONLY) return;
-    var props = {};
-    props["日期"] = { date: rec.date };
-    props["分类"] = { text: rec.data.category || "" };
-    props["金额"] = { currency: rec.data.amount || 0 };
-    props["备注"] = { text: (rec.data.flow==='income'?'收入：':'') + (rec.data.note||"") };
-    dbAdd(DB_MONEY, props, function(rid){ if(rid) rec.remoteId = rid; });
-  }
-
-  function pushHabit(h, date){
-    if (!ONLINE || LOCAL_ONLY) return;
-    var props = {};
-    props["日期"] = { date: date };
-    props["习惯"] = { text: h.name || "" };
-    props["数值"] = { number: Number(h.entries[date]||0) };
-    props["备注"] = { text: h.unit || "" };
-    dbAdd(DB_HABIT, props);
-  }
-
-  function pushPlan(rec){
-    if (!ONLINE || LOCAL_ONLY) return;
-    var props = {};
-    props["日期"] = { date: rec.date };
-    props["内容"] = { text: rec.data.title || "" };
-    props["类型"] = { text: rec.data.list || "" };
-    props["状态"] = { text: rec.data.done ? "已完成" : "待完成" };
-    dbAdd(DB_PLAN, props, function(rid){ if(rid) rec.remoteId = rid; });
-  }
-
-  function pushFitness(rec){
-    if (!ONLINE || LOCAL_ONLY) return;
-    var props = {};
-    props["日期"] = { date: rec.date };
-    props["体重"] = { number: rec.data.weight || 0 };
-    props["体脂率"] = { number: rec.data.bodyFat || 0 };
-    props["备注"] = { text: rec.data.note || "" };
-    dbAdd(DB_FITNESS, props, function(rid){ if(rid) rec.remoteId = rid; });
-  }
-
-  function pushShopping(rec){
-    if (!ONLINE || LOCAL_ONLY) return;
-    var qty = parseInt(rec.data.quantity) || 0;
-    var props = {};
-    props["物品名称"] = { text: rec.data.name || "" };
-    props["数量"] = { number: qty };
-    props["预估价格"] = { currency: rec.data.price || 0 };
-    props["是否已买"] = { select: rec.data.bought ? "已买" : "待买" };
-    props["备注"] = { text: rec.data.note || "" };
-    dbAdd(DB_SHOPPING, props, function(rid){ if(rid) rec.remoteId = rid; });
-  }
-
-  function pushMedia(item){
-    if (!ONLINE || LOCAL_ONLY) return;
-    var typeMap = {'书':'书籍','电影':'电影','剧':'电视剧','番':'动漫'};
-    var statusMap = {'想看':'想看','在看':'在看','看完':'看过','弃了':'在看'};
-    var props = {};
-    props["标题"] = { text: item.name || "" };
-    props["类型"] = { select: typeMap[item.type] || "电影" };
-    props["状态"] = { select: statusMap[item.status] || "想看" };
-    props["评分"] = { number: item.rating || 0 };
-    props["短评"] = { text: item.review || "" };
-    dbAdd(DB_MEDIA, props, function(rid){ if(rid) item.remoteId = rid; });
-  }
-
-  function updateRemoteMoney(rec){
-    if (!ONLINE || LOCAL_ONLY || !rec.remoteId) return;
-    var props = {};
-    props["分类"] = { text: rec.data.category || "" };
-    props["金额"] = { currency: rec.data.amount || 0 };
-    props["备注"] = { text: (rec.data.flow==='income'?'收入：':'') + (rec.data.note||"") };
-    dbUpdate(DB_MONEY, rec.remoteId, props);
-  }
-  function deleteRemoteMoney(rid){ if(rid) dbDelete(DB_MONEY, rid); }
-
-  function updateRemotePlan(rec){
-    if (!ONLINE || LOCAL_ONLY || !rec.remoteId) return;
-    var props = {};
-    props["状态"] = { text: rec.data.done ? "已完成" : "待完成" };
-    dbUpdate(DB_PLAN, rec.remoteId, props);
-  }
-  function deleteRemotePlan(rid){ if(rid) dbDelete(DB_PLAN, rid); }
-
-  function updateRemoteFitness(rec){
-    if (!ONLINE || LOCAL_ONLY || !rec.remoteId) return;
-    var props = {};
-    props["体重"] = { number: rec.data.weight || 0 };
-    props["体脂率"] = { number: rec.data.bodyFat || 0 };
-    props["备注"] = { text: rec.data.note || "" };
-    dbUpdate(DB_FITNESS, rec.remoteId, props);
-  }
-  function deleteRemoteFitness(rid){ if(rid) dbDelete(DB_FITNESS, rid); }
-
-  function updateRemoteShopping(rec){
-    if (!ONLINE || LOCAL_ONLY || !rec.remoteId) return;
-    var props = {};
-    props["是否已买"] = { select: rec.data.bought ? "已买" : "待买" };
-    dbUpdate(DB_SHOPPING, rec.remoteId, props);
-  }
-  function deleteRemoteShopping(rid){ if(rid) dbDelete(DB_SHOPPING, rid); }
-
-  function updateRemoteMedia(item){
-    if (!ONLINE || LOCAL_ONLY || !item.remoteId) return;
-    var typeMap = {'书':'书籍','电影':'电影','剧':'电视剧','番':'动漫'};
-    var statusMap = {'想看':'想看','在看':'在看','看完':'看过','弃了':'在看'};
-    var props = {};
-    props["状态"] = { select: statusMap[item.status] || "想看" };
-    props["评分"] = { number: item.rating || 0 };
-    props["短评"] = { text: item.review || "" };
-    dbUpdate(DB_MEDIA, item.remoteId, props);
-  }
-  function deleteRemoteMedia(rid){ if(rid) dbDelete(DB_MEDIA, rid); }
+  /* ================= 本机存储 =================
+   * 这一版是「纯本机版」：数据只读写 localStorage，不登录、不连云、不显示同步提示。
+   * 要跨设备、按账号存云端，用同目录下的 online.html（持久化层换成 Supabase）。
+   * 早先这里还留着一整套休眠的「资料库 SDK」同步层（仅在资料库 Smart Page 环境里才启用），
+   * 与 online.html 是两套后端、两份合并逻辑，改了一边另一边不会跟着变 —— 已整体移除。
+   * ============================================ */
 
   const LANG_PARAM = new URL(location).searchParams.get('lang');
   const LANG = LANG_PARAM === 'en' ? 'en' : 'zh';
@@ -1246,11 +984,6 @@
   function sortedRecords(type,ascending=false){return state.records.filter(r=>!type||r.type===type).sort((a,b)=>(ascending?1:-1)*(a.date.localeCompare(b.date)||(a.createdAt||0)-(b.createdAt||0)));}
   function addRecord(type,date,data){
     state.records.push({id:uid(),type,date:date||isoDate(),createdAt:Date.now(),sample:false,data});
-    var rec=state.records[state.records.length-1];
-    if(type==='money')pushMoney(rec);
-    if(type==='planner')pushPlan(rec);
-    if(type==='fitness')pushFitness(rec);
-    if(type==='home')pushShopping(rec);
     state.settings.recordsSinceExport=Number(state.settings.recordsSinceExport||0)+1;
     if(type==='money') state.settings.moneySinceExport=Number(state.settings.moneySinceExport||0)+1;
     const saved=saveState(true);renderAll();
@@ -1258,7 +991,7 @@
     toast('已立即保存');
     return true;
   }
-  function deleteRecord(id){const target=state.records.find(r=>r.id===id);if(!target||!confirm(LANG==='en'?`Delete “${titleFor(target)}”? This cannot be undone.`:`确定删除“${titleFor(target)}”吗？删除后无法撤回。`))return;if(target.remoteId){if(target.type==='money')deleteRemoteMoney(target.remoteId);if(target.type==='planner')deleteRemotePlan(target.remoteId);if(target.type==='fitness')deleteRemoteFitness(target.remoteId);if(target.type==='home')deleteRemoteShopping(target.remoteId);}state.records=state.records.filter(r=>r.id!==id);const saved=saveState();renderAll();if(saved)toast('记录已删除');}
+  function deleteRecord(id){const target=state.records.find(r=>r.id===id);if(!target||!confirm(LANG==='en'?`Delete “${titleFor(target)}”? This cannot be undone.`:`确定删除“${titleFor(target)}”吗？删除后无法撤回。`))return;state.records=state.records.filter(r=>r.id!==id);const saved=saveState();renderAll();if(saved)toast('记录已删除');}
   function switchView(view){const target=document.getElementById(`view-${view}`);if(!target)return;document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el===target));document.querySelectorAll('[data-nav]').forEach(el=>el.classList.toggle('active',el.dataset.nav===view));document.getElementById('viewTitle').textContent=target.dataset.title||'日常集';if(location.hash!==`#${view}`)history.replaceState(null,'',`#${view}`);scrollTo({top:0,behavior:'smooth'});}
   function formatDateHeading(value){if(value===isoDate())return t('今天');if(value===shiftDate(-1))return t('昨天');const date=new Date(`${value}T00:00:00`);return LANG==='en'?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric'}).format(date):`${date.getMonth()+1} 月 ${date.getDate()} 日`;}
   function titleFor(record){const d=record.data||{},local=value=>record.sample?translateText(value):value;if(record.type==='money')return d.note?local(d.note):t(d.category||'一笔收支');if(record.type==='planner')return d.title?local(d.title):t('一项日程');if(record.type==='fitness')return d.note?local(d.note):t('身体记录');if(record.type==='home')return d.name?local(d.name):t('待买物品');return t('生活记录');}
@@ -1441,15 +1174,15 @@
     document.getElementById('plannerForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));if(addRecord('planner',data.date,{title:data.title.trim(),time:data.time,priority:data.priority,list:data.list,note:data.note.trim(),remind:data.remind==='1',done:false}))clearDraft(e.currentTarget);});
     document.getElementById('homeForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));if(addRecord('home',isoDate(),{name:data.name.trim(),quantity:data.quantity.trim(),category:data.category,price:Number(data.price||0),priority:data.priority,note:data.note.trim(),bought:false}))clearDraft(e.currentTarget);});
     document.getElementById('mediaCoverInput').addEventListener('change',async e=>{const[file]=e.target.files;if(!file)return;if(file.size>12*1024*1024){toast('封面图片请控制在 12MB 以内');e.target.value='';return;}try{pendingMediaCover=await compressCover(file);const preview=document.getElementById('mediaCoverPreview');preview.style.backgroundImage=`url(${pendingMediaCover})`;preview.closest('.cover-upload').classList.add('has-cover');toast('封面已压缩，可以保存了');}catch(error){toast(error.message);resetMediaCover();}});
-    document.getElementById('mediaForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));var newItem={id:uid(),name:data.name.trim(),type:data.type,status:data.status,rating:Number(data.rating||0),review:data.review.trim(),date:data.date,cover:pendingMediaCover,sample:false};state.mediaItems.push(newItem);pushMedia(newItem);state.settings.recordsSinceExport=Number(state.settings.recordsSinceExport||0)+1;const saved=saveState(true);renderAll();if(saved){clearDraft(e.currentTarget);resetMediaCover();toast('已加入书影音清单');}});
+    document.getElementById('mediaForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));var newItem={id:uid(),name:data.name.trim(),type:data.type,status:data.status,rating:Number(data.rating||0),review:data.review.trim(),date:data.date,cover:pendingMediaCover,sample:false};state.mediaItems.push(newItem);state.settings.recordsSinceExport=Number(state.settings.recordsSinceExport||0)+1;const saved=saveState(true);renderAll();if(saved){clearDraft(e.currentTarget);resetMediaCover();toast('已加入书影音清单');}});
     document.getElementById('habitTypeSelect').addEventListener('change',e=>{const form=document.getElementById('habitSettingsForm'),isCheck=e.target.value==='check';form.elements.target.value=isCheck?'1':form.elements.target.value;form.elements.unit.value=isCheck?'次':form.elements.unit.value;document.getElementById('habitTargetFields').classList.toggle('is-check',isCheck);});
     document.getElementById('habitSettingsForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget)),isCheck=data.type==='check';state.habits.push({id:uid(),key:`custom-${uid()}`,name:data.name.trim(),type:data.type,target:isCheck?1:Math.max(.1,Number(data.target||1)),unit:isCheck?'次':data.unit.trim()||'次',tone:data.tone,entries:{},sample:false});const saved=saveState();renderAll();renderHabitManageList();if(saved){e.currentTarget.reset();document.getElementById('habitTypeSelect').dispatchEvent(new Event('change'));toast('新习惯已加入');}});
     document.getElementById('planSettingsForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));state.settings.weeklyPlan.push({id:uid(),group:data.group,title:data.title.trim(),note:data.note.trim()||'按自己的节奏完成',done:false});const saved=saveState();renderFitness();renderPlanManageList();if(saved){e.currentTarget.reset();toast('新计划已加入');}});
     document.getElementById('fitnessProfileForm').addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.currentTarget));state.settings.fitnessProfile={...state.settings.fitnessProfile,height:Number(data.height),target:Number(data.target),age:Number(data.age),sex:data.sex,activity:Number(data.activity)};const saved=saveState();renderFitness();closeFitnessProfile();if(saved)toast('目标设置已更新');});
   }
 
-  function updateHabit(id,operation,value){const h=state.habits.find(x=>x.id===id);if(!h)return;const today=isoDate(),current=Number(h.entries[today]||0);if(operation==='plus')h.entries[today]=current+1;if(operation==='minus')h.entries[today]=Math.max(0,current-1);if(operation==='toggle')h.entries[today]=habitDone(h)?0:1;if(operation==='quick')h.entries[today]=habitDone(h)?0:Number(h.target||1);if(operation==='number')h.entries[today]=clamp(Number(value||0),0,9999);pushHabit(h,today);const justDone=habitDone(h),saved=saveState();renderAll();if(saved&&justDone){celebrate();const name=HABIT_DEFS.some(def=>def.key===h.key)||h.sample?translateText(h.name):h.name;toast(LANG==='en'?`${name} completed — nicely done`:`${h.name}，完成得漂亮`);}}
-  function toggleTask(id){const task=state.records.find(r=>r.id===id&&r.type==='planner');if(!task)return;task.data.done=!task.data.done;updateRemotePlan(task);const saved=saveState();renderAll();if(saved&&task.data.done){celebrate();toast('完成一项，心里轻一点');}}
+  function updateHabit(id,operation,value){const h=state.habits.find(x=>x.id===id);if(!h)return;const today=isoDate(),current=Number(h.entries[today]||0);if(operation==='plus')h.entries[today]=current+1;if(operation==='minus')h.entries[today]=Math.max(0,current-1);if(operation==='toggle')h.entries[today]=habitDone(h)?0:1;if(operation==='quick')h.entries[today]=habitDone(h)?0:Number(h.target||1);if(operation==='number')h.entries[today]=clamp(Number(value||0),0,9999);const justDone=habitDone(h),saved=saveState();renderAll();if(saved&&justDone){celebrate();const name=HABIT_DEFS.some(def=>def.key===h.key)||h.sample?translateText(h.name):h.name;toast(LANG==='en'?`${name} completed — nicely done`:`${h.name}，完成得漂亮`);}}
+  function toggleTask(id){const task=state.records.find(r=>r.id===id&&r.type==='planner');if(!task)return;task.data.done=!task.data.done;const saved=saveState();renderAll();if(saved&&task.data.done){celebrate();toast('完成一项，心里轻一点');}}
 
   function bindEvents(){
     document.getElementById('brandSettingsBtn').addEventListener('click',openBrandSettings);
@@ -1469,8 +1202,8 @@
       if(type==='toggle-plan'){const item=state.settings.weeklyPlan.find(x=>x.id===id);if(item){item.done=!item.done;const saved=saveState();renderFitness();if(saved&&item.done)celebrate();}}
       if(type==='delete-habit-custom'){const habit=state.habits.find(h=>h.id===id);if(habit&&confirm(LANG==='en'?`Delete the habit “${habit.name}” and all of its history?`:`确定删除习惯“${habit.name}”吗？历史打卡也会一起删除。`)){state.habits=state.habits.filter(h=>h.id!==id);if(HABIT_DEFS.some(def=>def.key===habit.key)){state.settings.hiddenHabitKeys=[...new Set([...(state.settings.hiddenHabitKeys||[]),habit.key])];}const saved=saveState();renderAll();renderHabitManageList();if(saved)toast('习惯已删除');}}
       if(type==='delete-plan'){const item=state.settings.weeklyPlan.find(x=>x.id===id);if(item&&confirm(LANG==='en'?`Delete the plan “${item.title}”?`:`确定删除计划“${item.title}”吗？`)){state.settings.weeklyPlan=state.settings.weeklyPlan.filter(x=>x.id!==id);const saved=saveState();renderFitness();renderPlanManageList();if(saved)toast('计划已删除');}}
-      if(type==='toggle-shopping'){const item=state.records.find(r=>r.id===id&&r.type==='home');if(item){item.data.bought=!item.data.bought;item.data.boughtDate=item.data.bought?isoDate():null;updateRemoteShopping(item);const saved=saveState();renderAll();if(saved&&item.data.bought){celebrate();toast('买到了，已移入完成');}}}
-      if(type==='delete-media'){const item=state.mediaItems.find(media=>media.id===id);if(item&&confirm(LANG==='en'?`Remove “${item.name}” from the list?`:`确定从清单中删除“${item.name}”吗？`)){if(item.remoteId)deleteRemoteMedia(item.remoteId);state.mediaItems=state.mediaItems.filter(media=>media.id!==id);const saved=saveState();renderMedia();if(saved)toast('已从书影音清单移除');}}
+      if(type==='toggle-shopping'){const item=state.records.find(r=>r.id===id&&r.type==='home');if(item){item.data.bought=!item.data.bought;item.data.boughtDate=item.data.bought?isoDate():null;const saved=saveState();renderAll();if(saved&&item.data.bought){celebrate();toast('买到了，已移入完成');}}}
+      if(type==='delete-media'){const item=state.mediaItems.find(media=>media.id===id);if(item&&confirm(LANG==='en'?`Remove “${item.name}” from the list?`:`确定从清单中删除“${item.name}”吗？`)){state.mediaItems=state.mediaItems.filter(media=>media.id!==id);const saved=saveState();renderMedia();if(saved)toast('已从书影音清单移除');}}
       if(type==='open-habit-settings')openHabitSettings();if(type==='close-habit-settings')closeHabitSettings();if(type==='open-plan-settings')openPlanSettings();if(type==='close-plan-settings')closePlanSettings();if(type==='open-fitness-profile')openFitnessProfile();if(type==='close-fitness-profile')closeFitnessProfile();
       if(type==='export-money')exportExcel('money');if(type==='export-fitness')exportExcel('fitness');if(type==='close-brand')closeBrandSettings();if(type==='reset-brand'){state.settings.brand={name:'日常集',avatar:'日',tagline:'生活有迹可循',theme:'plum'};saveState();applyBrand();openBrandSettings();toast('已恢复默认外观');}
     });
@@ -1485,36 +1218,13 @@
     document.getElementById('mediaRatingFilter').addEventListener('change',e=>{state.settings.mediaRatingFilter=Number(e.target.value);saveState();renderMedia();});
     document.getElementById('clearSamplesBtn').addEventListener('click',()=>{const recordSamples=state.records.filter(r=>r.sample).length,mediaSamples=state.mediaItems.filter(item=>item.sample).length,sampleCount=recordSamples+mediaSamples;if(!sampleCount&&!state.habits.some(h=>h.sample))return;if(!confirm(`将清空 ${sampleCount} 条示例记录和示例打卡，你自己的内容会保留。是否继续？`))return;state.records=state.records.filter(r=>!r.sample);state.mediaItems=state.mediaItems.filter(item=>!item.sample);state.habits.forEach(h=>{if(h.sample){h.entries={};h.sample=false;}});state.settings.weeklyPlan=DEFAULT_PLAN.map(x=>({...x}));const saved=saveState();renderAll();if(saved)toast('示例内容已清空');});
     window.addEventListener('storage',e=>{if(e.key!==STORAGE_KEY||!e.newValue)return;try{state=normalizeState(JSON.parse(e.newValue));renderAll();toast('另一个页面的数据已同步');}catch{}});
-    var importBtn=document.getElementById('importDataBtn'),exportBtn=document.getElementById('exportDataBtn'),importInput=document.getElementById('importDataInput'),retryBtn=document.getElementById('syncRetryBtn'),dismissBtn=document.getElementById('syncDismissBtn');
+    var importBtn=document.getElementById('importDataBtn'),exportBtn=document.getElementById('exportDataBtn'),importInput=document.getElementById('importDataInput');
     if(importBtn) importBtn.addEventListener('click',()=>{importInput.value='';importInput.click();});
     if(exportBtn) exportBtn.addEventListener('click',exportData);
     if(importInput) importInput.addEventListener('change',()=>{importDataFile(importInput.files&&importInput.files[0]);});
-    if(retryBtn) retryBtn.addEventListener('click',retrySync);
-    if(dismissBtn) dismissBtn.addEventListener('click',hideSyncBanner);
     var legacyImportBtn=document.getElementById('legacyImportBtn'),legacyDismissBtn=document.getElementById('legacyDismissBtn');
     if(legacyImportBtn) legacyImportBtn.addEventListener('click',importLegacyData);
     if(legacyDismissBtn) legacyDismissBtn.addEventListener('click',()=>{hideLegacySlot();markLegacyHandled();toast('已忽略；之后随时可用「导入数据」导入备份');});
-  }
-
-  /* ================= 线上同步提示 + 重试 ================= */
-  var syncRetrying = false;
-  function showSyncBanner(message){
-    var banner=document.getElementById('syncBanner'),text=document.getElementById('syncBannerText');
-    if(!banner||!text)return;
-    text.textContent=translateText(message);
-    banner.hidden=false;
-  }
-  function hideSyncBanner(){var banner=document.getElementById('syncBanner');if(banner)banner.hidden=true;}
-  function retrySync(){
-    if(syncRetrying)return;
-    if(!ONLINE){showSyncBanner('当前页面没有连上线上数据表，请从资料库里的在线页面重新打开后再试。');return;}
-    syncRetrying=true;hideSyncBanner();LOCAL_ONLY=false;
-    toast('正在重新同步…');
-    pullAllRemote(function(changed,failed){
-      syncRetrying=false;
-      if(failed)return;                       // 失败时 pullAllRemote 已弹出提示
-      saveState();renderAll();toast('已和线上数据表同步');
-    });
   }
 
   /* ================= 数据导入 / 导出 ================= */
@@ -1582,9 +1292,9 @@
     throw new Error('无法识别的数据格式（这份文件里的字段是：'+Object.keys(raw).slice(0,8).join('、')+'）');
   }
 
-  /* 合并导入：同一条不重复，返回新增数据与待同步的打卡项 */
+  /* 合并导入：同一条不重复，返回新增数据条数 */
   function mergeImported(candidate){
-    var summary={records:0,media:0,habits:0,checks:0},habitPushes=[],seenNames=new Set(),seenChecks=new Set();
+    var summary={records:0,media:0,habits:0,checks:0,hidden:0},seenNames=new Set(),seenChecks=new Set();
     var signature=function(r){return [r.type,r.date,r.data&&r.data.title,r.data&&r.data.name,r.data&&r.data.amount,r.data&&r.data.weight].join('|');};
     var seen=new Set(state.records.map(signature)),newRecords=[];
     (candidate.records||[]).forEach(function(r){
@@ -1592,7 +1302,7 @@
       var key=signature(r);
       if(seen.has(key))return;
       seen.add(key);
-      newRecords.push(Object.assign({},r,{id:r.id||uid(),createdAt:r.createdAt||Date.now(),sample:false,remoteId:null}));
+      newRecords.push(Object.assign({},r,{id:r.id||uid(),createdAt:r.createdAt||Date.now(),sample:false}));
     });
     state.records=state.records.concat(newRecords);
     summary.records=newRecords.length;
@@ -1601,7 +1311,7 @@
     (candidate.mediaItems||[]).forEach(function(item){
       if(!item||!item.name)return;
       if(state.mediaItems.some(function(exist){return exist.name===item.name;}))return;
-      newMedia.push(Object.assign({},item,{id:item.id||uid(),sample:false,remoteId:null}));
+      newMedia.push(Object.assign({},item,{id:item.id||uid(),sample:false}));
     });
     state.mediaItems=state.mediaItems.concat(newMedia);
     summary.media=newMedia.length;
@@ -1623,28 +1333,24 @@
         var checkKey=h.name+'|'+date;
         if(seenChecks.has(checkKey))return;
         seenChecks.add(checkKey);
-        habitPushes.push([target,date]);
+        summary.checks++;
       });
     });
-    summary.checks=habitPushes.length;
-    return {summary:summary,records:newRecords,media:newMedia,habitPushes:habitPushes};
-  }
-
-  /* 新增数据写回线上数据表（打卡项分批节流，避免一次打太多请求） */
-  function pushMergedToRemote(merged){
-    if(!ONLINE||LOCAL_ONLY)return;
-    merged.records.forEach(function(rec){
-      if(rec.type==='money')pushMoney(rec);
-      else if(rec.type==='planner')pushPlan(rec);
-      else if(rec.type==='fitness')pushFitness(rec);
-      else if(rec.type==='home')pushShopping(rec);
+    /* 本机把内置习惯删掉了（记在 hiddenHabitKeys 里）—— 导入也要认这个状态，
+       否则导入一份删过习惯的备份，它在本机又冒出来了。用并集，不撤销本机已有的隐藏。 */
+    var incomingHidden=(candidate.settings&&Array.isArray(candidate.settings.hiddenHabitKeys))?candidate.settings.hiddenHabitKeys:[];
+    var knownHidden=new Set(state.settings.hiddenHabitKeys||[]);
+    var hiddenAdded=0;
+    incomingHidden.forEach(function(key){
+      if(!key||knownHidden.has(key))return;
+      knownHidden.add(key);
+      state.settings.hiddenHabitKeys=[...knownHidden];
+      state.habits=state.habits.filter(function(h){return h.key!==key;});
+      hiddenAdded++;
     });
-    merged.media.forEach(function(item){pushMedia(item);});
-    var pending=merged.habitPushes.slice();
-    (function step(){
-      pending.splice(0,15).forEach(function(pair){pushHabit(pair[0],pair[1]);});
-      if(pending.length)setTimeout(step,220);
-    })();
+    summary.hidden=hiddenAdded;
+
+    return {summary:summary,records:newRecords,media:newMedia};
   }
 
   function importDataFile(file){
@@ -1659,26 +1365,15 @@
         merged=mergeImported(normalizeState(parsed.candidate));
       }catch(error){toast(error.message||'导入失败，请检查备份文件');return;}
       var s=merged.summary;
-      if(!s.records&&!s.media&&!s.habits&&!s.checks){toast('没有发现需要导入的新数据');return;}
-      var localNote=(!ONLINE||LOCAL_ONLY)?'\n\n注意：当前地址没有连上线上数据表，导入只会保存到这台设备的浏览器里。':'';
-      if(!confirm('将导入 '+s.records+' 条收支/日程/健康记录、'+s.media+' 条书影音、'+s.habits+' 个新习惯（共 '+s.checks+' 条打卡）。是否继续？'+localNote)){
+      if(!s.records&&!s.media&&!s.habits&&!s.checks&&!s.hidden){toast('没有发现需要导入的新数据');return;}
+      if(!confirm('将导入 '+s.records+' 条收支/日程/健康记录、'+s.media+' 条书影音、'+s.habits+' 个新习惯（共 '+s.checks+' 条打卡'+(s.hidden?'、'+s.hidden+' 个已删除的习惯':'')+'）。是否继续？')){
         try{state=JSON.parse(snapshot);}catch(error){}
         renderAll();
         toast('已取消，数据没有改动');
         return;
       }
       saveState();renderAll();
-      if(!ONLINE||LOCAL_ONLY){toast('已导入到本机：'+s.records+' 条记录 · '+s.media+' 条书影音 · '+s.habits+' 个习惯（这个地址未连线上数据表，换设备不会带过去）');return;}
-      pushMergedToRemote(merged);
-      toast('已导入，正在同步到线上数据表…');
-      var wait=1200+Math.ceil(merged.habitPushes.length/15)*220;
-      setTimeout(function(){
-        if(LOCAL_ONLY){toast('部分内容未能写入线上，已保留在本机，可点顶部「重试同步」');return;}
-        pullAllRemote(function(changed,failed){
-          saveState();renderAll();
-          if(!failed&&!LOCAL_ONLY)toast('导入内容已同步到线上数据表');
-        });
-      },wait>12000?12000:wait);
+      toast('已导入：'+s.records+' 条记录 · '+s.media+' 条书影音 · '+s.habits+' 个习惯'+(s.hidden?' · '+s.hidden+' 个删除记录':''));
     };
     reader.readAsText(file);
   }
@@ -1723,17 +1418,10 @@
     catch(error){toast(error.message||'旧数据导入失败');return;}
     var s=merged.summary;
     saveState();renderAll();hideLegacySlot();markLegacyHandled();
-    if(!ONLINE||LOCAL_ONLY){toast('旧数据已搬进来：'+s.records+' 条记录 · '+s.media+' 条书影音 · '+s.habits+' 个习惯（保存在本机）');return;}
-    pushMergedToRemote(merged);
-    toast('旧数据已搬进来，正在写入线上数据表…');
-    var wait=1200+Math.ceil(merged.habitPushes.length/15)*220;
-    setTimeout(function(){
-      if(LOCAL_ONLY){toast('部分内容未能写入线上，已保留在本机，可点顶部「重试同步」');return;}
-      pullAllRemote(function(changed,failed){saveState();renderAll();if(!failed&&!LOCAL_ONLY)toast('旧数据已同步到线上数据表');});
-    },wait>12000?12000:wait);
+    toast('旧数据已搬进来：'+s.records+' 条记录 · '+s.media+' 条书影音 · '+s.habits+' 个习惯');
   }
 
-  function init(){const now=new Date(),weekdays=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];document.getElementById('todayLabel').textContent=LANG==='en'?new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',weekday:'long'}).format(now):`${now.getMonth()+1} 月 ${now.getDate()} 日 · ${weekdays[now.getDay()]}`;setDateDefaults();updateMoneyCategories();restoreDrafts();bindForms();bindEvents();renderAll();switchView(document.getElementById(`view-${location.hash.slice(1)}`)?location.hash.slice(1):'dashboard');if(!dataCorrupted)saveState();pullAllRemote(function(ok){ if(ok){ saveState(); renderAll(); } });}
+  function init(){const now=new Date(),weekdays=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];document.getElementById('todayLabel').textContent=LANG==='en'?new Intl.DateTimeFormat('en-US',{month:'long',day:'numeric',weekday:'long'}).format(now):`${now.getMonth()+1} 月 ${now.getDate()} 日 · ${weekdays[now.getDay()]}`;setDateDefaults();updateMoneyCategories();restoreDrafts();bindForms();bindEvents();renderAll();switchView(document.getElementById(`view-${location.hash.slice(1)}`)?location.hash.slice(1):'dashboard');if(!dataCorrupted)saveState();}
   /* ============ 添加到手机桌面 / 安装为应用 ============
      能力来自通用模块（真源 shared/pwa-install.js，由 tools/sync-pwa.mjs 内联）。 */
   if(window.PWAInstall){
