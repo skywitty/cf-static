@@ -1872,7 +1872,10 @@
      它按 uid 精确删自己的桶，动不到其他账号，也动不到 index.html 的那份。 */
   function clearOwnBucket(uid) {
     var key = bucketKeyOf(uid);
-    try { localStorage.removeItem(key); } catch (e) { /* 存储不可用不影响：内存状态照样会被换成空桶内容 */ }
+    try {
+      localStorage.removeItem(key);
+      localStorage.removeItem(key + '_pending');   // 数据都不要了，待同步标记也一起清
+    } catch (e) { /* 存储不可用不影响：内存状态照样会被换成空桶内容 */ }
   }
 
   /* ---------- 本机版存量并入 ----------
@@ -2107,7 +2110,10 @@
         [DB_MONEY, DB_HABIT, DB_PLAN, DB_FITNESS, DB_SHOPPING, DB_MEDIA].forEach(function (table) {
           realtimeChannel.on('postgres_changes', {
             event: '*', schema: 'public', table: table, filter: 'space=eq.' + SUPABASE_SPACE
-          }, function () { pullAllRemote(function (changed) { if (changed) { saveState(); renderAll(); } }); });
+          }, function () {
+            if (Date.now() - lastWriteAt < 1500) return;    // 自己刚写过的，不用再拉一次
+            pullAllRemote(function (changed) { if (changed) { saveState(); renderAll(); } });
+          });
         });
         realtimeChannel.subscribe();
       } catch (e) { /* 实时通道不可用，静默降级，手动「重试同步」照样能用 */ }
@@ -2160,6 +2166,7 @@
 
   function dbAdd(table, row, cb) {
     if (!ONLINE || LOCAL_ONLY) { if (cb) cb(null); return; }
+    markWritten();
     SupabaseSync.insert(table, row).then(function (res) {
       if (res.error) { goLocalOnly(res.error.message); if (cb) cb(null); return; }
       if (cb) cb((res.data && res.data.id) || null);
@@ -2169,6 +2176,7 @@
   /* 主键确定的行用 upsert：断网补传、多设备同时写都不会写重 */
   function dbUpsert(table, row, cb) {
     if (!ONLINE || LOCAL_ONLY) { if (cb) cb(null); return; }
+    markWritten();
     SupabaseSync.upsert(table, row).then(function (res) {
       if (res.error) { goLocalOnly(res.error.message); if (cb) cb(null); return; }
       if (cb) cb((res.data && res.data.id) || null);
@@ -2177,6 +2185,7 @@
 
   function dbUpdate(table, recordId, patch) {
     if (!ONLINE || LOCAL_ONLY) return;
+    markWritten();
     SupabaseSync.update(table, recordId, patch).then(function (res) {
       if (res.error) goLocalOnly(res.error.message);
     });
@@ -2184,93 +2193,119 @@
 
   function dbDelete(table, recordId) {
     if (!ONLINE || LOCAL_ONLY) return;
+    markWritten();
     SupabaseSync.remove(table, recordId).then(function (res) {
       if (res.error) goLocalOnly(res.error.message);
     });
   }
 
-  function pullAllRemote(cb) {
-    if (!ONLINE || LOCAL_ONLY) {
-      // 只在「压根没配」时提示一次，失败场景由 goLocalOnly 负责
-      if (!ONLINE && SupabaseSync.status().phase === SupabaseSync.PHASE.UNCONFIGURED) showSyncBanner(supabaseHint());
-      if (cb) cb(false);
-      return;
-    }
-    var pending = 6, done = 0, changed = false, failed = 0;
-    function oneDone(ok, c) {
-      done++;
-      if (c) changed = true;
-      if (!ok) failed++;
-      if (done >= pending) {
-        if (failed > 0) showSyncBanner('有 ' + failed + ' 张线上数据表读取失败，页面已先用本机缓存展示，不会白屏。检查网络后点「重试同步」即可重新拉取。');
-        else hideSyncBanner();
-        if (cb) cb(changed, failed);
-      }
-    }
-    dbFetchAll(DB_MONEY, function (rows) { if (rows) { mergeMoney(rows); oneDone(true, true); } else oneDone(false, false); });
-    dbFetchAll(DB_HABIT, function (rows) { if (rows) { mergeHabit(rows); oneDone(true, true); } else oneDone(false, false); });
-    dbFetchAll(DB_PLAN, function (rows) { if (rows) { mergePlan(rows); oneDone(true, true); } else oneDone(false, false); });
-    dbFetchAll(DB_FITNESS, function (rows) { if (rows) { mergeFitness(rows); oneDone(true, true); } else oneDone(false, false); });
-    dbFetchAll(DB_SHOPPING, function (rows) { if (rows) { mergeShopping(rows); oneDone(true, true); } else oneDone(false, false); });
-    dbFetchAll(DB_MEDIA, function (rows) { if (rows) { mergeMedia(rows); oneDone(true, true); } else oneDone(false, false); });
+  /* ---------- 待同步集合 ----------
+     本地产生、线上还没确认的行 id。单独一个键，不塞进 state ——
+     normalizeState 会按类型重建对象，塞进 state 的标记留不住。
+     有它才能区分两种「本地有、线上没有」：
+       · 我这边新记的（在集合里）      → 补传到线上，断网时记的账不会只留在这台设备上；
+       · 别的设备已经删掉的（不在集合里）→ 保持删除，不重新塞回线上。 */
+  function pendingKey() { return storageKey() + '_pending'; }
+  function readPending() {
+    try {
+      var raw = localStorage.getItem(pendingKey());
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+  function writePending(list) {
+    try { localStorage.setItem(pendingKey(), JSON.stringify(list)); } catch (e) { /* 记不下只是补传晚一点 */ }
+  }
+  function markPending(id) {
+    var key = String(id || '');
+    if (!key) return;
+    var list = readPending();
+    if (list.indexOf(key) < 0) { list.push(key); writePending(list); }
+  }
+  function settlePending(ids) {
+    var drop = {};
+    (Array.isArray(ids) ? ids : [ids]).forEach(function (value) { var key = String(value || ''); if (key) drop[key] = true; });
+    if (!Object.keys(drop).length) return;
+    writePending(readPending().filter(function (id) { return !drop[id]; }));
+  }
+  /* 自己刚写入的那几秒里，实时通道推回来的事件不必再拉一次（避免「推送 → 拉取」空转） */
+  var lastWriteAt = 0;
+  function markWritten() { lastWriteAt = Date.now(); }
+
+  /* ---------- 线上 -> 本地：两端合并去重 ----------
+     打开页面不再是用线上整份覆盖本地，而是两边取并集去重，逐条判断：
+       ① 本机改过（待同步集合里）且线上也有 → 以本地为准，保留并补传；
+       ② 线上有、本机没改过                → 以线上为准；
+       ③ 线上没有内容完全相同的重复项      → 按内容指纹只留线上那一份；
+       ④ 本机新记的（待同步集合里，线上没有）→ 保留原样，随后补传到线上；
+       ⑤ 其余（线上没有、也不是本机新记的） → 别的设备删掉了，本地跟着删。
+     返回「本轮需要补传的本地记录」，由 pullAllRemote 推到线上。 */
+  function recordSignature(r) {
+    var d = r.data || {};
+    return [r.type, r.date, d.flow, d.amount, d.category, d.note, d.title, d.name, d.weight].join('|');
   }
 
-  /* ---------- 云端 -> 本地 ---------- */
-  function mergeMoney(rows) {
-    if (!rows) return;
-    var remoteRecords = rows.map(function (r) {
+  function mergeRecordSet(rows, pending, type, fromRow) {
+    if (!rows) return [];                              // 读取失败：本地原样保留，不动
+    var remote = rows.map(fromRow);
+    var remoteById = {}, sigCount = {};
+    remote.forEach(function (rec) {
+      remoteById[rec.id] = rec;
+      var key = recordSignature(rec);
+      sigCount[key] = (sigCount[key] || 0) + 1;
+    });
+    var keep = [], upload = [], overridden = {};
+    state.records.forEach(function (rec) {
+      if (rec.type !== type || rec.sample) return;
+      var waiting = Boolean(pending[rec.id]);
+      if (waiting && remoteById[rec.id]) {
+        // ① 本机改过且线上也有：内容一致说明只是标记没清干净，内容不一致才以本地为准并补传
+        if (recordSignature(rec) !== recordSignature(remoteById[rec.id])) {
+          overridden[rec.id] = true;    // 本地版本顶掉线上那一行，别让两份同时留在列表里
+          keep.push(rec); upload.push(rec);
+        }
+        return;
+      }
+      if (remoteById[rec.id]) return;                                                  // ② 线上为准
+      var key = recordSignature(rec);
+      if (sigCount[key] > 0) { sigCount[key] -= 1; return; }                            // ③ 内容重复 → 只留线上那份
+      if (waiting) { keep.push(rec); upload.push(rec); return; }                        // ④ 本地新增 → 补传
+      // ⑤ 其余保持删除
+    });
+    state.records = state.records.filter(function (rec) { return rec.type !== type; })
+      .concat(remote.filter(function (rec) { return !overridden[rec.id]; }), keep);
+    return upload;
+  }
+
+  function mergeMoney(rows, pending) {
+    return mergeRecordSet(rows, pending, 'money', function (r) {
       return {
         id: r.id || uid(), type: 'money', date: isoDateFrom(r.date) || isoDate(), createdAt: Date.now(), sample: false, remoteId: r.id,
         data: { flow: r.flow === 'income' ? 'income' : 'expense', amount: Number(r.amount) || 0, category: r.category || '其他', note: r.note || '' }
       };
     });
-    state.records = state.records.filter(function (r) { return r.type !== 'money'; }).concat(remoteRecords);
   }
 
-  function mergeHabit(rows) {
-    if (!rows) return;
-    var byKey = {}, byName = {};
-    rows.forEach(function (r) {
-      var d = isoDateFrom(r.date);
-      if (!d) return;
-      var val = Number(r.value) || 0;
-      if (r.habit_key) { (byKey[r.habit_key] = byKey[r.habit_key] || {})[d] = val; }
-      if (r.habit_name) { (byName[r.habit_name] = byName[r.habit_name] || {})[d] = val; }
-    });
-    state.habits.forEach(function (h) {
-      var remote = byKey[h.key] || byName[h.name];
-      if (remote) {
-        h.entries = Object.assign({}, remote);
-        h.sample = false;
-      }
-    });
-  }
-
-  function mergePlan(rows) {
-    if (!rows) return;
-    var remoteRecords = rows.map(function (r) {
+  function mergePlan(rows, pending) {
+    return mergeRecordSet(rows, pending, 'planner', function (r) {
       return {
         id: r.id || uid(), type: 'planner', date: isoDateFrom(r.date) || isoDate(), createdAt: Date.now(), sample: false, remoteId: r.id,
         data: { title: r.title || '', list: r.list || '生活', done: r.status === '已完成', time: '', priority: r.priority || 'normal', note: r.note || '', remind: Boolean(r.remind) }
       };
     });
-    state.records = state.records.filter(function (r) { return r.type !== 'planner'; }).concat(remoteRecords);
   }
 
-  function mergeFitness(rows) {
-    if (!rows) return;
-    var remoteRecords = rows.map(function (r) {
+  function mergeFitness(rows, pending) {
+    return mergeRecordSet(rows, pending, 'fitness', function (r) {
       return {
         id: r.id || uid(), type: 'fitness', date: isoDateFrom(r.date) || isoDate(), createdAt: Date.now(), sample: false, remoteId: r.id,
         data: { weight: Number(r.weight) || 0, bodyFat: (r.body_fat === null || r.body_fat === undefined) ? null : Number(r.body_fat), calories: Number(r.calories) || 0, duration: Number(r.duration) || 0, note: r.note || '' }
       };
     });
-    state.records = state.records.filter(function (r) { return r.type !== 'fitness'; }).concat(remoteRecords);
   }
 
-  function mergeShopping(rows) {
-    if (!rows) return;
-    var remoteRecords = rows.map(function (r) {
+  function mergeShopping(rows, pending) {
+    return mergeRecordSet(rows, pending, 'home', function (r) {
       return {
         id: r.id || uid(), type: 'home', date: isoDateFrom(r.bought_date) || isoDate(), createdAt: Date.now(), sample: false, remoteId: r.id,
         data: {
@@ -2280,13 +2315,48 @@
         }
       };
     });
-    state.records = state.records.filter(function (r) { return r.type !== 'home'; }).concat(remoteRecords);
   }
 
-  function mergeMedia(rows) {
-    if (!rows) return;
+  function mergeHabit(rows, pending) {
+    if (!rows) return [];
+    var byKey = {}, byName = {};
+    rows.forEach(function (r) {
+      var d = isoDateFrom(r.date);
+      if (!d) return;
+      var val = Number(r.value) || 0;
+      if (r.habit_key) { (byKey[r.habit_key] = byKey[r.habit_key] || {})[d] = val; }
+      if (r.habit_name) { (byName[r.habit_name] = byName[r.habit_name] || {})[d] = val; }
+    });
+    var upload = [];
+    state.habits.forEach(function (h) {
+      var remote = byKey[h.key] || byName[h.name];
+      if (!remote) {
+        // 线上这个习惯一条打卡都没有（新账号 / 还没同步过）→ 保留本地这份，
+        // 但只把「本机新打的卡」补传上去，老的不用重复推
+        Object.keys(h.entries || {}).forEach(function (date) {
+          if (!(Number(h.entries[date]) || 0)) return;
+          var rowId = habitRowId(h, date);
+          if (pending[rowId]) upload.push({ habit: h, date: date, id: rowId });
+        });
+        return;
+      }
+      var merged = Object.assign({}, remote);          // 线上已有的日期以线上为准
+      Object.keys(h.entries || {}).forEach(function (date) {
+        var value = Number(h.entries[date]) || 0;
+        if (!value || date in merged) return;
+        var rowId = habitRowId(h, date);
+        if (pending[rowId]) { merged[date] = value; upload.push({ habit: h, date: date, id: rowId }); }
+      });
+      h.entries = merged;
+      h.sample = false;
+    });
+    return upload;
+  }
+
+  function mergeMedia(rows, pending) {
+    if (!rows) return [];
     var TYPES = ['电影', '剧', '书', '番'], STATUSES = ['想看', '在看', '看完', '弃了'];
-    state.mediaItems = rows.map(function (r) {
+    var remote = rows.map(function (r) {
       return {
         id: r.id || uid(), name: r.name || '',
         type: TYPES.indexOf(r.type) >= 0 ? r.type : '电影',
@@ -2295,126 +2365,277 @@
         cover: r.cover || '', sample: false, remoteId: r.id
       };
     });
+    var mediaSignature = function (m) { return [m.name, m.type, m.date, m.status, m.rating, m.review].join('|'); };
+    var remoteById = {}, sigCount = {};
+    remote.forEach(function (item) {
+      remoteById[item.id] = item;
+      var key = mediaSignature(item);
+      sigCount[key] = (sigCount[key] || 0) + 1;
+    });
+    var keep = [], upload = [], overridden = {};
+    state.mediaItems.forEach(function (item) {
+      if (item.sample) return;
+      var waiting = Boolean(pending[item.id]);
+      if (waiting && remoteById[item.id]) {
+        // 本机改过且线上也有：内容一致说明只是标记没清干净，不一致才以本地为准并补传
+        if (mediaSignature(item) !== mediaSignature(remoteById[item.id])) {
+          overridden[item.id] = true;
+          keep.push(item); upload.push(item);
+        }
+        return;
+      }
+      if (remoteById[item.id]) return;
+      var key = mediaSignature(item);
+      if (sigCount[key] > 0) { sigCount[key] -= 1; return; }
+      if (waiting) { keep.push(item); upload.push(item); return; }
+    });
+    state.mediaItems = remote.filter(function (item) { return !overridden[item.id]; }).concat(keep);
+    return upload;
   }
 
-  /* ---------- 本地 -> 云端 ---------- */
-  function pushMoney(rec) {
-    if (!ONLINE || LOCAL_ONLY) return;
-    dbUpsert(DB_MONEY, {
+  function pullAllRemote(cb) {
+    if (!ONLINE || LOCAL_ONLY) {
+      // 只在「压根没配」时提示一次，失败场景由 goLocalOnly 负责
+      if (!ONLINE && SupabaseSync.status().phase === SupabaseSync.PHASE.UNCONFIGURED) showSyncBanner(supabaseHint());
+      if (cb) cb(false);
+      return;
+    }
+    var pendingList = readPending();
+    var waiting = {};
+    pendingList.forEach(function (id) { waiting[id] = true; });
+    var uploadRecords = [], uploadMedia = [], uploadHabits = [];
+    var expects = 6, done = 0, changed = false, failed = 0;
+    function oneDone(ok, c) {
+      done++;
+      if (c) changed = true;
+      if (!ok) failed++;
+      if (done < expects) return;
+      if (failed > 0) {
+        showSyncBanner('有 ' + failed + ' 张线上数据表读取失败，页面已先用本机缓存展示，不会白屏。检查网络后点「重试同步」即可重新拉取。');
+        if (cb) cb(changed, failed);
+        return;
+      }
+      // 合并完成 → 把「本地新增」补传到线上；推完这一次同步才算真的收敛
+      pushLocalNew(uploadRecords, uploadMedia, uploadHabits, function (pushFailed) {
+        if (pushFailed) {
+          showSyncBanner('有内容没能写到线上数据表，已先保留在这台设备上。检查网络后点「重试同步」即可补传。');
+          if (cb) cb(changed, failed + 1);
+          return;
+        }
+        hideSyncBanner();
+        if (cb) cb(changed, 0);
+      });
+    }
+    dbFetchAll(DB_MONEY, function (rows) { if (rows) { uploadRecords = uploadRecords.concat(mergeMoney(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
+    dbFetchAll(DB_HABIT, function (rows) { if (rows) { uploadHabits = uploadHabits.concat(mergeHabit(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
+    dbFetchAll(DB_PLAN, function (rows) { if (rows) { uploadRecords = uploadRecords.concat(mergePlan(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
+    dbFetchAll(DB_FITNESS, function (rows) { if (rows) { uploadRecords = uploadRecords.concat(mergeFitness(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
+    dbFetchAll(DB_SHOPPING, function (rows) { if (rows) { uploadRecords = uploadRecords.concat(mergeShopping(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
+    dbFetchAll(DB_MEDIA, function (rows) { if (rows) { uploadMedia = uploadMedia.concat(mergeMedia(rows, waiting)); oneDone(true, true); } else oneDone(false, false); });
+  }
+
+  /* 把「本地新增」补传到线上。批量 upsert：主键已存在时是覆盖而不是报错，
+     所以「另一台设备刚好也写过同一行」不会让整批失败。
+     推成功后清掉待同步标记；推失败的留在集合里，下次打开还会再试。 */
+  function pushLocalNew(records, media, habits, onDone) {
+    if (!records.length && !media.length && !habits.length) { onDone(false); return; }
+    markWritten();
+    var jobs = [];
+    var groups = { money: [], planner: [], fitness: [], home: [] };
+    records.forEach(function (rec) { if (groups[rec.type]) groups[rec.type].push(rec); });
+
+    [['money', DB_MONEY, moneyRow], ['planner', DB_PLAN, planRow], ['fitness', DB_FITNESS, fitnessRow], ['home', DB_SHOPPING, shoppingRow]]
+      .forEach(function (spec) {
+        var list = groups[spec[0]];
+        if (!list.length) return;
+        var rows = list.map(spec[2]);
+        jobs.push(SupabaseSync.upsertMany(spec[1], rows).then(function (res) {
+          if (res.error) return res;
+          list.forEach(function (rec, index) { rec.remoteId = rows[index].id; settlePending(rec.id); });
+          return res;
+        }));
+      });
+
+    if (media.length) {
+      var mediaRows = media.map(mediaRow);
+      jobs.push(SupabaseSync.upsertMany(DB_MEDIA, mediaRows).then(function (res) {
+        if (res.error) return res;
+        media.forEach(function (item, index) { item.remoteId = mediaRows[index].id; settlePending(item.id); });
+        return res;
+      }));
+    }
+
+    if (habits.length) {
+      var habitRows = habits.map(function (item) { return habitRow(item.habit, item.date); });
+      jobs.push(SupabaseSync.upsertMany(DB_HABIT, habitRows).then(function (res) {
+        if (res.error) return res;
+        settlePending(habits.map(function (item) { return item.id; }));
+        return res;
+      }));
+    }
+
+    Promise.all(jobs).then(function (results) {
+      if (results.some(function (res) { return res && res.error; })) { onDone(true); return; }
+      // 这一轮没能补传的待同步 id（线上已有 / 已被去重 / 本地也已删掉）不必再跟踪
+      var stillNeeded = {};
+      records.forEach(function (rec) { stillNeeded[rec.id] = true; });
+      media.forEach(function (item) { stillNeeded[item.id] = true; });
+      habits.forEach(function (item) { stillNeeded[item.id] = true; });
+      settlePending(readPending().filter(function (id) { return !stillNeeded[id]; }));
+      onDone(false);
+    });
+  }
+
+  /* ---------- 本地 -> 云端 ----------
+     行的形状只写一份（插入 / 补传 / 更新共用），避免两处字段写歪。
+     remoteId 与主键是同一个值（见 pushX），所以取键时统一用 idOr(rec) 兜底。 */
+  function idOr(rec) { return (rec && (rec.remoteId || rec.id)) || ''; }
+
+  function moneyRow(rec) {
+    return {
       id: rec.id, space: SUPABASE_SPACE, date: rec.date,
       flow: rec.data.flow === 'income' ? 'income' : 'expense',
       amount: Number(rec.data.amount) || 0,
       category: rec.data.category || '其他',
       note: rec.data.note || ''
-    }, function (rid) { if (rid) rec.remoteId = rid; });
+    };
   }
-
-  function pushHabit(h, date) {
-    if (!ONLINE || LOCAL_ONLY) return;
-    dbUpsert(DB_HABIT, {
-      id: habitRowId(h, date), space: SUPABASE_SPACE, date: date,
-      habit_key: h.key || '', habit_name: h.name || '',
-      value: Number(h.entries[date] || 0), unit: h.unit || ''
-    });
-  }
-
-  function pushPlan(rec) {
-    if (!ONLINE || LOCAL_ONLY) return;
-    dbUpsert(DB_PLAN, {
+  function planRow(rec) {
+    return {
       id: rec.id, space: SUPABASE_SPACE, date: rec.date,
       title: rec.data.title || '', list: rec.data.list || '生活',
       status: rec.data.done ? '已完成' : '待完成',
       priority: rec.data.priority || 'normal', note: rec.data.note || '', remind: Boolean(rec.data.remind)
-    }, function (rid) { if (rid) rec.remoteId = rid; });
+    };
   }
-
-  function pushFitness(rec) {
-    if (!ONLINE || LOCAL_ONLY) return;
-    dbUpsert(DB_FITNESS, {
+  function fitnessRow(rec) {
+    return {
       id: rec.id, space: SUPABASE_SPACE, date: rec.date,
       weight: Number(rec.data.weight) || 0,
       body_fat: rec.data.bodyFat === null || rec.data.bodyFat === undefined ? null : Number(rec.data.bodyFat),
       calories: Number(rec.data.calories) || 0,
       duration: Number(rec.data.duration) || 0,
       note: rec.data.note || ''
-    }, function (rid) { if (rid) rec.remoteId = rid; });
+    };
   }
-
-  function pushShopping(rec) {
-    if (!ONLINE || LOCAL_ONLY) return;
-    dbUpsert(DB_SHOPPING, {
+  function shoppingRow(rec) {
+    return {
       id: rec.id, space: SUPABASE_SPACE,
       name: rec.data.name || '', quantity: rec.data.quantity || '',
       category: rec.data.category || '其他', price: Number(rec.data.price) || 0,
       priority: rec.data.priority || 'normal', note: rec.data.note || '',
       bought: Boolean(rec.data.bought),
       bought_date: rec.data.bought ? (rec.data.boughtDate || isoDate()) : null
-    }, function (rid) { if (rid) rec.remoteId = rid; });
+    };
   }
-
-  function pushMedia(item) {
-    if (!ONLINE || LOCAL_ONLY) return;
-    dbUpsert(DB_MEDIA, {
+  function mediaRow(item) {
+    return {
       id: item.id, space: SUPABASE_SPACE, name: item.name || '',
       type: item.type || '电影', status: item.status || '想看',
       rating: Number(item.rating) || 0, review: item.review || '',
       date: isoDateFrom(item.date) || isoDate(), cover: item.cover || ''
-    }, function (rid) { if (rid) item.remoteId = rid; });
+    };
+  }
+  function habitRow(h, date) {
+    return {
+      id: habitRowId(h, date), space: SUPABASE_SPACE, date: date,
+      habit_key: h.key || '', habit_name: h.name || '',
+      value: Number(h.entries[date] || 0), unit: h.unit || ''
+    };
   }
 
-  function updateRemoteMoney(rec) {
-    if (!ONLINE || LOCAL_ONLY || !rec.remoteId) return;
-    dbUpdate(DB_MONEY, rec.remoteId, {
-      date: rec.date,
-      flow: rec.data.flow === 'income' ? 'income' : 'expense',
-      amount: Number(rec.data.amount) || 0,
-      category: rec.data.category || '其他',
-      note: rec.data.note || ''
-    });
+  /* 每次推送都先挂上待同步标记：这一次没写成功（断网 / 本地模式），
+     下次打开页面 pullAllRemote 会自动补传，数据不会只留在这台设备上。 */
+  function pushMoney(rec) {
+    markPending(rec.id);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpsert(DB_MONEY, moneyRow(rec), function (rid) { if (rid) { rec.remoteId = rid; settlePending(rec.id); } });
   }
-  function deleteRemoteMoney(rid) { if (rid) dbDelete(DB_MONEY, rid); }
+
+  function pushHabit(h, date) {
+    var row = habitRow(h, date);
+    markPending(row.id);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpsert(DB_HABIT, row, function (rid) { if (rid) settlePending(row.id); });
+  }
+
+  function pushPlan(rec) {
+    markPending(rec.id);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpsert(DB_PLAN, planRow(rec), function (rid) { if (rid) { rec.remoteId = rid; settlePending(rec.id); } });
+  }
+
+  function pushFitness(rec) {
+    markPending(rec.id);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpsert(DB_FITNESS, fitnessRow(rec), function (rid) { if (rid) { rec.remoteId = rid; settlePending(rec.id); } });
+  }
+
+  function pushShopping(rec) {
+    markPending(rec.id);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpsert(DB_SHOPPING, shoppingRow(rec), function (rid) { if (rid) { rec.remoteId = rid; settlePending(rec.id); } });
+  }
+
+  function pushMedia(item) {
+    markPending(item.id);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpsert(DB_MEDIA, mediaRow(item), function (rid) { if (rid) { item.remoteId = rid; settlePending(item.id); } });
+  }
+
+  /* 修改：先标记「本条本机改过」，这样下一次合并时以本地版本为准并把它补传上去，
+     而不是被线上的旧值盖掉。取键用 id 兜底 —— remoteId 在读缓存时可能已经丢了。 */
+  function updateRemoteMoney(rec) {
+    var key = idOr(rec); if (!key) return;
+    markPending(key);
+    if (!ONLINE || LOCAL_ONLY) return;
+    var row = moneyRow(rec); delete row.id; delete row.space; dbUpdate(DB_MONEY, key, row);
+  }
+  function deleteRemoteMoney(rid) { settlePending(rid); if (rid) dbDelete(DB_MONEY, rid); }
 
   function updateRemotePlan(rec) {
-    if (!ONLINE || LOCAL_ONLY || !rec.remoteId) return;
-    dbUpdate(DB_PLAN, rec.remoteId, {
+    var key = idOr(rec); if (!key) return;
+    markPending(key);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpdate(DB_PLAN, key, {
       status: rec.data.done ? '已完成' : '待完成',
       title: rec.data.title || '',
       priority: rec.data.priority || 'normal',
       note: rec.data.note || ''
     });
   }
-  function deleteRemotePlan(rid) { if (rid) dbDelete(DB_PLAN, rid); }
+  function deleteRemotePlan(rid) { settlePending(rid); if (rid) dbDelete(DB_PLAN, rid); }
 
   function updateRemoteFitness(rec) {
-    if (!ONLINE || LOCAL_ONLY || !rec.remoteId) return;
-    dbUpdate(DB_FITNESS, rec.remoteId, {
-      weight: Number(rec.data.weight) || 0,
-      body_fat: rec.data.bodyFat === null || rec.data.bodyFat === undefined ? null : Number(rec.data.bodyFat),
-      calories: Number(rec.data.calories) || 0,
-      duration: Number(rec.data.duration) || 0,
-      note: rec.data.note || ''
-    });
+    var key = idOr(rec); if (!key) return;
+    markPending(key);
+    if (!ONLINE || LOCAL_ONLY) return;
+    var row = fitnessRow(rec); delete row.id; delete row.space; dbUpdate(DB_FITNESS, key, row);
   }
-  function deleteRemoteFitness(rid) { if (rid) dbDelete(DB_FITNESS, rid); }
+  function deleteRemoteFitness(rid) { settlePending(rid); if (rid) dbDelete(DB_FITNESS, rid); }
 
   function updateRemoteShopping(rec) {
-    if (!ONLINE || LOCAL_ONLY || !rec.remoteId) return;
-    dbUpdate(DB_SHOPPING, rec.remoteId, {
+    var key = idOr(rec); if (!key) return;
+    markPending(key);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpdate(DB_SHOPPING, key, {
       bought: Boolean(rec.data.bought),
       bought_date: rec.data.bought ? (rec.data.boughtDate || isoDate()) : null
     });
   }
-  function deleteRemoteShopping(rid) { if (rid) dbDelete(DB_SHOPPING, rid); }
+  function deleteRemoteShopping(rid) { settlePending(rid); if (rid) dbDelete(DB_SHOPPING, rid); }
 
   function updateRemoteMedia(item) {
-    if (!ONLINE || LOCAL_ONLY || !item.remoteId) return;
-    dbUpdate(DB_MEDIA, item.remoteId, {
+    var key = idOr(item); if (!key) return;
+    markPending(key);
+    if (!ONLINE || LOCAL_ONLY) return;
+    dbUpdate(DB_MEDIA, key, {
       status: item.status || '想看',
       rating: Number(item.rating) || 0,
       review: item.review || ''
     });
   }
-  function deleteRemoteMedia(rid) { if (rid) dbDelete(DB_MEDIA, rid); }
+  function deleteRemoteMedia(rid) { settlePending(rid); if (rid) dbDelete(DB_MEDIA, rid); }
 
   const LANG_PARAM = new URL(location).searchParams.get('lang');
   const LANG = LANG_PARAM === 'en' ? 'en' : 'zh';
@@ -2704,7 +2925,12 @@
     toast('已立即保存');
     return true;
   }
-  function deleteRecord(id){const target=state.records.find(r=>r.id===id);if(!target||!confirm(LANG==='en'?`Delete “${titleFor(target)}”? This cannot be undone.`:`确定删除“${titleFor(target)}”吗？删除后无法撤回。`))return;if(target.remoteId){if(target.type==='money')deleteRemoteMoney(target.remoteId);if(target.type==='planner')deleteRemotePlan(target.remoteId);if(target.type==='fitness')deleteRemoteFitness(target.remoteId);if(target.type==='home')deleteRemoteShopping(target.remoteId);}state.records=state.records.filter(r=>r.id!==id);const saved=saveState();renderAll();if(saved)toast('记录已删除');}
+  function deleteRecord(id){const target=state.records.find(r=>r.id===id);if(!target||!confirm(LANG==='en'?`Delete “${titleFor(target)}”? This cannot be undone.`:`确定删除“${titleFor(target)}”吗？删除后无法撤回。`))return;
+    /* 线上那一行的主键就是本地 id，remoteId 只是它的同义词；读缓存时 remoteId 会丢，
+       所以用 id 兜底 —— 否则刷新后再删，线上那行删不掉，下一次拉取又会把它带回来。 */
+    const key=target.remoteId||target.id;
+    if(target.type==='money')deleteRemoteMoney(key);if(target.type==='planner')deleteRemotePlan(key);if(target.type==='fitness')deleteRemoteFitness(key);if(target.type==='home')deleteRemoteShopping(key);
+    state.records=state.records.filter(r=>r.id!==id);const saved=saveState();renderAll();if(saved)toast('记录已删除');}
   function switchView(view){const target=document.getElementById(`view-${view}`);if(!target)return;document.querySelectorAll('.view').forEach(el=>el.classList.toggle('active',el===target));document.querySelectorAll('[data-nav]').forEach(el=>el.classList.toggle('active',el.dataset.nav===view));document.getElementById('viewTitle').textContent=target.dataset.title||'日常集';if(location.hash!==`#${view}`)history.replaceState(null,'',`#${view}`);scrollTo({top:0,behavior:'smooth'});}
   function formatDateHeading(value){if(value===isoDate())return t('今天');if(value===shiftDate(-1))return t('昨天');const date=new Date(`${value}T00:00:00`);return LANG==='en'?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric'}).format(date):`${date.getMonth()+1} 月 ${date.getDate()} 日`;}
   function titleFor(record){const d=record.data||{},local=value=>record.sample?translateText(value):value;if(record.type==='money')return d.note?local(d.note):t(d.category||'一笔收支');if(record.type==='planner')return d.title?local(d.title):t('一项日程');if(record.type==='fitness')return d.note?local(d.note):t('身体记录');if(record.type==='home')return d.name?local(d.name):t('待买物品');return t('生活记录');}
@@ -2916,7 +3142,7 @@
       if(type==='delete-habit-custom'){const habit=state.habits.find(h=>h.id===id);if(habit&&confirm(LANG==='en'?`Delete the habit “${habit.name}” and all of its history?`:`确定删除习惯“${habit.name}”吗？历史打卡也会一起删除。`)){state.habits=state.habits.filter(h=>h.id!==id);if(HABIT_DEFS.some(def=>def.key===habit.key)){state.settings.hiddenHabitKeys=[...new Set([...(state.settings.hiddenHabitKeys||[]),habit.key])];}const saved=saveState();renderAll();renderHabitManageList();if(saved)toast('习惯已删除');}}
       if(type==='delete-plan'){const item=state.settings.weeklyPlan.find(x=>x.id===id);if(item&&confirm(LANG==='en'?`Delete the plan “${item.title}”?`:`确定删除计划“${item.title}”吗？`)){state.settings.weeklyPlan=state.settings.weeklyPlan.filter(x=>x.id!==id);const saved=saveState();renderFitness();renderPlanManageList();if(saved)toast('计划已删除');}}
       if(type==='toggle-shopping'){const item=state.records.find(r=>r.id===id&&r.type==='home');if(item){item.data.bought=!item.data.bought;item.data.boughtDate=item.data.bought?isoDate():null;updateRemoteShopping(item);const saved=saveState();renderAll();if(saved&&item.data.bought){celebrate();toast('买到了，已移入完成');}}}
-      if(type==='delete-media'){const item=state.mediaItems.find(media=>media.id===id);if(item&&confirm(LANG==='en'?`Remove “${item.name}” from the list?`:`确定从清单中删除“${item.name}”吗？`)){if(item.remoteId)deleteRemoteMedia(item.remoteId);state.mediaItems=state.mediaItems.filter(media=>media.id!==id);const saved=saveState();renderMedia();if(saved)toast('已从书影音清单移除');}}
+      if(type==='delete-media'){const item=state.mediaItems.find(media=>media.id===id);if(item&&confirm(LANG==='en'?`Remove “${item.name}” from the list?`:`确定从清单中删除“${item.name}”吗？`)){deleteRemoteMedia(item.remoteId||item.id);state.mediaItems=state.mediaItems.filter(media=>media.id!==id);const saved=saveState();renderMedia();if(saved)toast('已从书影音清单移除');}}
       if(type==='open-habit-settings')openHabitSettings();if(type==='close-habit-settings')closeHabitSettings();if(type==='open-plan-settings')openPlanSettings();if(type==='close-plan-settings')closePlanSettings();if(type==='open-fitness-profile')openFitnessProfile();if(type==='close-fitness-profile')closeFitnessProfile();
       if(type==='export-money')exportExcel('money');if(type==='export-fitness')exportExcel('fitness');if(type==='close-brand')closeBrandSettings();if(type==='reset-brand'){state.settings.brand={name:'日常集',avatar:'日',tagline:'生活有迹可循',theme:'plum'};saveState();applyBrand();openBrandSettings();toast('已恢复默认外观');}
     });

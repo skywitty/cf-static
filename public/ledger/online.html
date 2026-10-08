@@ -2599,41 +2599,103 @@ function dbRemove(table, recordId, cb) {
   });
 }
 
-/* ---------- 远端数据合并（云端为准，本地待同步项保留） ---------- */
-function applyRemoteExpenses(rows) {
-  var remote = (rows || []).map(toExpenseItem);
-  if (!remote.length) {
-    state.expenses = state.expenses.filter(function (item) { return item.isSample || !item.remoteId; });
-    return;
-  }
-  var sigCount = {};
-  remote.forEach(function (item) { var k = expenseSignature(item); sigCount[k] = (sigCount[k] || 0) + 1; });
-  var keep = [];
-  state.expenses.forEach(function (item) {
-    if (item.isSample || item.remoteId) return;
-    var k = expenseSignature(item);
-    if (sigCount[k] > 0) { sigCount[k] -= 1; return; }   // 已被云端收录，改用远端记录
-    keep.push(item);
-  });
-  state.expenses = remote.concat(keep);
+/* ---------- 待同步集合 ----------
+   本地产生、云端还没确认的行 id。单独存一个键，不塞进 state ——
+   sanitizeImport 只保留已知字段，往 state 里放标记会在下次读取时被清掉。
+   有它才能区分两种「本地有、云端没有」：
+     · 我这边新记的（在集合里）      → 补传到云端，断网时记的账不会只留在这台设备上；
+     · 别的设备已经删掉的（不在集合里）→ 保持删除，不重新塞回云端。 */
+function pendingKey() { return storageKey() + '_pending'; }
+function readPending() {
+  try {
+    var raw = localStorage.getItem(pendingKey());
+    var list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch (e) { return []; }
+}
+function writePending(list) {
+  try { localStorage.setItem(pendingKey(), JSON.stringify(list)); } catch (e) { /* 记不下只是补传晚一点，不影响数据 */ }
+}
+function markPending(id) {
+  var key = strOr(id);
+  if (!key) return;
+  var list = readPending();
+  if (list.indexOf(key) < 0) { list.push(key); writePending(list); }
+}
+function settlePending(ids) {
+  var drop = {};
+  (Array.isArray(ids) ? ids : [ids]).forEach(function (value) { var key = strOr(value); if (key) drop[key] = true; });
+  if (!Object.keys(drop).length) return;
+  writePending(readPending().filter(function (id) { return !drop[id]; }));
 }
 
-function applyRemoteSummaries(rows) {
-  var remote = (rows || []).map(toSummaryItem);
-  if (!remote.length) {
-    state.monthlySummaries = state.monthlySummaries.filter(function (item) { return item.isSample || !item.remoteId; });
-    return;
-  }
-  var sigCount = {};
-  remote.forEach(function (item) { var k = summarySignature(item); sigCount[k] = (sigCount[k] || 0) + 1; });
-  var keep = [];
+/* ---------- 本地 + 云端 合并去重 ----------
+   打开页面不再是把云端整份拉回来覆盖本地，而是两边取并集去重，逐条判断：
+     ① 本机改过（待同步集合里）且云端也有 → 内容不一致才以本地为准，保留并补传；
+     ② 云端有、本机没改过                → 以云端为准，用云端那一份；
+     ③ 内容完全相同的重复项              → 按内容指纹只留云端那一份；
+     ④ 本机新记的（待同步集合里，云端没有）→ 保留原样，随后补传到云端；
+     ⑤ 其余（云端没有、也不是本机新记的） → 别的设备删掉了，本地跟着删。
+   返回「本轮需要补传的本地新增」，交给 pullAllRemote 推到线上。 */
+function applyRemoteExpenses(rows, pending) {
+  if (!rows) return [];              // 读取失败：本地原样保留，绝不能因为「远端为空」把本地清掉
+  pending = pending || {};
+  var remote = rows.map(toExpenseItem);
+  var remoteById = {}, sigCount = {};
+  remote.forEach(function (item) {
+    remoteById[item.id] = item;
+    var k = expenseSignature(item);
+    sigCount[k] = (sigCount[k] || 0) + 1;
+  });
+  var keep = [], upload = [], overridden = {};
+  state.expenses.forEach(function (item) {
+    if (item.isSample) return;
+    var waiting = Boolean(pending[item.id]);
+    if (waiting && remoteById[item.id]) {                          // ① 本机改过
+      if (expenseSignature(item) !== expenseSignature(remoteById[item.id])) {
+        overridden[item.id] = true;    // 本地版本顶掉云端那一行，别让两份同时留在列表里
+        keep.push(item); upload.push(item);
+      }
+      return;
+    }
+    if (remoteById[item.id]) return;                               // ② 云端为准
+    var k = expenseSignature(item);
+    if (sigCount[k] > 0) { sigCount[k] -= 1; return; }             // ③ 内容重复 → 只留云端那份
+    if (waiting) { keep.push(item); upload.push(item); }           // ④ 本地新增 → 保留并补传
+    // ⑤ 其余保持删除
+  });
+  state.expenses = remote.filter(function (item) { return !overridden[item.id]; }).concat(keep);
+  return upload;
+}
+
+function applyRemoteSummaries(rows, pending) {
+  if (!rows) return [];
+  pending = pending || {};
+  var remote = rows.map(toSummaryItem);
+  var remoteByMonth = {}, sigCount = {};
+  remote.forEach(function (item) {
+    remoteByMonth[item.month] = item;
+    var k = summarySignature(item);
+    sigCount[k] = (sigCount[k] || 0) + 1;
+  });
+  var keep = [], upload = [], overridden = {};
   state.monthlySummaries.forEach(function (item) {
-    if (item.isSample || item.remoteId) return;
+    if (item.isSample) return;
+    var waiting = Boolean(pending[summaryId(item.month)]);
+    if (waiting && remoteByMonth[item.month]) {
+      if (summarySignature(item) !== summarySignature(remoteByMonth[item.month])) {
+        overridden[item.month] = true;
+        keep.push(item); upload.push(item);
+      }
+      return;
+    }
+    if (remoteByMonth[item.month]) return;
     var k = summarySignature(item);
     if (sigCount[k] > 0) { sigCount[k] -= 1; return; }
-    keep.push(item);
+    if (waiting) { keep.push(item); upload.push(item); }
   });
-  state.monthlySummaries = remote.concat(keep);
+  state.monthlySummaries = remote.filter(function (item) { return !overridden[item.month]; }).concat(keep);
+  return upload;
 }
 
 /* ---------- 拉取全部线上数据 ---------- */
@@ -2646,25 +2708,93 @@ function pullAllRemote(cb) {
   }
   setSync('syncing', '');
   var remaining = 3, failed = 0;
+  var pendingList = readPending();
+  var pending = {};
+  pendingList.forEach(function (id) { pending[id] = true; });
+  var uploadExpenses = [], uploadSummaries = [];
+  // 本机有未同步的设置改动时保留本地那份，稍后推上去；否则云端为准
+  var settingsPending = Boolean(pending[settingsId()]);
+
   function done() {
     remaining -= 1;
     if (remaining > 0) return;
     if (failed) {
       setSync('error', t('sync.readFailed'));
       queueRetry(function () { pullAllRemote(refreshCallback); });
-    } else {
+      if (cb) cb(false);
+      return;
+    }
+    // 合并完成 → 把「本地新增」补传到线上；推完这一次同步才算真的收敛
+    pushLocalNew(uploadExpenses, uploadSummaries, settingsPending, function (pushFailed) {
+      if (pushFailed) {
+        setSync('error', t('sync.writeFailed'));
+        queueRetry(function () { pullAllRemote(refreshCallback); });
+        if (cb) cb(false);
+        return;
+      }
       setSync('ok', '');
       SYNC.retry = null;
-    }
-    if (cb) cb(!failed);
+      if (cb) cb(true);
+    });
   }
-  dbQueryAll(DB_EXPENSE, function (err, rows) { if (err) failed += 1; else applyRemoteExpenses(rows); done(); });
-  dbQueryAll(DB_SUMMARY, function (err, rows) { if (err) failed += 1; else applyRemoteSummaries(rows); done(); });
+
+  dbQueryAll(DB_EXPENSE, function (err, rows) { if (err) failed += 1; else uploadExpenses = applyRemoteExpenses(rows, pending) || []; done(); });
+  dbQueryAll(DB_SUMMARY, function (err, rows) { if (err) failed += 1; else uploadSummaries = applyRemoteSummaries(rows, pending) || []; done(); });
   dbQueryAll(DB_SETTINGS, function (err, rows) {
     if (err) { failed += 1; }
-    else if (rows && rows.length) { applySettingsRow(rows[0]); }
+    else if (rows && rows.length) { if (!settingsPending) applySettingsRow(rows[0]); }
     else if (!SYNC.settingsProbed) { SYNC.settingsProbed = true; pushSettings(); }  // 首次使用：把当前设置落成线上第一行
     done();
+  });
+}
+
+/**
+ * 把「本地新增」补传到线上。
+ * 走批量 upsert：主键已存在时是覆盖而不是报错，所以「另一台设备刚好也写过同一行」
+ * 不会让整批失败。推成功后清掉对应的待同步标记；推失败的留在集合里，下次打开还会再试。
+ */
+function pushLocalNew(expenses, summaries, settingsPending, onDone) {
+  if (!expenses.length && !summaries.length && !settingsPending) { onDone(false); return; }
+  var jobs = [];
+  SYNC.lastWrite = Date.now();    // 自己写入的这几条，不必再触发一次实时拉取
+
+  if (expenses.length) {
+    var hourly = 0;
+    try { hourly = currentHourly().realHourly || 0; } catch (e) { hourly = 0; }
+    var expenseRows = expenses.map(function (item) {
+      return Object.assign({ id: item.id, space: SUPABASE_SPACE }, expenseFields(item, hourly));
+    });
+    jobs.push(SupabaseSync.upsertMany(DB_EXPENSE, expenseRows).then(function (res) {
+      if (res.error) return res;
+      expenses.forEach(function (item, index) { item.remoteId = expenseRows[index].id; });
+      settlePending(expenses.map(function (item) { return item.id; }));
+      return res;
+    }));
+  }
+
+  if (summaries.length) {
+    var summaryRows = summaries.map(function (item) {
+      return Object.assign({ id: summaryId(item.month), space: SUPABASE_SPACE }, summaryFields(item));
+    });
+    jobs.push(SupabaseSync.upsertMany(DB_SUMMARY, summaryRows).then(function (res) {
+      if (res.error) return res;
+      summaries.forEach(function (item) { item.remoteId = summaryId(item.month); });
+      settlePending(summaryRows.map(function (row) { return row.id; }));
+      return res;
+    }));
+  }
+
+  Promise.all(jobs).then(function (results) {
+    var bad = results.some(function (res) { return res && res.error; });
+    if (bad) { onDone(true); return; }
+    // 这一轮没能补传的待同步 id（云端已有 / 已被去重 / 本地也已删掉）不必再跟踪
+    var stillNeeded = {};
+    expenses.forEach(function (item) { stillNeeded[item.id] = true; });
+    summaries.forEach(function (item) { stillNeeded[summaryId(item.month)] = true; });
+    if (settingsPending) stillNeeded[settingsId()] = true;
+    settlePending(readPending().filter(function (id) { return !stillNeeded[id]; }));
+    if (!settingsPending) { onDone(false); return; }
+    pushSettings(function (err) { onDone(Boolean(err)); });
   });
 }
 
@@ -2688,9 +2818,11 @@ function refreshRemote() { pullAllRemote(refreshCallback); }
 
 /* ---------- 写回线上 ---------- */
 function pushSettings(onDone) {
+  // 先挂上待同步标记：这一次没推成功（断网 / 本地模式），下次拉取时会自动补传
+  markPending(settingsId());
   if (!REMOTE_ENABLED || !ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }
   var row = Object.assign({ id: settingsId(), space: SUPABASE_SPACE }, settingsFields());
-  function ok() { SYNC.settingsId = settingsId(); setSync('ok', ''); if (onDone) onDone(null); }
+  function ok() { SYNC.settingsId = settingsId(); settlePending(settingsId()); setSync('ok', ''); if (onDone) onDone(null); }
   function fail(err) {
     setSync('error', t('sync.writeFailed'));
     queueRetry(function () { pushSettings(); });
@@ -2702,11 +2834,13 @@ function pushSettings(onDone) {
 }
 
 function pushExpense(item, isEdit, onDone) {
-  if (!REMOTE_ENABLED || !ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }
   var hourly = 0;
   try { hourly = currentHourly().realHourly || 0; } catch (e) { hourly = 0; }
   var fields = expenseFields(item, hourly);
   var key = strOr(item.remoteId) || strOr(item.id) || uid('expense');
+  // 先挂上待同步标记：本地模式下写不上去，也能在下次拉取时自动补传，不留在这台设备上
+  markPending(key);
+  if (!REMOTE_ENABLED || !ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }
 
   function handle(err) {
     if (err) {
@@ -2716,6 +2850,7 @@ function pushExpense(item, isEdit, onDone) {
       return;
     }
     item.remoteId = key;
+    settlePending(key);
     refreshRemote();
     if (onDone) onDone(null);
   }
@@ -2725,9 +2860,10 @@ function pushExpense(item, isEdit, onDone) {
 }
 
 function pushSummary(item, isEdit, onDone) {
-  if (!REMOTE_ENABLED || !ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }
   var fields = summaryFields(item);
   var key = strOr(item.remoteId) || summaryId(item.month);
+  markPending(key);
+  if (!REMOTE_ENABLED || !ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }
 
   function handle(err) {
     if (err) {
@@ -2737,6 +2873,7 @@ function pushSummary(item, isEdit, onDone) {
       return;
     }
     item.remoteId = key;
+    settlePending(key);
     refreshRemote();
     if (onDone) onDone(null);
   }
@@ -2746,9 +2883,14 @@ function pushSummary(item, isEdit, onDone) {
 }
 
 function removeExpense(item, onDone) {
+  // remoteId 在每次读取本机缓存时会被清掉（sanitizeImport 只保留已知字段），
+  // 而支出的主键就是本地 id，所以要用 id 兜底 —— 否则刷新后再删，线上那行删不掉，
+  // 下一次拉取又会把它带回来。
+  var key = strOr(item && item.remoteId) || strOr(item && item.id);
+  settlePending(key);                                   // 本地已删，不必再补传
   if (!REMOTE_ENABLED || !ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }
-  if (!item || !item.remoteId) { localOnlyPass(onDone); return; }
-  dbRemove(DB_EXPENSE, item.remoteId, function (err) {
+  if (!key) { localOnlyPass(onDone); return; }
+  dbRemove(DB_EXPENSE, key, function (err) {
     if (err) {
       setSync('error', t('sync.writeFailed'));
       queueRetry(function () { removeExpense(item, null); });
@@ -2761,9 +2903,12 @@ function removeExpense(item, onDone) {
 }
 
 function removeSummary(item, onDone) {
+  // 月度总结的主键是确定性的，本机只存了月份，所以直接用 summaryId 拼出来
+  var key = strOr(item && item.remoteId) || (item ? summaryId(item.month) : '');
+  settlePending(key);
   if (!REMOTE_ENABLED || !ONLINE || SYNC.localOnly) { localOnlyPass(onDone); return; }
-  if (!item || !item.remoteId) { localOnlyPass(onDone); return; }
-  dbRemove(DB_SUMMARY, item.remoteId, function (err) {
+  if (!key) { localOnlyPass(onDone); return; }
+  dbRemove(DB_SUMMARY, key, function (err) {
     if (err) {
       setSync('error', t('sync.writeFailed'));
       queueRetry(function () { removeSummary(item, null); });
@@ -2801,6 +2946,7 @@ function clearOwnBucket(uid) {
   try {
     localStorage.removeItem(key);
     localStorage.removeItem(key + '_recovery');
+    localStorage.removeItem(key + '_pending');   // 数据都不要了，待同步标记也一起清
     Object.keys(localStorage).forEach(function (k) {
       if (k.indexOf(key + '_draft_') === 0) localStorage.removeItem(k);
     });
