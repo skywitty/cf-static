@@ -240,9 +240,22 @@ npm run check:pwa    # 只校验是否同步；部署工作流也会跑这一步
 ```js
 var SUPABASE_CONFIG = {
   url: 'https://xxxxxxxx.supabase.co',   // Settings → API → Project URL
-  anonKey: 'eyJhbGciOi...'               // Settings → API → anon public
+  anonKey: 'sb_publishable_4567...'      // 公开密钥，见下
 };
 ```
+
+`anonKey` 这个字段名是历史遗留，**新旧两种「公开密钥」都能填，等价、都受 RLS 约束**：
+
+| 格式 | 来源 | 说明 |
+|---|---|---|
+| `sb_publishable_...` | Settings → **API Keys** → Publishable | **推荐**。2025 年后新建的项目默认只有这个 |
+| `eyJhbGciOi...`（JWT） | Settings → **API** → `anon` `public` | 旧版，Supabase 计划 **2026 年底废弃**，现在仍可用 |
+
+两者只是格式差异，权限完全相同：未登录时映射到 `anon` 角色、登录后映射到 `authenticated` 角色 ——
+本项目的策略只对 `authenticated` 开放，所以签名登录之后的行为一模一样。
+
+⚠️ 同页面上那把 `sb_secret_...` / `service_role` 是**机密密钥**，带 `BYPASSRLS`，绕过所有策略、可读写全库。
+它只能待在你自己的服务器上，**任何情况下都不要填进这个页面**。
 
 **④ 部署** — 推 `main` 即可。没填配置时页面**不会假装配对成功**，
 也不会弹出登录框 —— 它安静地走回本机模式，并在顶部提示「还没配置 Supabase」。
@@ -253,7 +266,7 @@ var SUPABASE_CONFIG = {
 
 - **隔离在数据库那侧，不是前端过滤**：每张表都带 `space` 列，RLS 策略要求 `space = auth.uid()::text`。
   别人的行**查都查不到**（`using` 拦读），伪造 `space` 也写不进去（`with check` 拦写）。
-- **`anonKey` 公开也安全**：它只是一把「没有身份就什么也读不到」的钥匙。
+- **公开密钥泄露也安全**：它只是一把「没有身份就什么也读不到」的钥匙。
   未登录时 `auth.uid()` 为 null，所有查询返回空、所有写入被拒。
 - **换人登录不会串号**：登录门禁用不透明层盖住整个页面，且未登录状态下所有云端读写直接失败
   （`requireAuth`），不会安静地把数据写进默认空间。退出登录会清掉本机缓存 ——
