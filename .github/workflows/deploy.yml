@@ -51,6 +51,10 @@ jobs:
       - name: 校验通用 PWA 模块已同步
         run: node tools/sync-pwa.mjs --check
 
+      # 同理：Supabase 持久化共享模块的真源在 shared/supabase-sync.js。
+      - name: 校验 Supabase 共享模块已同步
+        run: node tools/sync-supabase.mjs --check
+
       # 没配 Secret 时给出可读的提示并跳过部署，避免每次 push 都亮红叉
       - name: 预检 Secrets
         id: precheck
