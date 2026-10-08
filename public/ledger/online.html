@@ -2725,37 +2725,23 @@ function useLocalData() {
   setSync('offline', t('sync.localMode'));
 }
 
-/* ---------- 账号：退出时把上一位用户的痕迹清干净 ----------
-   本机缓存不区分账号，共用一台设备时如果不擦，下一位登录者会在自己的
-   界面里看到上一位的本地记录。所以退出即重置为全新示例状态（只动内存，
-   不写回 localStorage —— 登录后拉到的云端数据会重新落盘）。 */
-function wipeLocalProfile() {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-    Object.keys(localStorage).forEach(function (key) {
-      if (key.indexOf(DRAFT_PREFIX) === 0) localStorage.removeItem(key);
-    });
-  } catch (e) { /* 存储不可用也不影响：内存状态照样会被重置 */ }
-  state = createSampleState();
-  renderAll();
-  refillSettingsForms();
-}
+/* ---------- 账号：本机缓存按账号分桶，而不是「共用一份 + 退出时擦掉」 ----------
+   缓存的键里带着登录用户 id（见下方 storageKey()），一个人一份。
+   这样「换账号不串号」是结构上成立的：切人只是换个桶读，别人的桶根本不碰。
+   不再需要 _owner 记录归属、也不需要「登录时先把上一位的缓存擦掉」——
+   那种做法一旦把「页面刚打开还没登录」误判成「退出登录」，就会顺手清掉数据。
 
-/* 本机缓存「属于谁」记在单独一个键里：登录者与记名不符就整份丢掉。
-   这样无论是换人登录、还是从「还没接登录」的旧版本升上来，都不会串号。 */
-function ownerKey() { return STORAGE_KEY + '_owner'; }
-function localOwner() {
-  try { return localStorage.getItem(ownerKey()) || ''; } catch (e) { return ''; }
-}
-function setLocalOwner(uid) {
-  try { uid ? localStorage.setItem(ownerKey(), uid) : localStorage.removeItem(ownerKey()); } catch (e) {}
-}
-/* 返回 true 表示确实换了人、缓存被重置过，调用方需要重新渲染 */
-function adoptLocalProfile(uid) {
-  if (localOwner() === uid) return false;
-  wipeLocalProfile();
-  setLocalOwner(uid);
-  return true;
+   下面这个只用于**显式退出登录**时清掉本人那份缓存（共用设备上的隐私考虑）：
+   它按 uid 精确删自己的桶，动不到其他账号，也动不到 index.html 的那份。 */
+function clearOwnBucket(uid) {
+  const key = bucketKeyOf(uid);
+  try {
+    localStorage.removeItem(key);
+    localStorage.removeItem(key + '_recovery');
+    Object.keys(localStorage).forEach(function (k) {
+      if (k.indexOf(key + '_draft_') === 0) localStorage.removeItem(k);
+    });
+  } catch (e) { /* 存储不可用不影响：内存状态照样会被换成空桶内容 */ }
 }
 
 /* 门禁文案：直接查 I18N 表，缺键返回空串，让门禁用它自己的兜底文案，
@@ -2849,7 +2835,7 @@ const I18N = {
     'auth.okSignUpConfirm': '注册成功。去邮箱点一下确认链接，然后回来登录。',
     'auth.okResetSent': '重置邮件已发出，去邮箱按提示操作。',
     'auth.okPasswordUpdated': '新密码已生效，用新密码登录即可。',
-    'auth.gateNote': '数据按账号隔离：登录后只看得到自己的账目，家里其他人看不到。退出登录会清掉本机缓存。'
+    'auth.gateNote': '数据按账号隔离：登录后只看得到自己的账目，家里其他人看不到。本机缓存按账号分开存放，退出登录只清掉属于你的那份。'
   },
   en: {
     'app.name': 'Worker Ledger', 'app.tagline': 'Make every yuan and hour count', 'app.documentTitle': '{page} | Worker Ledger',
@@ -2908,7 +2894,7 @@ const I18N = {
     'auth.okSignUpConfirm': 'Account created. Click the link in your email, then come back and sign in.',
     'auth.okResetSent': 'Reset email sent — follow the link in your inbox.',
     'auth.okPasswordUpdated': 'New password saved. Sign in with it.',
-    'auth.gateNote': 'Data is isolated per account: you only ever see your own ledger. Signing out clears this device cache.'
+    'auth.gateNote': 'Data is isolated per account: you only ever see your own ledger. Local cache is kept per account, and signing out clears only your own copy on this device.'
   }
 };
 const LANG = new URL(location.href).searchParams.get('lang') === 'en' ? 'en' : 'zh';
@@ -3330,13 +3316,17 @@ function sanitizeImport(payload) {
 }
 
 
-    /* ⚠️ 云端版必须用独立的键。
-       index.html 与本页在同一个域名下（ledger.skywitty.win/ 与 /online），
-       localStorage 按域名共享，共用键会让两边的离线缓存互相覆盖 ——
-       /online 一旦清理缓存，就会把 index.html 的数据一起带走。
-       加后缀彻底隔开，两个入口从此互不干扰。 */
-    const STORAGE_KEY = 'wb_workspace_worker_ledger_state_v1__cloud';
-    const RECOVERY_KEY = STORAGE_KEY + '_recovery';
+    /* ⚠️ 云端版的键要跟两样东西分开：
+       ① index.html 与本页同域（ledger.skywitty.win/ 与 /online），localStorage 按域名共享，
+          共用键会让两边的离线缓存互相覆盖；
+       ② 一台设备可能被家里几个人轮流登录。键里带上登录用户 id，一人一份。
+       有了 ②，「账号不串号」由结构保证 —— 换账号只是换个桶读，不需要去动别人的数据，
+       也就不会出现「清理时机判断错 → 误删记录」这类事故。 */
+    const STORAGE_BASE = 'wb_workspace_worker_ledger_state_v1__cloud';
+    let storageBucket = '';                  // 当前登录用户 id；未登录为空，落到 'anon' 桶
+    function bucketKeyOf(uid) { return STORAGE_BASE + '!' + (uid || 'anon'); }
+    function storageKey() { return bucketKeyOf(storageBucket); }
+    function draftPrefix() { return storageKey() + '_draft_'; }
     const SVG_NS = 'http' + '://www.w3.org/2000/svg';
     const pageNames = { dashboard: 'page.dashboard', hourly: 'page.hourly', expenses: 'page.expenses', monthly: 'page.monthly', freedom: 'page.freedom', insights: 'page.insights' };
     let storageAvailable = true;
@@ -3469,7 +3459,7 @@ function sanitizeImport(payload) {
     function loadState() {
       let raw;
       try {
-        raw = localStorage.getItem(STORAGE_KEY);
+        raw = localStorage.getItem(storageKey());
       } catch (error) {
         storageAvailable = false;
         showStorageAlert(t('storage.unavailable', { reason: error.message }));
@@ -3488,7 +3478,7 @@ function sanitizeImport(payload) {
     function saveState() {
       if (!storageAvailable) return false;
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(storageKey(), JSON.stringify(state));
         showStorageAlert('');
         return true;
       } catch (error) {
@@ -3505,19 +3495,19 @@ function sanitizeImport(payload) {
       return persisted;
     }
 
-    /* 表单草稿本地缓存：提交成功了才清，写入失败就留着，下次打开还在这 */
-    const DRAFT_PREFIX = STORAGE_KEY + '_draft_';
+    /* 表单草稿本地缓存：提交成功了才清，写入失败就留着，下次打开还在这。
+       前缀同样跟着当前账号走，换人不会读到上一位没提交完的草稿。 */
     function saveDraft(name, data) {
-      try { localStorage.setItem(DRAFT_PREFIX + name, JSON.stringify(data)); } catch (error) { storageAvailable = false; }
+      try { localStorage.setItem(draftPrefix() + name, JSON.stringify(data)); } catch (error) { storageAvailable = false; }
     }
     function readDraft(name) {
       try {
-        const raw = localStorage.getItem(DRAFT_PREFIX + name);
+        const raw = localStorage.getItem(draftPrefix() + name);
         return raw ? JSON.parse(raw) : null;
       } catch (error) { return null; }
     }
     function dropDraft(name) {
-      try { localStorage.removeItem(DRAFT_PREFIX + name); } catch (error) { /* 本地不可用时静默降级 */ }
+      try { localStorage.removeItem(draftPrefix() + name); } catch (error) { /* 本地不可用时静默降级 */ }
     }
     function draftValues(form, names) {
       const out = {};
@@ -4310,28 +4300,34 @@ function sanitizeImport(payload) {
       remoteTimer = setTimeout(() => { pullAllRemote(refreshCallback); }, 400);
     };
 
-    /* ③ 登录态是唯一入口：登录了才拉数据、才开实时通道；换人则重置数据空间 */
+    /* ③ 登录态是唯一入口：登录了才拉数据、才开实时通道；换人则换到他自己那份本机缓存 */
     let authSettled = false;    // initAuth 落定前收到的回调先不处理，避免误删离线缓存
     let lastUserId = null;
     function applyUser(uid) {
       if (uid === lastUserId) return;
-      const firstResolve = lastUserId === null;   // 页面刚打开、身份首次落定
+      const previous = lastUserId;
       lastUserId = uid;
+
+      // 只有「本来登录着 → 现在退出」才清本人缓存（共用设备上的隐私考虑）。
+      // 页面刚打开就未登录是常态、不是退出 —— 把它当退出处理会清空数据。
+      // 而且这里清的是 previous 自己的桶，按 uid 精确删除，碰不到别人。
+      if (CONFIGURED && previous && !uid) clearOwnBucket(previous);
+
       SUPABASE_SPACE = uid;
       ONLINE = Boolean(REMOTE_ENABLED && CONFIGURED && uid);
       SYNC.settingsProbed = false;
       SYNC.settingsId = '';
       SYNC.localOnly = false;
       SYNC.retry = null;
-      if (!uid) {
-        // 只有「本来登录着 → 现在退出」才清本机缓存，共用设备时才不会串号。
-        // 页面刚打开就未登录（firstResolve）是常态而非退出：把它当退出处理，
-        // 会让每次打开 /online 都顺手清空缓存。绝不能这么做。
-        if (CONFIGURED && !firstResolve) { wipeLocalProfile(); setLocalOwner(''); }
-        setSync('offline', supabaseHint());
-        return;
-      }
-      if (adoptLocalProfile(uid)) { renderAll(); refillSettingsForms(); }
+
+      // 切到这位用户自己的桶，把他的本机缓存读回来 —— 换人即换桶，天然不串号，
+      // 同一账号重开还能直接用上缓存，不必等云端返回。
+      storageBucket = uid || '';
+      state = loadState();
+      renderAll();
+      refillSettingsForms();
+
+      if (!uid) { setSync('offline', supabaseHint()); return; }
       pullAllRemote(refreshCallback);
       if (typeof db.onUpdated === 'function') db.onUpdated(onRemoteChange);
     }

@@ -1829,28 +1829,17 @@
     showSyncBanner('写入 Supabase 失败（' + reason + '），已改为先保存在本机，数据不会丢。检查网络后点「重试同步」可继续在线保存。');
   }
 
-  /* ---------- 账号：本地缓存归谁 ----------
-     一台设备可能被家里几个人轮流登录。本机缓存不区分账号，
-     所以用单独的 owner 键记下「这份缓存属于谁」，对不上就整份丢掉。 */
-  function ownerKey() { return STORAGE_KEY + '_owner'; }
-  function localOwner() {
-    try { return localStorage.getItem(ownerKey()) || ''; } catch (e) { return ''; }
-  }
-  function setLocalOwner(uid) {
-    try { uid ? localStorage.setItem(ownerKey(), uid) : localStorage.removeItem(ownerKey()); } catch (e) {}
-  }
-  function wipeLocalProfile() {
-    try { localStorage.removeItem(STORAGE_KEY); } catch (e) { /* 存储不可用也不影响：内存状态照样重置 */ }
-    dataCorrupted = false;
-    state = makeInitialState();
-    renderAll();
-  }
-  /* 返回 true 表示确实换了人、缓存被重置过，调用方需要重新渲染 */
-  function adoptLocalProfile(uid) {
-    if (localOwner() === uid) return false;
-    wipeLocalProfile();
-    setLocalOwner(uid);
-    return true;
+  /* ---------- 账号：本机缓存按账号分桶，而不是「共用一份 + 退出时擦掉」 ----------
+     缓存的键里带着登录用户 id（见下方 storageKey()），一个人一份。
+     这样「换账号不串号」是结构上成立的：切人只是换个桶读，别人的桶根本不碰。
+     不再需要 _owner 记录归属、也不需要「登录时先把上一位的缓存擦掉」——
+     那种做法一旦把「页面刚打开还没登录」误判成「退出登录」，就会顺手清掉数据。
+
+     下面这个只用于**显式退出登录**时清掉本人那份缓存（共用设备上的隐私考虑）：
+     它按 uid 精确删自己的桶，动不到其他账号，也动不到 index.html 的那份。 */
+  function clearOwnBucket(uid) {
+    var key = bucketKeyOf(uid);
+    try { localStorage.removeItem(key); } catch (e) { /* 存储不可用不影响：内存状态照样会被换成空桶内容 */ }
   }
 
   /* 登录门禁的文案：跟页面语言走。缺键返回空串，交给门禁内置兜底，
@@ -1872,7 +1861,7 @@
       okSignUpConfirm: '注册成功。去邮箱点一下确认链接，然后回来登录。',
       okResetSent: '重置邮件已发出，去邮箱按提示操作。',
       okPasswordUpdated: '新密码已生效，用新密码登录即可。',
-      gateNote: '数据按账号隔离：登录后只看得到自己的记录，家里其他人看不到。退出登录会清掉本机缓存。'
+      gateNote: '数据按账号隔离：登录后只看得到自己的记录，家里其他人看不到。本机缓存按账号分开存放，退出登录只清掉属于你的那份。'
     },
     en: {
       signInIntro: 'One account, one life board. Your data lives in your own space — other family members never see it.',
@@ -1890,7 +1879,7 @@
       okSignUpConfirm: 'Account created. Click the link in your email, then come back and sign in.',
       okResetSent: 'Reset email sent — follow the link in your inbox.',
       okPasswordUpdated: 'New password saved. Sign in with it.',
-      gateNote: 'Data is isolated per account: you only ever see your own records. Signing out clears this device cache.'
+      gateNote: 'Data is isolated per account: you only ever see your own records. Local cache is kept per account, and signing out clears only your own copy on this device.'
     }
   };
   function authText(key) {
@@ -1898,31 +1887,41 @@
     return dict[key] || AUTH_TEXT.zh[key] || '';
   }
 
-  /* ---------- 登录态是唯一入口：登录了才拉数据；换人则换数据空间 ---------- */
+  /* ---------- 登录态是唯一入口：登录了才拉数据；换人则换到他/她自己那份本机缓存 ---------- */
   var authSettled = false;      // initAuth 落定前收到的回调先忽略，避免误删离线缓存
   var lastUserId = null;
   var realtimeChannel = null;
 
   function applyUser(uid) {
     if (uid === lastUserId) return;
-    var firstResolve = lastUserId === null;   // 页面刚打开、身份首次落定
+    var previous = lastUserId;
     lastUserId = uid;
+
+    // 只有「本来登录着 → 现在退出」才清本人缓存（共用设备上的隐私考虑）。
+    // 页面刚打开就未登录是常态、不是退出 —— 把它当退出处理会清空数据。
+    // 而且这里清的是 previous 自己的桶，按 uid 精确删除，碰不到别人。
+    if (CONFIGURED && previous && !uid) clearOwnBucket(previous);
+
     SUPABASE_SPACE = uid;
     ONLINE = Boolean(CONFIGURED && uid);
     LOCAL_ONLY = false;
     if (!uid) {
-      // 只有「本来登录着 → 现在退出」才清本机缓存，共用设备时才不会串号。
-      // 页面刚打开就未登录（firstResolve）是常态而非退出：把它当退出处理，
-      // 会让每次打开 /online 都顺手清空缓存。绝不能这么做。
-      if (CONFIGURED && !firstResolve) { wipeLocalProfile(); setLocalOwner(''); }
+      // 未登录 → 'anon' 桶（内容会被登录门禁挡住，看不到）
+      storageBucket = '';
+      dataCorrupted = false;
+      state = loadState();
+      renderAll();
       hideSyncBanner();
       return;
     }
-    var switched = adoptLocalProfile(uid);
-    if (switched) renderAll();
-    pullAllRemote(function (changed) {
-      if (!switched && !changed) return;
-      saveState();
+    // 切到这位用户自己的桶，把他的本机缓存读回来 —— 换人即换桶，天然不串号，
+    // 同一账号重开还能直接用上缓存，不必干等云端。
+    storageBucket = uid;
+    dataCorrupted = false;
+    state = loadState();
+    renderAll();
+    pullAllRemote(function () {
+      saveState();      // 合并结果落回这位用户自己的桶
       renderAll();
     });
     subscribeRealtime();
@@ -2338,7 +2337,16 @@
      localStorage 按域名共享，共用键会让两边的离线缓存互相覆盖 ——
      /online 一旦清理缓存，就会把 index.html 的数据一起带走。
      加后缀彻底隔开，两个入口从此互不干扰。 */
-  const STORAGE_KEY = 'richangji-state-v1__cloud';
+  /* ⚠️ 云端版的键要跟两样东西分开：
+     ① index.html 与本页同域（life.skywitty.win/ 与 /online），localStorage 按域名共享，
+        共用键会让两边的离线缓存互相覆盖；
+     ② 一台设备可能被家里几个人轮流登录。键里带上登录用户 id，一人一份。
+     有了 ②，「账号不串号」由结构保证 —— 换账号只是换个桶读，不需要去动别人的数据，
+     也就不会出现「清理时机判断错 → 误删记录」这类事故。 */
+  const STORAGE_BASE = 'richangji-state-v1__cloud';
+  var storageBucket = '';                  // 当前登录用户 id；未登录为空，落到 'anon' 桶
+  function bucketKeyOf(uid) { return STORAGE_BASE + '!' + (uid || 'anon'); }
+  function storageKey() { return bucketKeyOf(storageBucket); }
   const EXPENSE_CATEGORIES = ['吃饭','交通','购物','娱乐','房租','看病','学习','其他'];
   const INCOME_CATEGORIES = ['工资','奖金','兼职','理财','其他'];
   const CATEGORY_COLORS = ['#b65f42','#627a67','#7d5b75','#a57c45','#5f7188','#c58d69','#879a75','#8e8478'];
@@ -2475,7 +2483,7 @@
 
   let dataCorrupted=false;
   function loadState(){
-    const raw=localStorage.getItem(STORAGE_KEY);
+    const raw=localStorage.getItem(storageKey());
     if(!raw) return makeInitialState();
     try{return normalizeState(JSON.parse(raw));}
     catch(error){dataCorrupted=true;return makeInitialState();}
@@ -2486,7 +2494,7 @@
   let pendingMediaCover='';
   function saveState(showSaved=false){
     try{
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      localStorage.setItem(storageKey(),JSON.stringify(state));
       document.querySelector('.save-state')?.classList.remove('error');
       document.getElementById('saveText').textContent='已自动保存';
       if(showSaved) pulseSaved();
@@ -2743,7 +2751,7 @@
     document.getElementById('mediaStatusFilter').addEventListener('change',e=>{state.settings.mediaStatusFilter=e.target.value;saveState();renderMedia();});
     document.getElementById('mediaRatingFilter').addEventListener('change',e=>{state.settings.mediaRatingFilter=Number(e.target.value);saveState();renderMedia();});
     document.getElementById('clearSamplesBtn').addEventListener('click',()=>{const recordSamples=state.records.filter(r=>r.sample).length,mediaSamples=state.mediaItems.filter(item=>item.sample).length,sampleCount=recordSamples+mediaSamples;if(!sampleCount&&!state.habits.some(h=>h.sample))return;if(!confirm(`将清空 ${sampleCount} 条示例记录和示例打卡，你自己的内容会保留。是否继续？`))return;state.records=state.records.filter(r=>!r.sample);state.mediaItems=state.mediaItems.filter(item=>!item.sample);state.habits.forEach(h=>{if(h.sample){h.entries={};h.sample=false;}});state.settings.weeklyPlan=DEFAULT_PLAN.map(x=>({...x}));const saved=saveState();renderAll();if(saved)toast('示例内容已清空');});
-    window.addEventListener('storage',e=>{if(e.key!==STORAGE_KEY||!e.newValue)return;try{state=normalizeState(JSON.parse(e.newValue));renderAll();toast('另一个页面的数据已同步');}catch{}});
+    window.addEventListener('storage',e=>{if(e.key!==storageKey()||!e.newValue)return;try{state=normalizeState(JSON.parse(e.newValue));renderAll();toast('另一个页面的数据已同步');}catch{}});
     var importBtn=document.getElementById('importDataBtn'),exportBtn=document.getElementById('exportDataBtn'),importInput=document.getElementById('importDataInput'),retryBtn=document.getElementById('syncRetryBtn'),dismissBtn=document.getElementById('syncDismissBtn');
     if(importBtn) importBtn.addEventListener('click',()=>{importInput.value='';importInput.click();});
     if(exportBtn) exportBtn.addEventListener('click',exportData);
