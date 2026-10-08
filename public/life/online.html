@@ -1905,13 +1905,16 @@
 
   function applyUser(uid) {
     if (uid === lastUserId) return;
+    var firstResolve = lastUserId === null;   // 页面刚打开、身份首次落定
     lastUserId = uid;
     SUPABASE_SPACE = uid;
     ONLINE = Boolean(CONFIGURED && uid);
     LOCAL_ONLY = false;
     if (!uid) {
-      // 退出登录：本机缓存属于上一位用户，必须清掉，共用设备时才不会串号
-      if (CONFIGURED) { wipeLocalProfile(); setLocalOwner(''); }
+      // 只有「本来登录着 → 现在退出」才清本机缓存，共用设备时才不会串号。
+      // 页面刚打开就未登录（firstResolve）是常态而非退出：把它当退出处理，
+      // 会让每次打开 /online 都顺手清空缓存。绝不能这么做。
+      if (CONFIGURED && !firstResolve) { wipeLocalProfile(); setLocalOwner(''); }
       hideSyncBanner();
       return;
     }
@@ -2330,7 +2333,12 @@
   }
   const nativeConfirm=window.confirm.bind(window);window.confirm=message=>nativeConfirm(translateText(message));
 
-  const STORAGE_KEY = 'richangji-state-v1';
+  /* ⚠️ 云端版必须用独立的键。
+     index.html 与本页在同一个域名下（life.skywitty.win/ 与 /online），
+     localStorage 按域名共享，共用键会让两边的离线缓存互相覆盖 ——
+     /online 一旦清理缓存，就会把 index.html 的数据一起带走。
+     加后缀彻底隔开，两个入口从此互不干扰。 */
+  const STORAGE_KEY = 'richangji-state-v1__cloud';
   const EXPENSE_CATEGORIES = ['吃饭','交通','购物','娱乐','房租','看病','学习','其他'];
   const INCOME_CATEGORIES = ['工资','奖金','兼职','理财','其他'];
   const CATEGORY_COLORS = ['#b65f42','#627a67','#7d5b75','#a57c45','#5f7188','#c58d69','#879a75','#8e8478'];

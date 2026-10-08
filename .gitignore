@@ -5,3 +5,6 @@ node_modules/
 .env
 .DS_Store
 Thumbs.db
+
+# 从浏览器存储里恢复出来的个人数据（账本/日常集记录），含隐私，永远不要提交
+recovered/

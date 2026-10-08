@@ -226,6 +226,14 @@ npm run check:pwa    # 只校验是否同步；部署工作流也会跑这一步
 > `index.html` 是**纯本机版**：不登录、不连云，数据只在这台设备的 localStorage 里。
 > 想给家人用、要跨设备，就用 `online.html`。
 
+> ⚠️ **两套入口同域，但存储键是分开的 —— 这点别改回去。**
+> `ledger.skywitty.win/` 和 `ledger.skywitty.win/online` 是同一个域名，localStorage 按域名共享。
+> 如果两个页面用同一个键，任一方清理缓存都会连带把另一方清掉
+> （云端版退出登录时就会清缓存）。所以云端版用的是加 `__cloud` 后缀的独立键。
+>
+> 副作用：**纯本机版里的数据不会自动出现在云端版里**。要搬过去，
+> 用本机版的「导出备份」导出 JSON，再到云端版点「导入数据」导入即可。
+
 #### 四个步骤接上你自己的 Supabase
 
 **① 开启邮箱密码登录** — 控制台 → **Authentication → Providers → Email**，打开 Enable。
@@ -413,6 +421,22 @@ localStorage 不区分账号。一家人共用一台平板时，若不清，
 | PWA 无法安装（按钮点了没反应） | 三条排查线：① 必须 HTTPS 或 `127.0.0.1`（`file://` 不算 secure context）；② manifest 的 `start_url` 必须是**绝对地址**，否则浏览器判 `start-url-not-valid` 且 `beforeinstallprompt` 不触发（见第二节的踩坑说明）；③ 用 `Page.getInstallabilityErrors` 可以直接问浏览器到底缺什么，返回 `[]` 才算可安装 |
 | 部署时报「通用 PWA 模块已同步」失败 | 改了 `shared/pwa-install.js` 但没同步。本地跑 `npm run sync:pwa` 后重新提交 |
 | `online.html` 表面完全正常，但没有顶部提示 | 说明 `SUPABASE_CONFIG` 已填好且已登录，这是**想要的状态** |
+| 打开 `/online` 之后，纯本机版 `/` 的数据不见了 | 两套入口同域，localStorage 按域名共享。云端版曾与 `index.html` 共用同一个键，只要打开 `/online`（未登录）就会把缓存清掉。**已修复**：云端版改用独立的 `__cloud` 键，且「身份首次落定即未登录」不再触发清理。若你怀疑中招，见下方「数据还能找回来吗」 |
+| 换了域名之后数据不见了 | localStorage 按**域名**隔离，换域名等于换了一个空存储。旧域名的数据没被删，仍留在原浏览器的原域名下。用 DevTools → Application → Storage 切到旧域名即可读到，或按下方方法从浏览器的 LevelDB 里导出 |
+
+#### 数据还能找回来吗
+
+`localStorage.removeItem()` 只是写入一条删除记录，旧值在浏览器把存储文件合并（compaction）之前
+仍留在磁盘上。可以这样捞：
+
+1. 关掉浏览器（避免文件被占用），把
+   `%LOCALAPPDATA%\Microsoft\Edge\User Data\Default\Local Storage\leveldb\`（Chrome 同理）
+   **整个目录复制**一份到临时位置 —— 不要在原目录上操作。
+2. 用任意 LevelDB 读取器打开副本，键是 `_<域名>\x00\x01<存储键>`，值是 UTF-16 或 Latin-1 编码。
+3. 只读即可。**不要**往原目录里写任何东西，写坏会影响浏览器正常数据。
+
+如果数据属于**旧域名**（例如从 WorkBuddy 托管预览换到 `*.skywitty.win`），
+它根本没被删，直接去旧域名下取就行，不用做恢复。
 | `online.html` 顶部提示「还没配置 Supabase」 | 这是正常状态，不是报错。把页面顶部 `SUPABASE_CONFIG` 的 `url` / `anonKey` 填上并刷新即可 |
 | `online.html` 一打开就是登录页 | 未登录时的正常表现。点「注册」建账号即可；已注册直接登录。若想完全不登录，把 `SUPABASE_CONFIG` 留空就退回本机模式 |
 | 注册后提示「去邮箱点确认链接」 | 项目开着邮箱确认。想省掉这步：控制台 → Authentication → Sign In / Up → 关掉 **Confirm email** |
