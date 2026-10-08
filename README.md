@@ -22,16 +22,16 @@ cf-static/
 │  ├─ .assetsignore           排除 public 内的杂项文件（如 .DS_Store）
 │  ├─ life/
 │  │  ├─ index.html           日常集 · 生活工作台（数据只在本机）
-│  │  └─ online.html          日常集 · 云端持久化版（数据存 Supabase）
+│  │  └─ online.html          日常集 · 云端版（登录后数据按账号存 Supabase）
 │  └─ ledger/
 │     ├─ index.html           打工人小账本（数据只在本机）
-│     └─ online.html          打工人小账本 · 云端持久化版（数据存 Supabase）
+│     └─ online.html          打工人小账本 · 云端版（登录后数据按账号存 Supabase）
 ├─ shared/
 │  ├─ README.md               通用 PWA 模块的接入说明
 │  ├─ pwa-install.js          通用「安装为应用」模块（单一真源）
-│  └─ supabase-sync.js        Supabase 持久化模块（单一真源）
+│  └─ supabase-sync.js        持久化 + 登录模块（单一真源）
 ├─ supabase/
-│  └─ schema.sql              建表 + 权限策略，粘进 Supabase SQL Editor 执行
+│  └─ schema.sql              建表 + 按用户隔离的 RLS 策略，粘进 Supabase SQL Editor 执行
 ├─ tools/
 │  ├─ sync-pwa.mjs            把 PWA 模块内联进各项目 index.html
 │  └─ sync-supabase.mjs       把 Supabase 模块内联进已接入的 HTML
@@ -221,13 +221,21 @@ npm run check:pwa    # 只校验是否同步；部署工作流也会跑这一步
 
 `online.html` 是独立文件，由 `index.html` 复制后**只替换持久化层**得到 ——
 界面、交互、业务计算完全一致，改动集中在 `/* ===== Supabase Database Integration ===== */` 那一段。
+登录门禁与账户菜单由共享模块用纯 JS 注入，没有改动页面 HTML，所以两套入口的界面始终同步。
 
-#### 三步接上你自己的 Supabase
+> `index.html` 是**纯本机版**：不登录、不连云，数据只在这台设备的 localStorage 里。
+> 想给家人用、要跨设备，就用 `online.html`。
 
-**① 建表** — Supabase 控制台 → **SQL Editor** → 新建查询 → 粘贴 `supabase/schema.sql` 全文 → Run。
-脚本建 9 张表（账本 3 张、日常集 6 张）、索引、权限策略与 Realtime 发布，可重复执行。
+#### 四个步骤接上你自己的 Supabase
 
-**② 填配置** — 打开两个 `online.html`，把顶部的 `SUPABASE_CONFIG` 换成自己项目的值：
+**① 开启邮箱密码登录** — 控制台 → **Authentication → Providers → Email**，打开 Enable。
+家庭自用强烈建议同时关掉 **Sign In / Up → Confirm email**：否则每个人注册后都要先去邮箱点确认链接才能进，
+多一道收邮件的麻烦；关掉之后注册即登录。
+
+**② 建表** — 控制台 → **SQL Editor** → 新建查询 → 粘贴 `supabase/schema.sql` 全文 → Run。
+脚本建 9 张表（账本 3 张、日常集 6 张）、索引、**按用户隔离的权限策略**与 Realtime 发布，可重复执行。
+
+**③ 填配置** — 打开两个 `online.html`，把顶部的 `SUPABASE_CONFIG` 换成自己项目的值：
 
 ```js
 var SUPABASE_CONFIG = {
@@ -236,23 +244,37 @@ var SUPABASE_CONFIG = {
 };
 ```
 
-**③ 部署** — 推 `main` 即可。没填配置时页面**不会假装配对成功**：
-它安静地走回本机模式，并在顶部提示「还没配置 Supabase」。
+**④ 部署** — 推 `main` 即可。没填配置时页面**不会假装配对成功**，
+也不会弹出登录框 —— 它安静地走回本机模式，并在顶部提示「还没配置 Supabase」。
 
-#### ⚠️ 权限：anon key 是公开的
+#### 一个账号一份数据（家庭成员互不可见）
 
-`anonKey` 会随页面源码一起公开，而脚本里的默认策略允许 `anon` 读写全部数据 ——
-**任何人拿到这个 key 就能读写你的账本**。个人自用、数据不敏感时可以接受；
-要真正隔离，请开启 Supabase Auth，并改用 `schema.sql` 第四节那套按 `auth.uid()` 的策略。
+配好之后打开 `online.html` 会先看到登录页；注册或登录后，数据按账号隔离存放。
+
+- **隔离在数据库那侧，不是前端过滤**：每张表都带 `space` 列，RLS 策略要求 `space = auth.uid()::text`。
+  别人的行**查都查不到**（`using` 拦读），伪造 `space` 也写不进去（`with check` 拦写）。
+- **`anonKey` 公开也安全**：它只是一把「没有身份就什么也读不到」的钥匙。
+  未登录时 `auth.uid()` 为 null，所有查询返回空、所有写入被拒。
+- **换人登录不会串号**：登录门禁用不透明层盖住整个页面，且未登录状态下所有云端读写直接失败
+  （`requireAuth`），不会安静地把数据写进默认空间。退出登录会清掉本机缓存 ——
+  缓存另有一份「属于哪个账号」的记录，账号对不上就整份丢弃，共用一台设备时尤其重要。
+- **新增成员零配置**：让家人在登录页点「注册」就行，不需要你在后台建账号，也不用改代码。
 
 #### 同步语义
 
-- **打开页面**：先渲染本机缓存（不白屏）→ 再拉 Supabase 全量 → 云端为准覆盖 → 回写 localStorage。
-- **写入**：先落本机，再推云端；推送失败**不丢数据**，顶部出现「重试同步」。
-- **跨设备重复提交**：月度总结主键是 `summary-<月份>`、设置为 `settings`、习惯打卡是 `习惯×日期`，
-  都走 upsert，不会写重。
-- **实时**：账本 `online.html` 订阅了 Supabase Realtime，另一端改动会自动重拉。
-  通道建不起来也不影响主流程，手动点「重试同步」照样可用。
+- **打开页面**：先恢复本机会话 → 按 `space` 拉自己那份全量 → 云端为准覆盖 → 回写 localStorage。
+- **写入**：先落本机，再推云端；推送失败**不丢数据**，出现「重试同步」。
+- **跨设备重复提交**：主键是 `<uid>:summary-<月份>`、`<uid>:settings`、`<uid>:habit-<习惯>-<日期>`，
+  都走 upsert，不会写重。这个前缀是必需的 —— 主键全局唯一，不带账号前缀两个人的同月记录会撞车。
+- **实时**：两个页面都订阅了 Supabase Realtime，另一端改动会自动重拉
+  （按 `space` 过滤，只看得到自己的行）。通道建不起来也不影响主流程，手动点「重试同步」照样可用。
+- **离线**：断网时用本机缓存照常可见可改，联网后点「重试同步」补上。
+
+#### 想把「接登录之前」的存量数据收归自己名下
+
+那时候写进去的行 `space` 全是 `'default'`，在按用户隔离的策略下谁都看不见。
+执行 `schema.sql` 第四节那段（默认注释着），把 `<你的用户 id>` 换成
+Authentication → Users 里那一行的 UID，再跑一遍即可。
 
 #### 改共享模块之后要同步
 
@@ -326,6 +348,29 @@ curl -H "Host: skywitty.win"      http://localhost:8787/
 纯静态 Worker 只能按路径分发，读不到 Host 头，也就无法实现子域名。
 换成路由脚本后，加项目只需加文件夹，域名数量不受限。
 
+**为什么隔离做在数据库端，而不是前端按账号过滤？**
+前端过滤只是「界面上不显示」，抓包照样拿得到全量数据，等于没隔离。
+这里每张表都有 `space` 列，RLS 策略要求 `space = auth.uid()::text`：
+读被 `using` 拦住（别人的行根本查不到），写被 `with check` 拦住（伪造 `space` 也存不进去）。
+前端因此**不需要、也无法**做隔离判断，只需老老实实带上自己的 uid。
+
+**为什么登录门禁放在共享模块里，而不是写进页面 HTML？**
+两个页面由各自的 `index.html` 复制而来，一旦往 HTML 里加登录界面，
+以后改 `index.html` 就得手工同步两处，迟早走歪。
+共享模块用纯 JS 注入样式和 DOM（`SupabaseSync.authGate()`），页面 HTML 一行没动，
+门禁样式还能自动跟随页面主题（宿主 CSS 变量 + `html[data-theme="dark"]`）。
+
+**为什么确定性主键要带 uid 前缀？**
+月度总结用 `summary-<月份>`、个人设置用 `settings`、习惯打卡用 `habit-<习惯>-<日期>`，
+这些 id 是「天生唯一」的，本意是让 upsert 收敛。但主键是全局唯一的 ——
+两个家庭成员在同一个月各存一次总结，就会撞主键。
+加上 `<uid>:` 前缀后既保留 upsert 收敛特性，又天然按账号分开。
+
+**为什么退出登录要清掉本机缓存？**
+localStorage 不区分账号。一家人共用一台平板时，若不清，
+下一位登录者会立刻在自己界面里看到上一位的本地记录，甚至可能被合并进自己的云端数据。
+所以缓存另存一个 `_owner` 键记录归属，账号对不上就整份丢弃 —— 云端才是真源。
+
 **为什么 `routes` 放在 Dashboard 而不是 `wrangler.jsonc`？**
 一是本地 dev 会因此无法测试 Host 分发（见上）；二是 `routes` 依赖 zone 已添加到账号，
 写进配置会让部署与域名状态耦合 —— 域名未就绪时构建会直接失败，把整个自动部署管线拖垮。
@@ -354,8 +399,14 @@ curl -H "Host: skywitty.win"      http://localhost:8787/
 | 本地 dev 的 Host 头无效 | 配置里出现了 `routes`，移除后重启 |
 | PWA 无法安装（按钮点了没反应） | 三条排查线：① 必须 HTTPS 或 `127.0.0.1`（`file://` 不算 secure context）；② manifest 的 `start_url` 必须是**绝对地址**，否则浏览器判 `start-url-not-valid` 且 `beforeinstallprompt` 不触发（见第二节的踩坑说明）；③ 用 `Page.getInstallabilityErrors` 可以直接问浏览器到底缺什么，返回 `[]` 才算可安装 |
 | 部署时报「通用 PWA 模块已同步」失败 | 改了 `shared/pwa-install.js` 但没同步。本地跑 `npm run sync:pwa` 后重新提交 |
+| `online.html` 表面完全正常，但没有顶部提示 | 说明 `SUPABASE_CONFIG` 已填好且已登录，这是**想要的状态** |
 | `online.html` 顶部提示「还没配置 Supabase」 | 这是正常状态，不是报错。把页面顶部 `SUPABASE_CONFIG` 的 `url` / `anonKey` 填上并刷新即可 |
-| `online.html` 提示「读取失败 / 写入失败，已切到本地模式」 | 按序排查：① `supabase/schema.sql` 是否已执行；② `url` / `anonKey` 是否填对；③ 页面里的 `DB_*` 表名与库里是否一致；④ 浏览器控制台的 CORS / 401 报错 |
+| `online.html` 一打开就是登录页 | 未登录时的正常表现。点「注册」建账号即可；已注册直接登录。若想完全不登录，把 `SUPABASE_CONFIG` 留空就退回本机模式 |
+| 注册后提示「去邮箱点确认链接」 | 项目开着邮箱确认。想省掉这步：控制台 → Authentication → Sign In / Up → 关掉 **Confirm email** |
+| 登录报「邮箱或密码不对」 | 密码错了，或邮箱还没确认。确认过的账号仍报错就用登录页的「忘记密码」重置 |
+| 登录成功，但界面上没有任何数据 | 正常 —— 新账号就是空的。数据按账号隔离，不会继承同一个库里别人的记录 |
+| 换账号登录后想找回旧数据 | 数据还在，只是归属变了。用登录页的「忘记密码」登回原账号即可 |
+| 提示「读取失败 / 写入失败，已切到本地模式」 | 按序排查：① `supabase/schema.sql` 是否已执行；② `url` / `anonKey` 是否填对；③ Email Provider 是否已开启；④ 页面里的 `DB_*` 表名与库里是否一致；⑤ 浏览器控制台的 CORS / 401 报错 |
 | 部署时报「Supabase 共享模块已同步」失败 | 改了 `shared/supabase-sync.js` 但没同步。本地跑 `npm run sync:sb` 后重新提交 |
 
 ---
