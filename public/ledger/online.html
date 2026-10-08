@@ -51,7 +51,7 @@
   (function (global) {
     'use strict';
 
-    var VERSION = '1.1.0';
+    var VERSION = '1.2.0';
 
     /* SDK 来源：jsdelivr 的 ESM 端点为主，esm.sh 兜底。
        两个都是运行时拉取，因此页面本身仍是单文件、零构建。 */
@@ -314,6 +314,33 @@
       return run(function (client) {
         return client.from(table).insert(rows).select();
       });
+    }
+
+    /**
+     * 批量 upsert —— 用于「把一段存量数据并进云端」这类一次多条的场景。
+     * 与 insertMany 的差别：遇到已存在的主键是覆盖而不是报错，所以
+     * 「另一台设备/另一个会话刚好也写过同一行」不会让整批失败。
+     * 分片串行发送：单次请求体别太大，也不要一次并发几十个请求把连接打满。
+     * 返回 { data, error }，任一批失败即停止，已成功的部分保留。
+     */
+    function upsertMany(table, rows, chunkSize) {
+      var list = (Array.isArray(rows) ? rows : []).filter(Boolean);
+      if (!list.length) return Promise.resolve({ data: [], error: null });
+      var size = chunkSize > 0 ? chunkSize : 200;
+      var groups = [];
+      for (var i = 0; i < list.length; i += size) groups.push(list.slice(i, i + size));
+
+      return groups.reduce(function (chain, group) {
+        return chain.then(function (acc) {
+          if (acc.error) return acc;                     // 前一批已失败，后面的不再发
+          return run(function (client) {
+            return client.from(table).upsert(group, { onConflict: 'id' }).select();
+          }).then(function (res) {
+            if (res && res.error) return { data: acc.data, error: res.error };
+            return { data: acc.data.concat((res && res.data) || []), error: null };
+          });
+        });
+      }, Promise.resolve({ data: [], error: null }));
     }
 
     /** 以 id 为主键的部分更新 */
@@ -981,6 +1008,7 @@
       insertMany: insertMany,
       update: update,
       upsert: upsert,
+      upsertMany: upsertMany,
       remove: remove,
       onStatus: onStatus,
       describe: describe,
@@ -2007,6 +2035,41 @@
       #sync-pill-text { display: none; }
       .sync-pill { padding: 6px 9px; }
     }
+
+    /* ---------- 「本机版数据并入」确认层 ----------
+       登录云端版后，如果这台设备上的本机版（index.html）还留着一份账，
+       就弹这一层问一句。样式全部走主题变量，暗色模式自动跟随。 */
+    .local-merge-backdrop {
+      position: fixed; inset: 0; z-index: 240; display: grid; place-items: center;
+      padding: 20px; background: rgba(18, 28, 27, .46);
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    }
+    .local-merge-backdrop[hidden] { display: none; }
+    .local-merge-card {
+      width: min(432px, 100%); max-height: calc(100vh - 40px); overflow: auto;
+      padding: 24px 24px 20px; border: 1px solid var(--line); border-radius: 22px;
+      background: var(--surface); color: var(--ink); box-shadow: var(--shadow, 0 26px 70px rgba(18, 28, 27, .28));
+    }
+    .local-merge-card h3 { margin: 0 0 10px; font-size: 17px; line-height: 1.4; color: var(--ink-deep); }
+    .local-merge-intro { margin: 0 0 14px; font-size: 13px; line-height: 1.7; }
+    .local-merge-stats {
+      margin: 0 0 14px; padding: 12px 14px; border-radius: 14px;
+      background: var(--surface-soft); color: var(--positive-strong);
+      font-size: 13px; font-weight: 600; line-height: 1.65;
+    }
+    .local-merge-note { margin: 0 0 18px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .local-merge-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .local-merge-actions button {
+      min-height: 42px; padding: 0 18px; border: 1px solid var(--line-strong); border-radius: 12px;
+      background: transparent; color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .local-merge-actions button.local-merge-ok { border-color: var(--brand); background: var(--brand); color: #fff; }
+    .local-merge-actions button:disabled { opacity: .6; cursor: default; }
+    @media (max-width: 430px) {
+      .local-merge-card { padding: 20px 18px 16px; }
+      .local-merge-actions { flex-direction: column-reverse; }
+      .local-merge-actions button { width: 100%; }
+    }
   </style>
 </head>
 <body data-page-node-id="r4o8VB5vQpNaczEwjvUi6O">
@@ -2744,6 +2807,181 @@ function clearOwnBucket(uid) {
   } catch (e) { /* 存储不可用不影响：内存状态照样会被换成空桶内容 */ }
 }
 
+/* ---------- 本机版存量并入 ----------
+   online.html 与本机版 index.html 同域、但用两个不同的存储键，所以登录云端版后，
+   本机版以前记的账不会自己冒出来。首次登录（且云端读取成功）时检测一次，
+   用一层确认问用户要不要带上来；问过就记住答案，不再反复打扰。
+
+   两条原则：
+   ① 云端为准 —— 只补传云端还没有的记录（支出按内容指纹比对、月度总结按月份比对），
+      不覆盖云端已有的行，免得把别的设备上更新的记录回退成旧的；
+   ② 不动源数据 —— 本机版那份始终留在原地，用户随时能退回单机继续用。
+
+   注意 localStorage 里的合并标记（<桶>_mergelocal）不随「退出登录清桶」一起删：
+   那份记录只是「问过了」，留着才能做到不重复打扰。 */
+const LOCAL_SOURCE_KEY = 'wb_workspace_worker_ledger_state_v1';   // index.html 用的存储键
+
+function localMergeFlagKey(uid) { return bucketKeyOf(uid) + '_mergelocal'; }
+function localMergeAsked(uid) {
+  try { return localStorage.getItem(localMergeFlagKey(uid)) || ''; } catch (e) { return ''; }
+}
+function markLocalMerge(uid, value) {
+  try { localStorage.setItem(localMergeFlagKey(uid), value); } catch (e) { /* 记不住就下次再问，不影响数据 */ }
+}
+
+/* 读本机版那份数据，只挑出「有内容、且不是示例」的部分 */
+function localLedgerSnapshot() {
+  let raw;
+  try { raw = localStorage.getItem(LOCAL_SOURCE_KEY); } catch (e) { return null; }
+  if (!raw) return null;
+  let parsed;
+  try { parsed = normalizeStored(JSON.parse(raw)); } catch (e) { return null; }
+  const expenses = (parsed.expenses || []).filter((item) => !item.isSample);
+  const summaries = (parsed.monthlySummaries || []).filter((item) => !item.isSample);
+  const profile = parsed.profile && !parsed.profile.isSample ? parsed.profile : null;
+  const freedom = parsed.freedom && !parsed.freedom.isSample ? parsed.freedom : null;
+  const hasProfile = Boolean(profile && (profile.monthlySalary || profile.dailyOfficeHours || profile.oneWayCommuteMinutes));
+  const hasFreedom = Boolean(freedom && (freedom.targetAmount || freedom.currentSaved || freedom.basicMonthlyCost));
+  if (!expenses.length && !summaries.length && !hasProfile && !hasFreedom) return null;
+  return { expenses, summaries, profile, freedom, hasProfile, hasFreedom };
+}
+
+/* 逐项比对云端现状，算出真正要补传的部分 */
+function planLocalMerge(info) {
+  // 只把「真实的云端/本机记录」算作已有；本页自带的示例内容不算，
+  // 否则示例里的那几个月会把本机版同样月份的真实记录挡在外面。
+  const expenseSeen = {};
+  state.expenses.forEach((item) => { if (!item.isSample) expenseSeen[expenseSignature(item)] = true; });
+  const summarySeen = {};
+  state.monthlySummaries.forEach((item) => { if (!item.isSample) summarySeen[item.month] = true; });
+  return {
+    expenses: info.expenses.filter((item) => !expenseSeen[expenseSignature(item)]),
+    summaries: info.summaries.filter((item) => !summarySeen[item.month]),
+    // 云端还没有真实设置（当前仍是示例值）时，才用本机版的时薪与自由基金参数
+    profile: Boolean(info.hasProfile && info.profile && state.profile.isSample),
+    freedom: Boolean(info.hasFreedom && info.freedom && state.freedom.isSample),
+    info: info
+  };
+}
+
+function localMergeCount(plan) {
+  return plan.expenses.length + plan.summaries.length + ((plan.profile || plan.freedom) ? 1 : 0);
+}
+
+/* 确认层：不借用 window.confirm，因为要摆出条目明细和「云端为准」的规则 */
+function askLocalMerge(plan, uid) {
+  const count = localMergeCount(plan);
+  const parts = [];
+  if (plan.expenses.length) parts.push(t('merge.statExpenses', { count: plan.expenses.length }));
+  if (plan.summaries.length) parts.push(t('merge.statSummaries', { count: plan.summaries.length }));
+  if (plan.profile || plan.freedom) parts.push(t('merge.statSettings'));
+
+  const overlay = document.createElement('div');
+  overlay.className = 'local-merge-backdrop';
+  const card = document.createElement('div');
+  card.className = 'local-merge-card';
+  card.setAttribute('role', 'dialog');
+  card.setAttribute('aria-modal', 'true');
+
+  const title = document.createElement('h3');
+  title.textContent = t('merge.title');
+  const intro = document.createElement('p');
+  intro.className = 'local-merge-intro';
+  intro.textContent = t('merge.intro');
+  const stats = document.createElement('p');
+  stats.className = 'local-merge-stats';
+  stats.textContent = t('merge.statsLabel') + parts.join(' · ');
+  const note = document.createElement('p');
+  note.className = 'local-merge-note';
+  note.textContent = t('merge.rule');
+
+  const actions = document.createElement('div');
+  actions.className = 'local-merge-actions';
+  const skip = document.createElement('button');
+  skip.type = 'button';
+  skip.textContent = t('merge.skip');
+  const ok = document.createElement('button');
+  ok.type = 'button';
+  ok.className = 'local-merge-ok';
+  ok.textContent = t('merge.confirm');
+
+  let running = false;
+  const close = () => { overlay.remove(); };
+  skip.addEventListener('click', () => { markLocalMerge(uid, 'skipped'); close(); showToast(t('merge.skipped')); });
+  ok.addEventListener('click', () => {
+    if (running) return;
+    running = true;
+    ok.disabled = true;
+    skip.disabled = true;
+    ok.textContent = t('merge.working');
+    markLocalMerge(uid, 'merged');
+    runLocalMerge(plan, (err, merged) => {
+      close();
+      if (err) showToast(t('merge.failed'));
+      else showToast(merged ? t('merge.done', { count: merged }) : t('merge.doneNone'));
+    });
+  });
+
+  actions.append(skip, ok);
+  card.append(title, intro, stats, note, actions);
+  overlay.append(card);
+  document.body.append(overlay);
+  ok.focus();
+}
+
+/* 执行合并：记录批量 upsert，设置走页面原本的单行口径 */
+function runLocalMerge(plan, onDone) {
+  if (!REMOTE_ENABLED || !ONLINE || SYNC.localOnly) { onDone(new Error('not-online'), 0); return; }
+  SYNC.lastWrite = Date.now();    // 自己写入的这几条，不必再触发实时拉取
+  const hourly = (() => { try { return currentHourly().realHourly || 0; } catch (e) { return 0; } })();
+  const jobs = [];
+
+  if (plan.expenses.length) {
+    jobs.push(SupabaseSync.upsertMany(DB_EXPENSE, plan.expenses.map((item) => Object.assign(
+      { id: strOr(item.id) || uid('expense'), space: SUPABASE_SPACE },
+      expenseFields(item, hourly)
+    ))));
+  }
+  if (plan.summaries.length) {
+    jobs.push(SupabaseSync.upsertMany(DB_SUMMARY, plan.summaries.map((item) => Object.assign(
+      { id: summaryId(item.month), space: SUPABASE_SPACE },
+      summaryFields(item)
+    ))));
+  }
+
+  const settingsChanged = Boolean(plan.profile || plan.freedom);
+  if (plan.profile) state.profile = Object.assign(emptyProfile(), plan.info.profile, { isSample: false });
+  if (plan.freedom) state.freedom = Object.assign(emptyFreedom(), plan.info.freedom, { isSample: false });
+
+  Promise.all(jobs).then((results) => {
+    const failed = results.some((res) => res && res.error);
+    if (failed) {
+      setSync('error', t('sync.writeFailed'));
+      queueRetry(() => { pullAllRemote(refreshCallback); });
+      onDone(new Error('write-failed'), 0);
+      return;
+    }
+    if (settingsChanged) pushSettings();
+    saveState();
+    renderAll();
+    refillSettingsForms();
+    setSync('ok', '');
+    pullAllRemote(refreshCallback);
+    onDone(null, localMergeCount(plan));
+  });
+}
+
+/* 首次登录的入口：云端读成功后才问，且只在真的有东西可带时问 */
+function offerLocalMerge(uid) {
+  if (!REMOTE_ENABLED || !CONFIGURED || !ONLINE || SYNC.localOnly || !uid) return;
+  if (localMergeAsked(uid)) return;
+  const info = localLedgerSnapshot();
+  if (!info) return;
+  const plan = planLocalMerge(info);
+  if (!localMergeCount(plan)) { markLocalMerge(uid, 'empty'); return; }   // 云端已经都有了，不必打扰
+  askLocalMerge(plan, uid);
+}
+
 /* 门禁文案：直接查 I18N 表，缺键返回空串，让门禁用它自己的兜底文案，
    而不是把 'auth.email' 这种 key 当成界面文字显示出来 */
 function authText(key) {
@@ -2835,7 +3073,25 @@ const I18N = {
     'auth.okSignUpConfirm': '注册成功。去邮箱点一下确认链接，然后回来登录。',
     'auth.okResetSent': '重置邮件已发出，去邮箱按提示操作。',
     'auth.okPasswordUpdated': '新密码已生效，用新密码登录即可。',
-    'auth.gateNote': '数据按账号隔离：登录后只看得到自己的账目，家里其他人看不到。本机缓存按账号分开存放，退出登录只清掉属于你的那份。'
+    'auth.gateNote': '数据按账号隔离：登录后只看得到自己的账目，家里其他人看不到。本机缓存按账号分开存放，退出登录只清掉属于你的那份。',
+
+    /* 首次登录时「本机版存量并入」的确认文案 */
+    'merge.title': '带上本机版的数据？',
+    'merge.intro': '这台设备上的「打工人小账本」本机版（index.html）还留着一份数据。要不要合并进当前账号？合并后换设备也能看到。',
+    'merge.statsLabel': '本机这份：',
+    'merge.statExpenses': '{count} 笔支出',
+    'merge.statSummaries': '{count} 个月度总结',
+    'merge.statSettings': '时薪与自由基金设置',
+    'merge.rule': '只补传云端还没有的记录，云端已有的保持不动；本机那份数据不会被删除，随时还能退回单机使用。',
+    'merge.allThere': '云端已经有这些内容了，没有需要补传的记录。',
+    'merge.confirm': '合并到云端',
+    'merge.skip': '先不用',
+    'merge.onlyKnown': '知道了',
+    'merge.working': '正在合并…',
+    'merge.done': '已把 {count} 项内容合并到云端。',
+    'merge.doneNone': '云端已有这些内容，没有新增。',
+    'merge.failed': '部分内容没写到云端，已先留在这台设备上。稍后可点「重试同步」。',
+    'merge.skipped': '好，本机版数据保持原样。'
   },
   en: {
     'app.name': 'Worker Ledger', 'app.tagline': 'Make every yuan and hour count', 'app.documentTitle': '{page} | Worker Ledger',
@@ -2894,7 +3150,25 @@ const I18N = {
     'auth.okSignUpConfirm': 'Account created. Click the link in your email, then come back and sign in.',
     'auth.okResetSent': 'Reset email sent — follow the link in your inbox.',
     'auth.okPasswordUpdated': 'New password saved. Sign in with it.',
-    'auth.gateNote': 'Data is isolated per account: you only ever see your own ledger. Local cache is kept per account, and signing out clears only your own copy on this device.'
+    'auth.gateNote': 'Data is isolated per account: you only ever see your own ledger. Local cache is kept per account, and signing out clears only your own copy on this device.',
+
+    /* First sign-in: offer to bring the on-device ledger along */
+    'merge.title': 'Bring over the on-device data?',
+    'merge.intro': 'This device still holds a copy of your data from the on-device version of Worker Ledger (index.html). Merge it into this account so it follows you to other devices?',
+    'merge.statsLabel': 'On this device: ',
+    'merge.statExpenses': '{count} expenses',
+    'merge.statSummaries': '{count} monthly reviews',
+    'merge.statSettings': 'hourly-rate and freedom-fund settings',
+    'merge.rule': 'Only records the cloud does not have yet are uploaded; nothing already in the cloud is overwritten, and the on-device copy is left untouched so you can still use the offline version.',
+    'merge.allThere': 'The cloud already has all of it — nothing to upload.',
+    'merge.confirm': 'Merge into cloud',
+    'merge.skip': 'Not now',
+    'merge.onlyKnown': 'Got it',
+    'merge.working': 'Merging…',
+    'merge.done': 'Merged {count} items into the cloud.',
+    'merge.doneNone': 'The cloud already had all of this — nothing new was added.',
+    'merge.failed': 'Part of the data did not reach the cloud. It stays on this device; try "Retry sync" in a moment.',
+    'merge.skipped': 'Okay — the on-device data stays as it is.'
   }
 };
 const LANG = new URL(location.href).searchParams.get('lang') === 'en' ? 'en' : 'zh';
@@ -4328,7 +4602,11 @@ function sanitizeImport(payload) {
       refillSettingsForms();
 
       if (!uid) { setSync('offline', supabaseHint()); return; }
-      pullAllRemote(refreshCallback);
+      // 云端读成功后再问一次「要不要把本机版的数据带上来」，失败就先不提，免得两头都没落地
+      pullAllRemote((ok) => {
+        refreshCallback(ok);
+        if (ok) offerLocalMerge(uid);
+      });
       if (typeof db.onUpdated === 'function') db.onUpdated(onRemoteChange);
     }
 

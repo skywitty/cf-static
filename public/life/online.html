@@ -52,7 +52,7 @@
   (function (global) {
     'use strict';
 
-    var VERSION = '1.1.0';
+    var VERSION = '1.2.0';
 
     /* SDK 来源：jsdelivr 的 ESM 端点为主，esm.sh 兜底。
        两个都是运行时拉取，因此页面本身仍是单文件、零构建。 */
@@ -315,6 +315,33 @@
       return run(function (client) {
         return client.from(table).insert(rows).select();
       });
+    }
+
+    /**
+     * 批量 upsert —— 用于「把一段存量数据并进云端」这类一次多条的场景。
+     * 与 insertMany 的差别：遇到已存在的主键是覆盖而不是报错，所以
+     * 「另一台设备/另一个会话刚好也写过同一行」不会让整批失败。
+     * 分片串行发送：单次请求体别太大，也不要一次并发几十个请求把连接打满。
+     * 返回 { data, error }，任一批失败即停止，已成功的部分保留。
+     */
+    function upsertMany(table, rows, chunkSize) {
+      var list = (Array.isArray(rows) ? rows : []).filter(Boolean);
+      if (!list.length) return Promise.resolve({ data: [], error: null });
+      var size = chunkSize > 0 ? chunkSize : 200;
+      var groups = [];
+      for (var i = 0; i < list.length; i += size) groups.push(list.slice(i, i + size));
+
+      return groups.reduce(function (chain, group) {
+        return chain.then(function (acc) {
+          if (acc.error) return acc;                     // 前一批已失败，后面的不再发
+          return run(function (client) {
+            return client.from(table).upsert(group, { onConflict: 'id' }).select();
+          }).then(function (res) {
+            if (res && res.error) return { data: acc.data, error: res.error };
+            return { data: acc.data.concat((res && res.data) || []), error: null };
+          });
+        });
+      }, Promise.resolve({ data: [], error: null }));
     }
 
     /** 以 id 为主键的部分更新 */
@@ -982,6 +1009,7 @@
       insertMany: insertMany,
       update: update,
       upsert: upsert,
+      upsertMany: upsertMany,
       remove: remove,
       onStatus: onStatus,
       describe: describe,
@@ -1511,6 +1539,11 @@
 .data-toolbar{margin:0 0 18px}
 .data-toolbar .data-hint{flex:1 1 240px;min-width:0;color:#8b8175;font-size:12px;line-height:1.55}
 @media(max-width:860px){.sync-banner{padding:10px 12px}.sync-banner .btn{min-height:42px}.sync-banner-actions{width:100%;margin-left:0}.sync-banner-actions .btn{flex:1 1 auto}}
+/* 首次登录：是否把本机版的数据带上来（借用已有的 settings-backdrop / settings-sheet 外观） */
+.merge-intro{margin:0 0 14px;color:var(--ink);font-size:13px;line-height:1.7}
+.merge-stats{margin:0 0 14px;padding:12px 14px;border:1px solid rgba(77,48,69,.14);border-radius:14px;background:rgba(77,48,69,.055);color:var(--plum);font-size:12.5px;font-weight:700;line-height:1.65}
+.merge-note{margin:0 0 18px;color:var(--muted);font-size:11.5px;line-height:1.65}
+@media(max-width:560px){.settings-sheet .sheet-actions{flex-direction:column-reverse}.settings-sheet .sheet-actions .btn{width:100%}}
   </style>
   <title data-page-node-id="N9uQg0dpiKTsyB4FFPFrxl" data-pnid-children="1t2kuYHDk4UITU5HQoJQo7">日常集 · 生活工作台</title>
 </head>
@@ -1842,6 +1875,140 @@
     try { localStorage.removeItem(key); } catch (e) { /* 存储不可用不影响：内存状态照样会被换成空桶内容 */ }
   }
 
+  /* ---------- 本机版存量并入 ----------
+     online.html 与本机版 index.html 用的是两个不同的存储键，所以登录云端版后，
+     本机版以前记的内容不会自己出现。首次登录（且云端读取成功）时问一次：
+     要不要把本机版的数据合并进当前账号？问过就记住答案，不再反复打扰。
+
+     合并复用「导入数据」那条链路（mergeImported + pushMergedToRemote）：
+     同一条记录不重复、习惯打卡只补缺失的日期，所以天然是「云端为准」；
+     本机那份数据始终留在原地，不因为合并而被删除。
+
+     localStorage 里的合并标记（<桶>_mergelocal）不随「退出登录清桶」一起删：
+     它只是「问过了」，留着才能做到不重复打扰。 */
+  var LOCAL_SOURCE_KEYS = ['richangji-state-v1', 'wb_life_data'];   // 本机版现行键 + 更早的旧版键
+
+  function localMergeFlagKey(uid) { return bucketKeyOf(uid) + '_mergelocal'; }
+  function localMergeAsked(uid) {
+    try { return localStorage.getItem(localMergeFlagKey(uid)) || ''; } catch (e) { return ''; }
+  }
+  function markLocalMerge(uid, value) {
+    try { localStorage.setItem(localMergeFlagKey(uid), value); } catch (e) { /* 记不住就下次再问，不影响数据 */ }
+  }
+
+  /* 读本机版那份数据（只挑有内容、非示例的部分）；两个键取第一个有内容的 */
+  function localLifeSnapshot() {
+    for (var i = 0; i < LOCAL_SOURCE_KEYS.length; i++) {
+      var raw = null;
+      try { raw = localStorage.getItem(LOCAL_SOURCE_KEYS[i]); } catch (e) { continue; }
+      if (!raw) continue;
+      var candidate = null;
+      try { candidate = normalizeState(detectImportFormat(raw).candidate); } catch (e) { continue; }
+      var records = (candidate.records || []).filter(function (r) { return !r.sample; });
+      var media = (candidate.mediaItems || []).filter(function (m) { return !m.sample; });
+      var habits = (candidate.habits || []).filter(function (h) { return !h.sample; });
+      var checks = habits.reduce(function (sum, h) { return sum + Object.keys(h.entries || {}).length; }, 0);
+      if (records.length || media.length || checks) return { records: records, media: media, habits: habits, checks: checks };
+    }
+    return null;
+  }
+
+  /* 确认层：借用已有的 settings-backdrop / settings-sheet 外观，风格与本页其它弹层一致 */
+  function askLocalMerge(info, uid) {
+    var overlay = document.createElement('div');
+    overlay.className = 'settings-backdrop merge-gate';
+    var sheet = document.createElement('section');
+    sheet.className = 'settings-sheet';
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-modal', 'true');
+
+    var head = document.createElement('div');
+    head.className = 'settings-head';
+    var title = document.createElement('h2');
+    title.textContent = t('带上本机版的数据？');
+    head.append(title);
+
+    var intro = document.createElement('p');
+    intro.className = 'merge-intro';
+    intro.textContent = t('这台设备上的本机版「日常集」还留着一份记录。要不要合并进当前账号？合并后换设备也能看到。');
+    var stats = document.createElement('p');
+    stats.className = 'merge-stats';
+    stats.textContent = t('本机这份：') + t('记录 {records} 条 · 书影音 {media} 条 · 习惯打卡 {checks} 次', {
+      records: info.records.length, media: info.media.length, checks: info.checks
+    });
+    var note = document.createElement('p');
+    note.className = 'merge-note';
+    note.textContent = t('只补传云端还没有的记录，云端已有的保持不动；本机那份数据不会被删除。');
+
+    var actions = document.createElement('div');
+    actions.className = 'sheet-actions';
+    var skip = document.createElement('button');
+    skip.type = 'button';
+    skip.className = 'btn ghost';
+    var skipText = document.createElement('span');
+    skipText.textContent = t('先不用');
+    skip.append(skipText);
+    var ok = document.createElement('button');
+    ok.type = 'button';
+    ok.className = 'btn primary';
+    var okText = document.createElement('span');
+    okText.textContent = t('合并到云端');
+    ok.append(okText);
+
+    var running = false;
+    var close = function () { overlay.remove(); };
+    skip.addEventListener('click', function () { markLocalMerge(uid, 'skipped'); close(); toast(t('好，本机版数据保持原样。')); });
+    ok.addEventListener('click', function () {
+      if (running) return;
+      running = true;
+      ok.disabled = true;
+      skip.disabled = true;
+      okText.textContent = t('正在合并…');
+      markLocalMerge(uid, 'merged');
+      runLocalMerge(info, function (failed, merged) {
+        close();
+        if (failed) toast(t('部分内容没写到云端，已先留在这台设备上。'));
+        else toast(merged ? t('已把本机版的数据合并进云端。') : t('云端已有这些内容，没有新增。'));
+      });
+    });
+
+    actions.append(skip, ok);
+    sheet.append(head, intro, stats, note, actions);
+    overlay.append(sheet);
+    document.body.append(overlay);
+    ok.focus();
+  }
+
+  /* 执行合并：复用导入链路，再把新增内容写回线上数据表 */
+  function runLocalMerge(info, onDone) {
+    if (!ONLINE || LOCAL_ONLY) { onDone(true, 0); return; }
+    var merged = mergeImported({ records: info.records, mediaItems: info.media, habits: info.habits });
+    var s = merged.summary;
+    var added = s.records + s.media + s.habits + s.checks;
+    saveState();
+    renderAll();
+    if (!added && !s.habits) { onDone(false, 0); return; }
+    pushMergedToRemote(merged);
+    // 打卡按每批 15 条节流推送，等待时间跟批数走（上限 12 秒，与导入那条链路一致）
+    var wait = 1200 + Math.ceil(merged.habitPushes.length / 15) * 220;
+    setTimeout(function () {
+      pullAllRemote(function (changed, failed) {
+        saveState();
+        renderAll();
+        onDone(Boolean(failed) || LOCAL_ONLY, added);
+      });
+    }, Math.min(wait, 12000));
+  }
+
+  /* 首次登录的入口：云端读成功后才问，且只在真的有东西可带时问 */
+  function offerLocalMerge(uid) {
+    if (!CONFIGURED || !ONLINE || LOCAL_ONLY || !uid) return;
+    if (localMergeAsked(uid)) return;
+    var info = localLifeSnapshot();
+    if (!info) return;
+    askLocalMerge(info, uid);
+  }
+
   /* 登录门禁的文案：跟页面语言走。缺键返回空串，交给门禁内置兜底，
      而不是把 'auth.email' 这种 key 当作界面文字显示出来。 */
   var AUTH_TEXT = {
@@ -1920,9 +2087,11 @@
     dataCorrupted = false;
     state = loadState();
     renderAll();
-    pullAllRemote(function () {
+    pullAllRemote(function (changed, failed) {
       saveState();      // 合并结果落回这位用户自己的桶
       renderAll();
+      // 云端读成功后再问一次「要不要把本机版的数据带上来」；读失败就先不提，免得两头都没落地
+      if (!failed) offerLocalMerge(uid);
     });
     subscribeRealtime();
   }
@@ -2274,7 +2443,17 @@
     "午饭":"Lunch","公交":"Bus","买衣服":"Clothes","电影票":"Movie ticket","整理本周生活清单":"Organize this week's life list","先处理最重要的三件事":"Start with the three most important things","预约牙科检查":"Book a dental checkup","带上医保卡":"Bring insurance card","周末采购":"Weekend shopping","按待买清单购买":"Shop from the list","状态平稳":"Feeling steady",
     "今天的节奏很好，也记得留一点空白。":"You found a good rhythm today. Remember to leave a little breathing room.","已经在稳稳推进，继续保持自己的节奏。":"You are making steady progress. Keep your own pace.","今天先从一件小事开始，慢慢来就好。":"Start with one small thing today. Take it slowly.","已超出本月预算":"Over this month's budget","今天全部完成":"Everything completed today","第一条记录，会从这里开始":"Your first entry will appear here","生活已经积攒了一些痕迹，趁现在为它存一份备份。":"Your life has gathered a few traces. This is a good time to save a backup.","你不是在追赶完美，而是在让好习惯慢慢变得自然。":"You are not chasing perfection; you are letting good habits become natural.","这个分类还没有流水":"No transactions in this category yet","今天还没记账":"No transaction logged today","有空时补一笔，让月度趋势保持完整。":"Add one when you have time to keep your monthly trend complete.","已新增 20 笔账目":"20 transactions added","建议现在导出一次备份。":"We recommend exporting a backup now.","先看消费结构，再决定哪些支出可以放慢一点。":"Review the spending breakdown, then decide what can wait.",
     "目标已达成，进入稳定期":"Goal reached. You are now in the maintenance phase.","多记录几天后估算达成时间":"Log a few more days to estimate your goal date","今天还没称重":"No weight logged today","尽量在相似时间、相似状态下记录，关注 7 天平均线。":"Log under similar conditions and focus on the 7-day average.","不用追赶，选一项适合今天状态的完成。":"No need to catch up. Choose one plan that fits how you feel today.","今天已记录，本周计划也完成了":"Today's data is logged and this week's plan is complete","做得很好，记得给身体留恢复时间。":"Well done. Remember to leave time for recovery.","还没有周计划，点击右上角新增一项":"No weekly plan yet. Add one from the top right.","记录体重和体脂，关注趋势而不是单日数字":"Log weight and body fat, and focus on the trend rather than a single day.","这个智能清单里暂时没有事项":"No items in this smart list yet","待买清单已经清空":"Your shopping list is clear","这里还没有物品":"No items here yet","这个筛选条件下还没有作品":"No titles match these filters","这个范围还没有记录":"No entries in this range","建议现在导出备份":"Export a backup now","还没有习惯":"No habits yet","还没有周计划":"No weekly plan yet",
-    "存不下了，先导出备份":"Storage is full. Export a backup first.","已经攒到 20 笔，记得导出备份":"You have reached 20 transactions. Remember to export a backup.","已立即保存到本机":"Saved to this device instantly","记录已删除":"Entry deleted","备份格式不正确":"Invalid backup format","备份中有损坏的记录，请换一份备份重试":"The backup contains corrupted entries. Try another backup.","备份已导出，请妥善保存":"Backup exported. Keep it somewhere safe.","Excel 已导出":"Excel file exported","备份导入成功":"Backup imported successfully","导入失败，请检查备份文件":"Import failed. Check the backup file.","封面读取失败":"Could not read the cover image","封面格式不支持":"Unsupported cover image format","封面图片请控制在 12MB 以内":"Keep the cover image under 12 MB","封面已压缩，可以保存了":"Cover compressed and ready to save","已加入书影音清单":"Added to your media log","新习惯已加入":"New habit added","新计划已加入":"New plan added","目标设置已更新":"Goal settings updated","完成一项，心里轻一点":"One task done, one less thing on your mind","习惯已删除":"Habit deleted","计划已删除":"Plan deleted","买到了，已移入完成":"Bought and moved to completed","已从书影音清单移除":"Removed from your media log","已恢复默认外观":"Default appearance restored","月度预算已更新":"Monthly budget updated","示例内容已清空":"Sample content cleared","另一个页面的数据已同步":"Data from another tab has been synced","工作台外观已更新":"Workbench appearance updated","请输入有效金额":"Enter a valid amount","请记录今天的体重":"Log today's weight"
+    "存不下了，先导出备份":"Storage is full. Export a backup first.","已经攒到 20 笔，记得导出备份":"You have reached 20 transactions. Remember to export a backup.","已立即保存到本机":"Saved to this device instantly","记录已删除":"Entry deleted","备份格式不正确":"Invalid backup format","备份中有损坏的记录，请换一份备份重试":"The backup contains corrupted entries. Try another backup.","备份已导出，请妥善保存":"Backup exported. Keep it somewhere safe.","Excel 已导出":"Excel file exported","备份导入成功":"Backup imported successfully","导入失败，请检查备份文件":"Import failed. Check the backup file.","封面读取失败":"Could not read the cover image","封面格式不支持":"Unsupported cover image format","封面图片请控制在 12MB 以内":"Keep the cover image under 12 MB","封面已压缩，可以保存了":"Cover compressed and ready to save","已加入书影音清单":"Added to your media log","新习惯已加入":"New habit added","新计划已加入":"New plan added","目标设置已更新":"Goal settings updated","完成一项，心里轻一点":"One task done, one less thing on your mind","习惯已删除":"Habit deleted","计划已删除":"Plan deleted","买到了，已移入完成":"Bought and moved to completed","已从书影音清单移除":"Removed from your media log","已恢复默认外观":"Default appearance restored","月度预算已更新":"Monthly budget updated","示例内容已清空":"Sample content cleared","另一个页面的数据已同步":"Data from another tab has been synced","工作台外观已更新":"Workbench appearance updated","请输入有效金额":"Enter a valid amount","请记录今天的体重":"Log today's weight",
+    "带上本机版的数据？":"Bring over the on-device data?",
+    "这台设备上的本机版「日常集」还留着一份记录。要不要合并进当前账号？合并后换设备也能看到。":"This device still holds a copy of your records from the on-device version of Daily Atlas. Merge it into this account so it follows you to your other devices?",
+    "本机这份：":"On this device: ",
+    "记录 {records} 条 · 书影音 {media} 条 · 习惯打卡 {checks} 次":"{records} entries · {media} titles · {checks} check-ins",
+    "只补传云端还没有的记录，云端已有的保持不动；本机那份数据不会被删除。":"Only records the cloud does not have yet are uploaded; nothing already in the cloud is overwritten, and the on-device copy is left untouched.",
+    "合并到云端":"Merge into cloud","先不用":"Not now","正在合并…":"Merging…",
+    "已把本机版的数据合并进云端。":"On-device data merged into the cloud.",
+    "云端已有这些内容，没有新增。":"The cloud already had all of this — nothing new was added.",
+    "好，本机版数据保持原样。":"Okay — the on-device data stays as it is.",
+    "部分内容没写到云端，已先留在这台设备上。":"Part of the data did not reach the cloud; it stays on this device."
   };
   const I18N = {zh:Object.fromEntries(Object.keys(EN_I18N).map(key=>[key,key])),en:EN_I18N};
   const t = (key, vars={}) => String(I18N[LANG][key] ?? key).replace(/\{(\w+)\}/g,(_,name)=>vars[name] ?? '');

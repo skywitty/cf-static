@@ -40,7 +40,7 @@
 (function (global) {
   'use strict';
 
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
 
   /* SDK 来源：jsdelivr 的 ESM 端点为主，esm.sh 兜底。
      两个都是运行时拉取，因此页面本身仍是单文件、零构建。 */
@@ -303,6 +303,33 @@
     return run(function (client) {
       return client.from(table).insert(rows).select();
     });
+  }
+
+  /**
+   * 批量 upsert —— 用于「把一段存量数据并进云端」这类一次多条的场景。
+   * 与 insertMany 的差别：遇到已存在的主键是覆盖而不是报错，所以
+   * 「另一台设备/另一个会话刚好也写过同一行」不会让整批失败。
+   * 分片串行发送：单次请求体别太大，也不要一次并发几十个请求把连接打满。
+   * 返回 { data, error }，任一批失败即停止，已成功的部分保留。
+   */
+  function upsertMany(table, rows, chunkSize) {
+    var list = (Array.isArray(rows) ? rows : []).filter(Boolean);
+    if (!list.length) return Promise.resolve({ data: [], error: null });
+    var size = chunkSize > 0 ? chunkSize : 200;
+    var groups = [];
+    for (var i = 0; i < list.length; i += size) groups.push(list.slice(i, i + size));
+
+    return groups.reduce(function (chain, group) {
+      return chain.then(function (acc) {
+        if (acc.error) return acc;                     // 前一批已失败，后面的不再发
+        return run(function (client) {
+          return client.from(table).upsert(group, { onConflict: 'id' }).select();
+        }).then(function (res) {
+          if (res && res.error) return { data: acc.data, error: res.error };
+          return { data: acc.data.concat((res && res.data) || []), error: null };
+        });
+      });
+    }, Promise.resolve({ data: [], error: null }));
   }
 
   /** 以 id 为主键的部分更新 */
@@ -970,6 +997,7 @@
     insertMany: insertMany,
     update: update,
     upsert: upsert,
+    upsertMany: upsertMany,
     remove: remove,
     onStatus: onStatus,
     describe: describe,
